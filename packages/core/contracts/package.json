@@ -1,0 +1,15 @@
+{
+  "name": "@aitip/contracts",
+  "version": "1.0.0",
+  "description": "AITIP 전사 공통 도메인 모델, 27대 TypeID 규격 및 데이터 계약 (Zero Secret)",
+  "type": "module",
+  "main": "./types/domain.ts",
+  "types": "./types/domain.ts",
+  "exports": {
+    ".": "./types/domain.ts",
+    "./types": "./types/domain.ts"
+  },
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}

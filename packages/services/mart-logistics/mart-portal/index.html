@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AITIP 단위농협 하나로마트 운영 관제 포털</title>
+  <link rel="stylesheet" href="/mart/mart.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- 1. 좌측 고정 사이드바 (Argon Dashboard Layout) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-badge">NH</span>
+        <span class="sidebar-title">하나로마트 서초점</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">운영 관제</div>
+        <a class="nav-item active" onclick="switchSection('sec-catalog')">
+          <span>당일 시세 및 카탈로그</span>
+          <span class="nav-badge">1,248</span>
+        </a>
+        <a class="nav-item" onclick="switchSection('sec-picking')">
+          <span>순회 배송 피킹 관리</span>
+          <span class="nav-badge">12건</span>
+        </a>
+        <a class="nav-item" onclick="switchSection('sec-receipt')">
+          <span>결품 정정 영수증 (DOC-11)</span>
+          <span class="nav-badge">1건</span>
+        </a>
+
+        <div class="nav-section-label" style="margin-top: 16px;">물류 및 유통</div>
+        <a class="nav-item" onclick="switchSection('sec-catalog')">
+          <span>매대 구역(Aisle) 배치</span>
+        </a>
+        <a class="nav-item" onclick="switchSection('sec-catalog')">
+          <span>경로당 급식 공동구매 풀</span>
+        </a>
+        <a class="nav-item" onclick="switchSection('sec-catalog')">
+          <span>정산 및 보조금 대사</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="user-name">김은영 총괄매니저</span>
+        <span>서초구 시니어클럽 위탁운영팀</span>
+      </div>
+    </aside>
+
+    <!-- 2. 우측 메인 작업 영역 -->
+    <div class="main-wrapper">
+      
+      <!-- 상단 글로벌 헤더 -->
+      <header class="top-header">
+        <div class="breadcrumb">
+          <span>하나로마트</span>
+          <span>/</span>
+          <span class="current" id="current-crumb">당일 시세 및 카탈로그 관리</span>
+        </div>
+        <div class="header-actions">
+          <div class="status-indicator">
+            <span class="dot"></span>
+            <span>POS 연동 인터페이스 정상</span>
+          </div>
+          <span style="font-size: 12px; color: #64748b;">2026-11-09 12:45 KST</span>
+        </div>
+      </header>
+
+      <!-- 페이지 본문 -->
+      <main class="page-content">
+
+        <!-- 섹션 1: 당일 시세 및 카탈로그 관리 -->
+        <section id="sec-catalog" class="content-section">
+          
+          <div class="page-title-row">
+            <div>
+              <h1>당일 시세 및 카탈로그 관리</h1>
+              <p>아침 POS 엑셀 차분 동기화 내역 및 매장 진열 품목 데이터 그리드</p>
+            </div>
+            <div>
+              <button class="btn btn-default" style="margin-right: 6px;">엑셀 양식 다운로드</button>
+              <button class="btn btn-primary" onclick="applyBatchUpdate()">당일 시세 일괄 반영 (0.1초 동기화)</button>
+            </div>
+          </div>
+
+          <!-- KPI 통계 카드 그리드 -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">총 관리 품목</span>
+              </div>
+              <div class="metric-value">1,248</div>
+              <div class="metric-footer">전체 바코드 SKU 등록 기준</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">시세 변동 품목</span>
+              </div>
+              <div class="metric-value" style="color: #0284c7;">42</div>
+              <div class="metric-footer">인상 14건 / 인하 28건</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">현장 품절 품목</span>
+              </div>
+              <div class="metric-value" style="color: #b45309;">3</div>
+              <div class="metric-footer">온라인 판매 자동 차단 완료</div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-header">
+                <span class="metric-title">1차 순회 배송 피킹</span>
+              </div>
+              <div class="metric-value" style="color: #15803d;">85%</div>
+              <div class="metric-footer">총 12가구 중 10가구 완료</div>
+            </div>
+          </div>
+
+          <!-- 데이터 테이블 카드 -->
+          <div class="table-card">
+            
+            <div class="card-header-toolbar">
+              <div class="toolbar-left">
+                <input type="text" class="search-input" placeholder="바코드 SKU 또는 상품명 검색..." id="table-search" oninput="filterTable()">
+                <select class="select-filter" id="zone-filter" onchange="filterTable()">
+                  <option value="">모든 매대 구역</option>
+                  <option value="1구역">1구역 (채소/과일)</option>
+                  <option value="2구역">2구역 (정육/수산)</option>
+                  <option value="3구역">3구역 (가공/공산품)</option>
+                </select>
+                <select class="select-filter" id="status-filter" onchange="filterTable()">
+                  <option value="">모든 상태</option>
+                  <option value="인상">시세 인상</option>
+                  <option value="인하">시세 인하</option>
+                  <option value="품절">현장 품절</option>
+                  <option value="유지">변동 없음</option>
+                </select>
+              </div>
+
+              <div class="toolbar-right">
+                <span style="font-size: 12px; color: #64748b;">선택된 품목 0건</span>
+                <button class="btn btn-default" onclick="alert('POS 엑셀 파일 업로드 모달을 호출합니다.')">파일 업로드</button>
+              </div>
+            </div>
+
+            <div class="table-container">
+              <table class="enterprise-table" id="product-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px;"><input type="checkbox"></th>
+                    <th style="width: 140px;">바코드 SKU</th>
+                    <th>상품명 / 규격</th>
+                    <th style="width: 110px;">매대 위치</th>
+                    <th style="width: 80px;">과세 구분</th>
+                    <th style="width: 100px; text-align: right;">기존 단가</th>
+                    <th style="width: 100px; text-align: right;">당일 시세</th>
+                    <th style="width: 90px; text-align: right;">변동 차액</th>
+                    <th style="width: 110px; text-align: center;">상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td><span class="code-sku">8809123456789</span></td>
+                    <td><strong>흙대파 1단 (국산, 500g)</strong></td>
+                    <td>1구역 (채소 매대 A-01)</td>
+                    <td><span class="badge badge-info">면세</span></td>
+                    <td class="price-dim" style="text-align: right;">1,500원</td>
+                    <td class="price-text" style="text-align: right;">2,200원</td>
+                    <td style="text-align: right; color: #b91c1c; font-weight: 700;">+700원</td>
+                    <td style="text-align: center;"><span class="badge badge-danger">시세 인상</span></td>
+                  </tr>
+
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td><span class="code-sku">2000123065008</span></td>
+                    <td><strong>한우 1+ 양지 국거리 [저울포장 450g]</strong></td>
+                    <td>2구역 (정육 대면 B-04)</td>
+                    <td><span class="badge badge-info">면세</span></td>
+                    <td class="price-dim" style="text-align: right;">35,000원</td>
+                    <td class="price-text" style="text-align: right;">35,000원</td>
+                    <td style="text-align: right; color: #64748b;">0원</td>
+                    <td style="text-align: center;"><span class="badge badge-neutral">변동 없음</span></td>
+                  </tr>
+
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td><span class="code-sku">8801111222333</span></td>
+                    <td><strong>햇 부사 사과 1봉 (5개입, 청송)</strong></td>
+                    <td>1구역 (과일 매대 A-03)</td>
+                    <td><span class="badge badge-info">면세</span></td>
+                    <td class="price-dim" style="text-align: right;">12,000원</td>
+                    <td class="price-text" style="text-align: right;">9,900원</td>
+                    <td style="text-align: right; color: #0284c7; font-weight: 700;">-2,100원</td>
+                    <td style="text-align: center;"><span class="badge badge-success">제철 인하</span></td>
+                  </tr>
+
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td><span class="code-sku">PLU-105-TOFU</span></td>
+                    <td><strong>서초두부 손두부 1모 (부침용, 400g)</strong></td>
+                    <td>1구역 (냉장 신선 A-07)</td>
+                    <td><span class="badge badge-info">면세</span></td>
+                    <td class="price-dim" style="text-align: right;">3,000원</td>
+                    <td class="price-text" style="text-align: right;">3,000원</td>
+                    <td style="text-align: right; color: #64748b;">0원</td>
+                    <td style="text-align: center;"><span class="badge badge-warning">현장 품절</span></td>
+                  </tr>
+
+                  <tr>
+                    <td><input type="checkbox"></td>
+                    <td><span class="code-sku">8801043014854</span></td>
+                    <td><strong>농심 신라면 5개입 멀티팩</strong></td>
+                    <td>3구역 (가공 면류 C-02)</td>
+                    <td><span class="badge badge-neutral">과세 10%</span></td>
+                    <td class="price-dim" style="text-align: right;">4,200원</td>
+                    <td class="price-text" style="text-align: right;">4,200원</td>
+                    <td style="text-align: right; color: #64748b;">0원</td>
+                    <td style="text-align: center;"><span class="badge badge-neutral">변동 없음</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-footer">
+              <span>표시 중: 1 - 5 / 총 1,248건</span>
+              <div class="pagination">
+                <button class="page-btn active">1</button>
+                <button class="page-btn">2</button>
+                <button class="page-btn">3</button>
+                <button class="page-btn">...</button>
+                <button class="page-btn">125</button>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- 섹션 2: 결품 정정 영수증 (DOC-11 전문 회계 뷰어) -->
+        <section id="sec-receipt" class="content-section" style="display: none;">
+          
+          <div class="page-title-row">
+            <div>
+              <h1>결품 부분취소 및 듀얼 영수증 관리 (DOC-11)</h1>
+              <p>지자체 급식 보조금 정산 대사용 [원거래 전액 취소 (VOID)] + [정정 재발행 (REISSUED)] 회계 검증</p>
+            </div>
+            <div>
+              <button class="btn btn-default" onclick="window.print()">영수증 세트 인쇄</button>
+            </div>
+          </div>
+
+          <div class="dual-split-grid">
+            
+            <!-- 좌측: 원거래 취소 전표 -->
+            <div class="slip-container">
+              <span class="slip-tag slip-tag-void">원거래 승인 취소 전표 (VOID)</span>
+              <div class="slip-box">
+                <div style="font-weight: 700; margin-bottom: 4px;">[신용카드 / 급식보조금 매출 취소전표]</div>
+                <div>가맹점: 하나로마트 서초점 (사업자: 123-82-45678)</div>
+                <div>승인번호: 30018923 | 거래일시: 2026-11-09 09:15:22</div>
+                <hr class="slip-divider">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr><td>한우 1+ 양지 (450g)</td><td style="text-align: right;">35,000</td></tr>
+                  <tr><td>흙대파 1단 (국산)</td><td style="text-align: right;">2,200</td></tr>
+                  <tr style="text-decoration: line-through; color: #b91c1c;"><td>서초두부 손두부 1모 (결품)</td><td style="text-align: right;">3,000</td></tr>
+                  <tr><td>신라면 5개입 멀티팩</td><td style="text-align: right;">4,200</td></tr>
+                  <tr><td>배송료 (로컬 순회배송)</td><td style="text-align: right;">3,000</td></tr>
+                </table>
+                <hr class="slip-divider">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>원 승인 합계</span>
+                  <span style="text-decoration: line-through;">47,400원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #b91c1c; font-weight: 700;">
+                  <span>취소 승인 금액</span>
+                  <span>-47,400원</span>
+                </div>
+                <hr class="slip-divider">
+                <div style="font-size: 11px; color: #64748b;">
+                  카드사: 신한 급식보조금카드 (9410-****-****-1002)<br>
+                  사유: 매장 품절로 인한 원거래 자동 취소 후 감액 재승인
+                </div>
+              </div>
+            </div>
+
+            <!-- 우측: 최종 정정 재발행 전표 -->
+            <div class="slip-container">
+              <span class="slip-tag slip-tag-reissued">최종 정정 재발행 전표 (REISSUED)</span>
+              <div class="slip-box">
+                <div style="font-weight: 700; margin-bottom: 4px;">[신용카드 / 급식보조금 정정 매출전표]</div>
+                <div>가맹점: 하나로마트 서초점 (사업자: 123-82-45678)</div>
+                <div>정정번호: 30018945 | 정정일시: 2026-11-09 11:42:10</div>
+                <hr class="slip-divider">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr><td>한우 1+ 양지 (450g)</td><td style="text-align: right;">35,000</td></tr>
+                  <tr><td>흙대파 1단 (국산)</td><td style="text-align: right;">2,200</td></tr>
+                  <tr><td>신라면 5개입 멀티팩</td><td style="text-align: right;">4,200</td></tr>
+                  <tr><td>배송료 (로컬 순회배송)</td><td style="text-align: right;">3,000</td></tr>
+                </table>
+                <hr class="slip-divider">
+                <div style="display: flex; justify-content: space-between;">
+                  <span>면세 농축산물 합계</span>
+                  <span>37,200원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>과세 물품 가액</span>
+                  <span>6,545원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span>부가가치세 (VAT 10%)</span>
+                  <span>655원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 14px; margin-top: 4px; color: #15803d;">
+                  <span>최종 정정 승인금액</span>
+                  <span>44,400원</span>
+                </div>
+                <hr class="slip-divider">
+                <div style="font-size: 11px; color: #64748b;">
+                  차액 환불 완료: 3,000원 즉시 계좌 반환<br>
+                  보조금 정산 대사 번호: REF-20261109-001 (감사 추적용)
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+
+    </div>
+
+  </div>
+
+  <script>
+    function switchSection(secId) {
+      document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.sidebar-nav .nav-item').forEach(el => el.classList.remove('active'));
+      
+      const target = document.getElementById(secId);
+      if (target) target.style.display = 'block';
+
+      if (secId === 'sec-catalog') {
+        document.getElementById('current-crumb').textContent = '당일 시세 및 카탈로그 관리';
+        document.querySelectorAll('.sidebar-nav .nav-item')[0].classList.add('active');
+      } else if (secId === 'sec-receipt') {
+        document.getElementById('current-crumb').textContent = '결품 정정 영수증 (DOC-11)';
+        document.querySelectorAll('.sidebar-nav .nav-item')[2].classList.add('active');
+      }
+    }
+
+    function filterTable() {
+      const q = document.getElementById('table-search').value.toLowerCase();
+      const zone = document.getElementById('zone-filter').value;
+      const status = document.getElementById('status-filter').value;
+      const rows = document.querySelectorAll('#product-table tbody tr');
+
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const matchesQ = !q || text.includes(q);
+        const matchesZone = !zone || text.includes(zone);
+        const matchesStatus = !status || text.includes(status);
+        row.style.display = (matchesQ && matchesZone && matchesStatus) ? '' : 'none';
+      });
+    }
+
+    function applyBatchUpdate() {
+      const btn = event.currentTarget;
+      btn.textContent = '반영 중...';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.textContent = '반영 완료 (D1 동기화됨)';
+        setTimeout(() => {
+          btn.textContent = '당일 시세 일괄 반영 (0.1초 동기화)';
+          btn.disabled = false;
+        }, 2000);
+      }, 300);
+    }
+  </script>
+
+</body>
+</html>

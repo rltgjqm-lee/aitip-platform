@@ -3,3 +3,7 @@ node_modules/
 *.log
 .env
 .wrangler/
+*.bak*
+__pycache__/
+*.pyc
+references/
