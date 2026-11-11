@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-pages.mjs",
+    "deploy": "node scripts/build-pages.mjs && wrangler pages deploy dist --project-name aitip-platform",
     "test:schema": "python scripts/test_schema_integrity.py",
     "test": "npm run test:schema"
   },
