@@ -4,12 +4,6 @@
   "private": true,
   "description": "AITIP 소상공인 상생 주문배달 O2O 플랫폼 (엔터프라이즈 모노레포)",
   "type": "module",
-  "workspaces": [
-    "packages/core/*",
-    "packages/services/food-delivery/*",
-    "packages/services/mart-logistics/*",
-    "packages/edge-device"
-  ],
   "scripts": {
     "test:schema": "python scripts/test_schema_integrity.py",
     "test": "npm run test:schema"
