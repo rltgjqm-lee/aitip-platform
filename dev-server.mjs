@@ -463,6 +463,19 @@ const server = http.createServer(async (req, res) => {
       </div>
       <div style="color: #f97316; font-weight: 700; font-size: 14px;">포털 열기 ➔</div>
     </a>
+    <a href="/admin/" class="card" style="border-top: 4px solid #2ac1bc;">
+      <div>
+        <div class="card-top">
+          <span class="card-icon" style="font-size: 13px; font-weight: 900; background: #2ac1bc; color: #ffffff; padding: 4px 8px; border-radius: 4px;">HQ</span>
+          <div>
+            <h2>플랫폼 마스터 관리자 (HQ)</h2>
+            <span class="card-badge" style="background: #e6f7f6; color: #0e706c; font-weight: 700;">전사 통합 관제 & 정산 (DOC-18)</span>
+          </div>
+        </div>
+        <p class="card-desc">전국 총판·대리점 3계층 유통망, 다중자산(카드/포인트/지역화폐/코인) 정산 대사, 스마트 단말기 MDM 관제</p>
+      </div>
+      <div style="color: #0e706c; font-weight: 700; font-size: 14px;">포털 열기 ➔</div>
+    </a>
   </div>
   <div class="footer">
     AITIP Platform · Cloudflare D1 Architecture (278 Integrity Tests Passed) · Local Port 8989
@@ -480,6 +493,11 @@ const server = http.createServer(async (req, res) => {
   }
   if (pathname === '/food') {
     res.writeHead(302, { 'Location': '/food/' });
+    res.end();
+    return;
+  }
+  if (pathname === '/admin') {
+    res.writeHead(302, { 'Location': '/admin/' });
     res.end();
     return;
   }
@@ -512,6 +530,15 @@ const server = http.createServer(async (req, res) => {
     let subpath = pathname.replace(/^\/food\/?/, '');
     if (!subpath || subpath === '') subpath = 'index.html';
     const filePath = path.join(__dirname, 'packages', 'services', 'food-delivery', 'merchant-portal', subpath);
+    serveStatic(filePath, res);
+    return;
+  }
+
+  // 5. 플랫폼 마스터 관리자 포털 정적 파일 서빙 (/admin/*)
+  if (pathname.startsWith('/admin')) {
+    let subpath = pathname.replace(/^\/admin\/?/, '');
+    if (!subpath || subpath === '') subpath = 'index.html';
+    const filePath = path.join(__dirname, 'packages', 'platform-admin', subpath);
     serveStatic(filePath, res);
     return;
   }

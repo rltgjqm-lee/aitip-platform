@@ -49,6 +49,12 @@ copyDirSync(
   path.join(DIST_DIR, 'food')
 );
 
+console.log('[Build] Copying platform admin to dist/admin...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'platform-admin'),
+  path.join(DIST_DIR, 'admin')
+);
+
 // 3. Functions 데이터 동기화
 console.log('[Build] Synchronizing store_data.json to functions/api/food...');
 const functionsApiFoodDir = path.join(ROOT_DIR, 'functions', 'api', 'food');
@@ -132,6 +138,10 @@ const hubHtml = `<!DOCTYPE html>
       </a>
       <a href="/food/" class="btn" target="_blank" rel="noopener">
         <span>가맹점 관리</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a href="/admin/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #2ac1bc;">
+        <span style="color: #0e706c;">플랫폼 마스터 관리자</span>
         <span class="arrow">&rarr;</span>
       </a>
     </div>

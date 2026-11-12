@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AITIP 마스터 관리자 (Platform Master Admin)</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- 1. Enterprise Navigation Sidebar (AITIP Official White & Mint Theme) -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <span class="brand-badge">ENTERPRISE</span>
+        <span class="brand-title">AITIP 마스터 관리자</span>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <!-- 대항목 1: 전사 통합 관제 -->
+        <div class="nav-group open" data-group="control">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>전사 통합 관제</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#dashboard" class="nav-item active" data-view="view-dashboard">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                <span class="nav-label">통합 경영 대시보드</span>
+              </div>
+              <span class="nav-pill-badge">실시간</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 대항목 2: 영업 유통 & 가맹점 -->
+        <div class="nav-group open" data-group="distribution">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>영업 유통 & 가맹점</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#distribution" class="nav-item" data-view="view-distribution">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                <span class="nav-label">영업 유통망 관리</span>
+              </div>
+              <span class="nav-pill-badge">17개 총판</span>
+            </a>
+
+            <a href="#merchants" class="nav-item" data-view="view-merchants">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="nav-label">가맹점 온보딩 심사</span>
+              </div>
+              <span class="nav-pill-badge">6건 대기</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 대항목 3: 인프라 & 실시간 현장 -->
+        <div class="nav-group open" data-group="infra">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>인프라 & 실시간 현장</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#hardware" class="nav-item" data-view="view-hardware">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                <span class="nav-label">스마트 단말기 관제 (MDM)</span>
+              </div>
+              <span class="nav-pill-badge">97.7%</span>
+            </a>
+
+            <a href="#orders" class="nav-item" data-view="view-orders">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                <span class="nav-label">실시간 주문 & 배송 관제</span>
+              </div>
+            </a>
+
+            <a href="#telephony" class="nav-item" data-view="view-telephony">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                <span class="nav-label">통신사 CTI & 0504 허브</span>
+              </div>
+            </a>
+
+            <a href="#disputes" class="nav-item" data-view="view-disputes">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                <span class="nav-label">CS & 분쟁 조정 센터</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 대항목 4: 재무 · 세무 · 연동 -->
+        <div class="nav-group open" data-group="finance">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>재무 · 세무 · 연동</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#settlement" class="nav-item" data-view="view-settlement">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                <span class="nav-label">다중 자산 정산 & 세무</span>
+              </div>
+            </a>
+
+            <a href="#integrations" class="nav-item" data-view="view-integrations">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                <span class="nav-label">외부 연동 게이트웨이 허브</span>
+              </div>
+            </a>
+
+            <a href="#security" class="nav-item" data-view="view-security">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <span class="nav-label">시스템 보안 & 감사 로그</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="operator-info">
+          <span class="operator-name">최고운영책임자 (HQ)</span>
+          <span class="operator-role">Super Admin · 2FA 인증됨</span>
+        </div>
+        <button class="header-btn" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-default); padding: 4px 8px; font-size: 11px;">로그아웃</button>
+      </div>
+    </aside>
+
+    <!-- 2. Main Content Viewport (60% Clean Slate White) -->
+    <main class="admin-main">
+      <header class="admin-header">
+        <div class="header-left">
+          <h1 class="view-page-title" id="page-title">통합 경영 대시보드</h1>
+          <span class="system-status-indicator">
+            <span class="status-dot"></span>전국 통신망 정상 (MQTT 8883)
+          </span>
+        </div>
+
+        <div class="header-right">
+          <button class="header-btn" id="btn-global-refresh">
+            <svg style="width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none;" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            실시간 새로고침
+          </button>
+          <a href="/food/" class="header-btn" target="_blank">가맹점 포털 &rarr;</a>
+          <a href="/mart/" class="header-btn" target="_blank">하나로마트 &rarr;</a>
+        </div>
+      </header>
+
+      <div class="admin-content" id="admin-content-container">
+        <!-- admin-app.js에서 동적 렌더링 -->
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="./js/admin-app.js"></script>
+</body>
+</html>
