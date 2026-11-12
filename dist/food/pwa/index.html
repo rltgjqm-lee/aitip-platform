@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AITIP 주문 - 바른치킨 서초본점</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="./css/pwa.css?v=20261111_05">
+  <!-- 대한민국 우편번호 / 도로명 주소 검색 공식 표준 스크립트 -->
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+
+  <div class="pwa-app-wrapper">
+
+    <!-- 1. 상단 사장님 실시간 공지 띠배너 -->
+    <div class="pwa-notice-bar" id="pwa-notice-bar" style="display: none;">
+      <!-- pwa-app.js에서 렌더링 -->
+    </div>
+
+    <!-- 2. 매장 헤더 배너 -->
+    <header class="pwa-store-header">
+      <div class="pwa-header-top">
+        <span class="pwa-brand-pill">AITIP 고객 주문</span>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="pwa-parking-pill" id="pwa-parking-badge">무료 주차 가능</span>
+          <button class="pwa-header-cart-btn" id="btn-header-cart" title="장바구니 확인">
+            <span>장바구니</span>
+            <span class="pwa-header-cart-badge" id="pwa-header-cart-badge">0</span>
+          </button>
+        </div>
+      </div>
+
+      <h1 class="pwa-store-title" id="pwa-store-name">바른치킨 서초본점</h1>
+
+      <div class="pwa-store-meta">
+        <span class="pwa-rating-star">★ 4.9</span>
+        <span id="pwa-review-count">(리뷰 482개)</span>
+        <span>·</span>
+        <span id="pwa-subway-info">서초역 1번 출구 도보 3분</span>
+      </div>
+
+      <!-- 3. 서비스 3단 모드 전환 탭 (배달 / 포장 / 매장식사) -->
+      <div class="pwa-mode-tabs" id="pwa-mode-tabs">
+        <button class="pwa-mode-btn active" data-mode="DELIVERY">배달 주문</button>
+        <button class="pwa-mode-btn" data-mode="TAKEOUT">포장 (픽업)</button>
+        <button class="pwa-mode-btn" data-mode="DINE_IN">★ 매장식사 · 테이블예약</button>
+      </div>
+    </header>
+
+    <!-- 4. 탐색 4단 서브탭 (메뉴판 / 장바구니 / 정보·위치·주차 / 리뷰) -->
+    <nav class="pwa-nav-tabs" id="pwa-nav-tabs">
+      <button class="pwa-nav-tab active" data-tab="MENU">메뉴판</button>
+      <button class="pwa-nav-tab" data-tab="CART" id="tab-nav-cart">장바구니 (<span id="pwa-tab-cart-count">0</span>)</button>
+      <button class="pwa-nav-tab" data-tab="INFO">정보 · 위치 · 주차</button>
+      <button class="pwa-nav-tab" data-tab="REVIEWS">리뷰</button>
+    </nav>
+
+    <!-- 5. 본문 동적 렌더링 영역 -->
+    <main class="pwa-content-body" id="pwa-content-body">
+      <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+        매장 정보와 메뉴를 불러오는 중입니다...
+      </div>
+    </main>
+
+    <!-- 6. 하단 고정 실시간 결제/예약 액션 바 -->
+    <footer class="pwa-bottom-bar" id="pwa-bottom-bar">
+      <div id="pwa-cart-trigger" style="cursor: pointer; flex: 1;">
+        <div class="pwa-bottom-price-label" id="pwa-cart-summary">선택된 메뉴 없음</div>
+        <div class="pwa-bottom-price-val" id="pwa-cart-total">0원</div>
+      </div>
+      <button class="pwa-btn-order" id="btn-submit-pwa-order">
+        주문하기
+      </button>
+    </footer>
+
+    <!-- 7. 서브웨이 스타일 단계별 옵션 위저드 모달 -->
+    <div class="pwa-modal-overlay" id="pwa-wizard-overlay">
+      <div class="pwa-wizard-modal">
+        <div class="pwa-modal-header">
+          <div class="pwa-modal-title" id="pwa-wizard-item-title">메뉴 옵션 선택</div>
+          <button class="pwa-modal-close-btn" id="btn-close-wizard">×</button>
+        </div>
+        <!-- 스텝 인디케이터 바 -->
+        <div class="pwa-step-progress-bar" id="pwa-wizard-steps"></div>
+        <!-- 스텝별 옵션 목록 바디 -->
+        <div class="pwa-wizard-body" id="pwa-wizard-body"></div>
+        <!-- 하단 실시간 가격 & 이전/다음 제어 -->
+        <div class="pwa-wizard-bottom">
+          <div class="pwa-wizard-summary-bar">
+            <span class="pwa-wizard-summary-text" id="pwa-wizard-summary-text">기본 메뉴</span>
+            <span class="pwa-wizard-total-price" id="pwa-wizard-total-price">0원</span>
+          </div>
+          <div class="pwa-wizard-actions">
+            <button class="pwa-btn-wizard-prev" id="btn-wizard-prev" style="display: none;">이전 단계</button>
+            <button class="pwa-btn-wizard-next" id="btn-wizard-next">다음 단계</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. 슬라이드업 장바구니 드로어 -->
+    <div class="pwa-modal-overlay" id="pwa-cart-overlay">
+      <div class="pwa-drawer">
+        <div class="pwa-modal-header">
+          <div class="pwa-modal-title">장바구니 (<span id="pwa-cart-count-badge">0</span>)</div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-clear-cart" style="font-size: 11.5px; background: none; border: none; color: #ef4444; cursor: pointer; font-weight: 700;">전체 비우기</button>
+            <button class="pwa-modal-close-btn" id="btn-close-cart">×</button>
+          </div>
+        </div>
+        <div class="pwa-drawer-body" id="pwa-cart-items-container">
+          <!-- 동적 카트 아이템 목록 -->
+        </div>
+        <div style="padding: 14px 16px; border-top: 1px solid var(--border-default); background: #ffffff;">
+          <div class="pwa-cart-bill-section" id="pwa-cart-bill">
+            <div class="pwa-bill-row">
+              <span>상품 주문 금액</span>
+              <span id="pwa-bill-items-total">0원</span>
+            </div>
+            <div class="pwa-bill-row" id="pwa-bill-delivery-row">
+              <span>배달팁</span>
+              <span id="pwa-bill-delivery-tip">0원</span>
+            </div>
+            <div class="pwa-bill-row total">
+              <span>총 결제 예정 금액</span>
+              <span id="pwa-bill-final-total" style="color: #0f766e;">0원</span>
+            </div>
+          </div>
+          <button class="pwa-btn-order" id="btn-goto-checkout" style="width: 100%; margin-top: 10px; padding: 12px 0;">
+            주문서 작성하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. 체크아웃 주문서 작성 모달 -->
+    <div class="pwa-modal-overlay" id="pwa-checkout-overlay">
+      <div class="pwa-drawer">
+        <div class="pwa-modal-header">
+          <div class="pwa-modal-title">주문서 작성 및 결제</div>
+          <button class="pwa-modal-close-btn" id="btn-close-checkout">×</button>
+        </div>
+        <div class="pwa-drawer-body">
+          <!-- 서비스 유형 뱃지 -->
+          <div style="margin-bottom: 14px; padding: 8px 12px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: #0f766e;" id="pwa-checkout-mode-summary">
+            배달 주문서
+          </div>
+
+          <!-- 동적 주문 정보 필드 -->
+          <div id="pwa-checkout-dynamic-fields">
+            <!-- pwa-app.js에서 렌더링 -->
+          </div>
+
+          <!-- 주문자 연락처 -->
+          <div class="pwa-form-group">
+            <label class="pwa-form-label">주문자 성함</label>
+            <input type="text" class="pwa-input-text" id="pwa-order-name" value="모바일 고객">
+          </div>
+          <div class="pwa-form-group">
+            <label class="pwa-form-label">연락처 (휴대폰 번호)</label>
+            <input type="tel" class="pwa-input-text" id="pwa-order-phone" value="010-3841-9258">
+            <div style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 6px; padding: 7px 10px;">
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #0f766e; cursor: pointer;">
+                <input type="checkbox" id="pwa-order-safe-phone" checked style="accent-color: #0f766e; width: 15px; height: 15px;">
+                <span>0504 가상 안심번호 사용</span>
+              </label>
+              <span style="font-size: 11px; color: #0d9488; font-weight: 700;">개인정보 안심</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; padding-left: 2px;">
+              라이더 및 매장 영수증에 고객님의 실제 번호 대신 0504 가상 번호로 안전하게 전달됩니다.
+            </div>
+          </div>
+
+          <!-- 상생 결제 수단 선택 -->
+          <div class="pwa-form-group">
+            <label class="pwa-form-label">결제 수단 선택</label>
+            <div class="pwa-payment-options">
+              <label class="pwa-pay-card selected">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="radio" name="payment_method" value="AITIP_ZERO_PAY" checked>
+                  <span class="pwa-pay-card-title">AITIP 제로페이</span>
+                </div>
+                <span class="pwa-pay-card-badge">수수료 0% 상생</span>
+              </label>
+              <label class="pwa-pay-card">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="radio" name="payment_method" value="CARD">
+                  <span class="pwa-pay-card-title">신용 / 체크카드</span>
+                </div>
+              </label>
+              <label class="pwa-pay-card">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="radio" name="payment_method" value="MEET_AND_PAY">
+                  <span class="pwa-pay-card-title">현장 결제 (만나서 카드/현금)</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div style="padding: 14px 16px; border-top: 1px solid var(--border-default); background: #ffffff;">
+          <button class="pwa-btn-order" id="btn-final-pay" style="width: 100%; padding: 12px 0;">
+            0원 주문 및 결제하기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. 주문 완료 영수증 모달 -->
+    <div class="pwa-modal-overlay" id="pwa-success-overlay">
+      <div class="pwa-wizard-modal" style="max-height: 70vh;">
+        <div class="pwa-modal-header">
+          <div class="pwa-modal-title" style="color: #0f766e;">주문 및 예약 접수 완료</div>
+          <button class="pwa-modal-close-btn" id="btn-close-success">×</button>
+        </div>
+        <div class="pwa-wizard-body" id="pwa-success-body">
+          <!-- 동적 영수증 -->
+        </div>
+        <div class="pwa-wizard-bottom">
+          <button class="pwa-btn-wizard-next" id="btn-success-done" style="width: 100%;">
+            확인 (메인으로 돌아가기)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. 카카오 주소 검색 레이어 팝업 모달 -->
+    <div class="pwa-modal-overlay" id="pwa-address-modal" style="z-index: 1200;">
+      <div class="pwa-wizard-modal" style="max-height: 85vh; height: 500px;">
+        <div class="pwa-modal-header">
+          <div class="pwa-modal-title">배달지 도로명 주소 검색</div>
+          <button class="pwa-modal-close-btn" id="btn-close-address-modal">×</button>
+        </div>
+        <div id="pwa-postcode-layer" style="flex: 1; width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 표준 ESM 고객 모바일 앱 컨트롤러 -->
+  <script type="module" src="./js/pwa-app.js?v=20261111_05"></script>
+
+</body>
+</html>

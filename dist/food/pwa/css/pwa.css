@@ -1,0 +1,1401 @@
+/* ============================================================================
+   AITIP Customer PWA Mobile Stylesheet (pwa.css)
+   특성: 모바일 퍼스트 반응형, 배민 2.0 모던 라이트 테마, 이모지 0%
+   ============================================================================ */
+
+:root {
+  --brand-mint: #2ac1bc;
+  --brand-mint-dark: #0f766e;
+  --brand-mint-light: #e6f7f6;
+  --color-purple: #7c3aed;
+  --color-purple-light: #faf5ff;
+  --color-purple-border: #c4b5fd;
+  --text-primary: #191f28;
+  --text-secondary: #4e5968;
+  --text-muted: #8b95a1;
+  --border-light: #f1f3f5;
+  --border-default: #e5e8eb;
+  --bg-app: #f8fafc;
+  --bg-surface: #ffffff;
+  --font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 모바일 뷰포트 컨테이너 (최대 480px 중앙 정렬) */
+.pwa-app-wrapper {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: var(--bg-surface);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+/* 1. 상단 사장님 공지 띠배너 */
+.pwa-notice-bar {
+  background: #fff8eb;
+  color: #b45309;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-bottom: 1px solid #fef3c7;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* 2. 매장 헤더 배너 */
+.pwa-store-header {
+  background: linear-gradient(135deg, #1b8a85 0%, #0f766e 100%);
+  color: #ffffff;
+  padding: 18px 16px 14px;
+}
+
+.pwa-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pwa-header-cart-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pwa-header-cart-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.pwa-header-cart-badge {
+  background: #ff5722;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 9999px;
+  padding: 1px 6px;
+  line-height: 14px;
+}
+
+.pwa-brand-pill {
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.pwa-parking-pill {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pwa-store-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 4px;
+  letter-spacing: -0.4px;
+}
+
+.pwa-store-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 12px;
+}
+
+.pwa-rating-star {
+  color: #ffd54f;
+  font-weight: 800;
+}
+
+/* 3. 서비스 3단 모드 전환 탭 (배달 / 포장 / 매장식사) */
+.pwa-mode-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.pwa-mode-btn {
+  flex: 1;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: #ffffff;
+  transition: all 0.15s ease;
+}
+
+.pwa-mode-btn.active {
+  background: #ffffff;
+  color: var(--brand-mint-dark);
+}
+
+.pwa-mode-btn[data-mode="DINE_IN"].active {
+  background: var(--color-purple);
+  color: #ffffff;
+}
+
+/* 4. 탐색 3단 서브탭 (메뉴판 / 정보·위치·주차 / 리뷰) */
+.pwa-nav-tabs {
+  display: flex;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-default);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pwa-nav-tab {
+  flex: 1;
+  padding: 12px 0;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pwa-nav-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--brand-mint);
+}
+
+/* 5. 본문 콘텐츠 영역 */
+.pwa-content-body {
+  flex: 1;
+  padding-bottom: 80px; /* 하단 결제 바 공간 확보 */
+}
+
+/* 홀 테이블 예약 제어 박스 */
+.pwa-dinein-box {
+  background: var(--color-purple-light);
+  border: 1.5px solid var(--color-purple-border);
+  border-radius: 10px;
+  padding: 14px;
+  margin: 12px 16px 8px;
+}
+
+.pwa-dinein-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: #6d28d9;
+  margin-bottom: 10px;
+}
+
+.pwa-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pwa-select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12.5px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+/* 카테고리 필터 칩 */
+.pwa-cat-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-light);
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.pwa-cat-chip {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 9999px;
+  border: 1px solid var(--border-default);
+  background: #ffffff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pwa-cat-chip.active {
+  background: var(--text-primary);
+  color: #ffffff;
+  border-color: var(--text-primary);
+}
+
+/* 메뉴 리스트 카드 */
+.pwa-category-section {
+  margin-bottom: 8px;
+}
+
+.pwa-category-section-title {
+  padding: 12px 16px 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: #f8fafc;
+  border-top: 1px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pwa-category-count-pill {
+  font-size: 11px;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.pwa-badge-custom-opt {
+  font-size: 10.5px;
+  color: #0f766e;
+  background: #e6f7f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.pwa-badge-quick-add {
+  font-size: 10.5px;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.pwa-menu-section-title {
+  padding: 12px 16px 6px;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+  border-bottom: 2px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pwa-food-card {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pwa-food-card:hover {
+  background: #fafbfc;
+}
+
+.pwa-food-card.soldout {
+  opacity: 0.55;
+}
+
+.pwa-food-info {
+  flex: 1;
+  padding-right: 12px;
+}
+
+.pwa-food-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.pwa-food-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.pwa-food-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-food-thumb {
+  width: 76px;
+  height: 76px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f3f5;
+  border: 1px solid var(--border-default);
+}
+
+/* 5-1. 사이드 메뉴 2열 그리드 (GRID_2COL) */
+.pwa-side-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 12px 16px;
+  background: #ffffff;
+}
+
+.pwa-side-card {
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pwa-side-card:active {
+  transform: scale(0.98);
+}
+
+.pwa-side-thumb {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  background: #f1f3f5;
+}
+
+.pwa-side-body {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+}
+
+.pwa-side-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pwa-side-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.3;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pwa-side-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.pwa-side-price {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-side-btn-add {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f766e;
+  background: #e6f7f6;
+  border: 1px solid #99f6e4;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pwa-side-btn-add:hover {
+  background: #ccfbf1;
+}
+
+/* 5-2. 음료 & 주류 슬림 가로 1행 (ROW_COMPACT) */
+.pwa-drink-list {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+}
+
+.pwa-drink-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  background: #ffffff;
+  transition: background 0.12s ease;
+}
+
+.pwa-drink-row:hover {
+  background: #f8fafc;
+}
+
+.pwa-drink-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-drink-thumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #f1f3f5;
+  border: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.pwa-drink-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pwa-drink-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-drink-desc {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-drink-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.pwa-drink-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.pwa-drink-add-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
+}
+
+.pwa-drink-add-btn:hover {
+  background: var(--brand-mint);
+  border-color: var(--brand-mint);
+  color: #ffffff;
+}
+
+/* 6. 정보·위치·주차 탭 패널 */
+.pwa-info-panel {
+  padding: 16px;
+}
+
+.pwa-info-block {
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.pwa-info-block-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.pwa-facility-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pwa-facility-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: #f1f5f9;
+  color: #334155;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* 7. 하단 고정 결제/주문 바 */
+.pwa-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-default);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+}
+
+.pwa-bottom-price-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.pwa-bottom-price-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-btn-order {
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--brand-mint);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pwa-btn-order.dinein {
+  background: var(--color-purple);
+}
+
+/* ============================================================================
+   8. 서브웨이 스타일 단계별(Step-by-Step) 옵션 커스텀 위저드 모달
+   ============================================================================ */
+.pwa-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: none;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.pwa-modal-overlay.active {
+  display: flex;
+}
+
+.pwa-wizard-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.22s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.pwa-modal-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+}
+
+.pwa-modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+/* 서브웨이 스텝 프로그레스 바 */
+.pwa-step-progress-bar {
+  display: flex;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border-light);
+  overflow-x: auto;
+  gap: 6px;
+}
+
+.pwa-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pwa-step-indicator:hover {
+  border-color: #0f766e;
+  color: #0f766e;
+}
+
+.pwa-btn-clear-step {
+  font-size: 11px;
+  background: #f8fafc;
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.pwa-btn-clear-step:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.pwa-step-indicator.active {
+  background: #0f766e;
+  color: #ffffff;
+  border-color: #0f766e;
+}
+
+.pwa-step-indicator.completed {
+  background: #e6f7f6;
+  color: #0f766e;
+  border-color: #2ac1bc;
+}
+
+.pwa-step-badge {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.pwa-step-indicator.active .pwa-step-badge {
+  background: #ffffff;
+  color: #0f766e;
+}
+
+/* 위저드 바디 영역 */
+.pwa-wizard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px;
+}
+
+.pwa-group-header {
+  margin-bottom: 12px;
+}
+
+.pwa-group-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pwa-group-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.pwa-group-badge.required {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pwa-group-badge.optional {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.pwa-group-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
+/* 옵션 선택 카드 (라디오 / 체크박스) */
+.pwa-option-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border-default);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pwa-option-card:hover {
+  background: #fafbfc;
+  border-color: #cbd5e1;
+}
+
+.pwa-option-card.selected {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.pwa-option-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pwa-option-radio-mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-option-card.selected .pwa-option-radio-mark {
+  border-color: #0f766e;
+  background: #0f766e;
+}
+
+.pwa-option-radio-mark::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: none;
+}
+
+.pwa-option-card.selected .pwa-option-radio-mark::after {
+  display: block;
+}
+
+.pwa-option-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pwa-option-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.pwa-option-card.selected .pwa-option-price {
+  color: #0f766e;
+}
+
+/* 위저드 하단 고정 제어 바 */
+.pwa-wizard-bottom {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-default);
+  background: #ffffff;
+}
+
+.pwa-wizard-summary-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pwa-wizard-summary-text {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  max-width: 65%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-wizard-total-price {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-wizard-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pwa-btn-wizard-prev {
+  flex: 1;
+  padding: 11px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pwa-btn-wizard-next {
+  flex: 2;
+  padding: 11px;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.pwa-btn-wizard-next:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   9. 슬라이드업 장바구니 Drawer & 체크아웃 모달
+   ============================================================================ */
+.pwa-drawer {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 16px 16px 0 0;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.22s ease-out;
+}
+
+.pwa-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.pwa-cart-item-card {
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafbfc;
+}
+
+.pwa-cart-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.pwa-cart-item-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-cart-item-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.pwa-cart-base-price {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.pwa-cart-options-box {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pwa-cart-opt-line {
+  font-size: 12px;
+  line-height: 1.45;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pwa-opt-bullet {
+  color: #94a3b8;
+  font-weight: 800;
+}
+
+.pwa-opt-group {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.pwa-opt-name {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.pwa-opt-price {
+  color: #0f766e;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.pwa-cart-opt-none {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.pwa-cart-item-middle {
+  margin-bottom: 10px;
+}
+
+.pwa-btn-change-opt {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pwa-btn-change-opt:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.pwa-cart-item-opts {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.pwa-cart-item-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pwa-qty-controller {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.pwa-qty-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #f8fafc;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.pwa-qty-val {
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.pwa-cart-item-price {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-cart-bill-section {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
+.pwa-bill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.pwa-bill-row.total {
+  border-top: 1px dashed var(--border-default);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* 체크아웃 주문서 필드 */
+.pwa-form-group {
+  margin-bottom: 14px;
+}
+
+.pwa-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.pwa-input-text {
+  width: 100%;
+  padding: 9px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.pwa-payment-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.pwa-pay-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border-default);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #ffffff;
+}
+
+.pwa-pay-card.selected {
+  border-color: #0f766e;
+  background: #f0fdfa;
+}
+
+.pwa-pay-card-title {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.pwa-pay-card-badge {
+  font-size: 10.5px;
+  padding: 2px 6px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* 영수증 완료 모달 */
+.pwa-receipt-box {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 16px;
+  margin: 12px 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ============================================================================
+   10. 독립 장바구니 탭 화면 (Cart View) & 최소주문금액 게이지
+   ============================================================================ */
+.pwa-cart-view-container {
+  padding: 16px;
+}
+
+.pwa-cart-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.pwa-cart-view-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pwa-btn-clear-all {
+  font-size: 12px;
+  color: #ef4444;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pwa-btn-clear-all:hover {
+  background: #fee2e2;
+}
+
+.pwa-cart-empty-box {
+  text-align: center;
+  padding: 60px 16px 40px;
+  color: var(--text-muted);
+}
+
+.pwa-cart-empty-icon {
+  font-size: 36px;
+  font-weight: 800;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.pwa-cart-empty-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.pwa-cart-empty-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.pwa-btn-go-menu {
+  display: inline-block;
+  padding: 10px 24px;
+  font-size: 13.5px;
+  font-weight: 800;
+  border-radius: 8px;
+  border: none;
+  background: var(--brand-mint);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.pwa-cart-min-order-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+
+.pwa-cart-min-order-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #166534;
+  display: flex;
+  justify-content: space-between;
+}
+
+.pwa-cart-progress-bar {
+  height: 6px;
+  background: #dcfce7;
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+
+.pwa-cart-progress-fill {
+  height: 100%;
+  background: #16a34a;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.pwa-btn-add-more {
+  display: block;
+  width: 100%;
+  padding: 11px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px dashed var(--brand-mint);
+  background: #f0fdfa;
+  color: #0f766e;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 12px 0;
+  transition: background 0.15s ease;
+}
+
+.pwa-btn-add-more:hover {
+  background: #ccfbf1;
+}
+
+/* 배민 스타일 토스트 알림 */
+.pwa-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(25, 31, 40, 0.92);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transition: all 0.25s ease;
+  z-index: 1001;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pwa-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
