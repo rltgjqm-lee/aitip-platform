@@ -49,7 +49,16 @@ copyDirSync(
   path.join(DIST_DIR, 'food')
 );
 
-// 3. 미니멀 대문 index.html 생성 (사족 없이 2개 버튼만 정갈하게 배치)
+// 3. Functions 데이터 동기화
+console.log('[Build] Synchronizing store_data.json to functions/api/food...');
+const functionsApiFoodDir = path.join(ROOT_DIR, 'functions', 'api', 'food');
+fs.mkdirSync(functionsApiFoodDir, { recursive: true });
+fs.copyFileSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'food-delivery', 'backend', 'data', 'store_data.json'),
+  path.join(functionsApiFoodDir, 'store_data.json')
+);
+
+// 4. 미니멀 대문 index.html 생성 (사족 없이 2개 버튼만 정갈하게 배치)
 const hubHtml = `<!DOCTYPE html>
 <html lang="ko">
 <head>
