@@ -658,6 +658,90 @@
   ],
   "live_orders": [
     {
+      "order_id": "ord_01m772a8tm9x2rfs73159x2rfs",
+      "short_display_id": "A-40",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "연동확인고객",
+      "customer_phone": "010-3333-4444",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-3187-2887",
+      "virtual_phone_id": "vnm_01m772a8tmb3p4zj3fg8b3p4zj",
+      "virtual_phone_expires_at": "2026-11-12T06:05:02.804Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m772a8tm2dywyqt71p2dywyq",
+          "product_id": "prd_01h7x8basak",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-12T05:05:02.804Z"
+    },
+    {
+      "order_id": "ord_01m771tr09dembyvs5medembyv",
+      "short_display_id": "A-39",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "테스트고객",
+      "customer_phone": "010-1234-5678",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-2203-7640",
+      "virtual_phone_id": "vnm_01m771tr0ajfrsvsqtdsjfrsvs",
+      "virtual_phone_expires_at": "2026-11-12T05:56:34.058Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m771tr0a2b32563x512b3256",
+          "product_id": "prd_01h7x8basak",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-12T04:56:34.059Z"
+    },
+    {
       "order_id": "ord_01m74rq0jddayarrmj8bdayarr",
       "short_display_id": "A-38",
       "status": "ACCEPTED",
@@ -1288,6 +1372,24 @@
     }
   ],
   "virtual_numbers": [
+    {
+      "id": "vnm_01m772a8tmb3p4zj3fg8b3p4zj",
+      "virtual_phone": "0504-3187-2887",
+      "order_id": "ord_01m772a8tm9x2rfs73159x2rfs",
+      "real_customer_phone": "010-3333-4444",
+      "status": "BOUND",
+      "bound_at": "2026-11-12T05:05:02.804Z",
+      "expires_at": "2026-11-12T06:05:02.804Z"
+    },
+    {
+      "id": "vnm_01m771tr0ajfrsvsqtdsjfrsvs",
+      "virtual_phone": "0504-2203-7640",
+      "order_id": "ord_01m771tr09dembyvs5medembyv",
+      "real_customer_phone": "010-1234-5678",
+      "status": "BOUND",
+      "bound_at": "2026-11-12T04:56:34.058Z",
+      "expires_at": "2026-11-12T05:56:34.058Z"
+    },
     {
       "id": "vnm_01m74rq0jf1wg471q1xe1wg471",
       "virtual_phone": "0504-4164-6852",

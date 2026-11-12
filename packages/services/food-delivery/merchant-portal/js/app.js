@@ -90,7 +90,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReviewFilterListeners(state);
   initKdsFilterListeners(state);
   await refreshAllData();
+  initKdsLiveSync();
 });
+
+// KDS 실시간 주문 자동 폴링 및 브라우저 간 동기화 (BroadcastChannel + 5초 주기 Live Polling)
+function initKdsLiveSync() {
+  // 1) BroadcastChannel 즉시 수신 (동일 기기/브라우저 PWA 주문 1ms 즉시 연동)
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      const orderChannel = new BroadcastChannel('aitip_food_orders');
+      orderChannel.onmessage = (event) => {
+        if (event.data?.type === 'NEW_ORDER' && event.data.order) {
+          const newOrder = event.data.order;
+          if (!Array.isArray(state.liveOrders)) {
+            state.liveOrders = [];
+          }
+          if (!state.liveOrders.some(o => o.order_id === newOrder.order_id)) {
+            state.liveOrders.unshift(newOrder);
+            renderKdsOrders(state);
+            playOrderChime();
+          }
+        }
+      };
+    }
+  } catch (bcErr) {
+    console.warn('[KDS] BroadcastChannel 초기화 실패:', bcErr);
+  }
+
+  // 2) 5초 주기 백그라운드 폴링 (서버에 들어온 신규 주문 실시간 감지)
+  setInterval(async () => {
+    try {
+      const latestOrders = await merchantApi.getLiveOrders();
+      if (Array.isArray(latestOrders) && latestOrders.length > 0) {
+        const prevFirstId = state.liveOrders?.[0]?.order_id;
+        const newFirstId = latestOrders[0]?.order_id;
+        
+        // 새로운 주문이 최상단에 추가되었거나 주문 수량이 변경된 경우
+        if (newFirstId && newFirstId !== prevFirstId) {
+          state.liveOrders = latestOrders;
+          renderKdsOrders(state);
+          playOrderChime();
+        } else if (latestOrders.length !== (state.liveOrders?.length || 0)) {
+          state.liveOrders = latestOrders;
+          renderKdsOrders(state);
+        }
+      }
+    } catch (pollErr) {
+      // 조용히 무시 (네트워크 일시 지연 등)
+    }
+  }, 5000);
+}
 
 // 2. 전체 데이터 새로고침 및 모듈 렌더러 호출
 async function refreshAllData() {

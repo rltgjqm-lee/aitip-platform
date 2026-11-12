@@ -1565,6 +1565,10 @@ async function handleFinalOrderSubmit() {
     const memo = document.getElementById('pwa-order-memo')?.value || '';
     const selectedPay = document.querySelector('input[name="payment_method"]:checked')?.value || 'AITIP_ZERO_PAY';
 
+    const itemsTotal = state.cart.reduce((sum, it) => sum + ((it.total_price || it.base_price || 0) * (it.quantity || 1)), 0);
+    const deliveryTip = state.activeMode === 'DELIVERY' ? 3000 : 0;
+    const finalAmount = itemsTotal + deliveryTip;
+
     const orderPayload = {
       fulfillment_type: state.activeMode,
       order_channel: 'PWA',
@@ -1579,8 +1583,11 @@ async function handleFinalOrderSubmit() {
         quantity: it.quantity,
         base_price: it.base_price,
         selected_options: it.selected_options || [],
-        total_price: it.total_price * it.quantity
-      }))
+        total_price: (it.total_price || it.base_price || 0) * (it.quantity || 1)
+      })),
+      items_total: itemsTotal,
+      delivery_tip: deliveryTip,
+      final_payment_amount: finalAmount
     };
 
     if (state.activeMode === 'DINE_IN') {
@@ -1659,6 +1666,17 @@ async function handleFinalOrderSubmit() {
       localStorage.setItem('aitip_customer_orders', JSON.stringify(filtered));
     } catch (storageErr) {
       console.warn('[PWA] 로컬 스토리지 주문 저장 실패:', storageErr);
+    }
+
+    // 실시간 브라우저 간 주문 연동 (KDS 즉시 반영)
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const orderChannel = new BroadcastChannel('aitip_food_orders');
+        orderChannel.postMessage({ type: 'NEW_ORDER', order: createdOrder });
+        orderChannel.close();
+      }
+    } catch (bcErr) {
+      console.warn('[PWA] BroadcastChannel 전송 실패:', bcErr);
     }
 
     state.cart = [];
