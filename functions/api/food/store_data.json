@@ -663,30 +663,30 @@
       "status": "ACCEPTED",
       "order_channel": "PWA",
       "fulfillment_type": "DELIVERY",
-      "customer_name": "????",
+      "customer_name": "홍길동 고객",
       "customer_phone": "010-7788-9900",
       "use_virtual_phone": true,
       "virtual_phone": "0504-4164-6852",
       "virtual_phone_id": "vnm_01m74rq0jf1wg471q1xe1wg471",
       "virtual_phone_expires_at": "2026-11-11T08:38:45.711Z",
-      "road_address": "????? ??? ???? 42? 11",
-      "detail_address": "302?",
+      "road_address": "서울특별시 서초구 서초대로 42길 11",
+      "detail_address": "302호",
       "postal_code": "06647",
-      "delivery_address": "????? ??? ???? 42? 11 302?",
+      "delivery_address": "서울특별시 서초구 서초대로 42길 11, 302호",
       "distance_meters": 500,
       "customer_memo": "",
       "items": [
         {
           "item_id": "itm_01m74rq0jfdd67fnqndmdd67fn",
           "product_id": "prd_01h7x8basak",
-          "name": "??????",
+          "name": "현미바삭치킨",
           "quantity": 1,
           "base_price": 18900,
           "selected_options": [
             {
               "price": 3000,
-              "option_name": "?/? ??? ??",
-              "group_name": "?? ??"
+              "option_name": "반/반 양념치킨 변경",
+              "group_name": "양념/맛 선택"
             }
           ],
           "total_price": 21900
@@ -694,7 +694,7 @@
         {
           "item_id": "itm_01m74rq0jfkdnh2t0gewkdnh2t",
           "product_id": "opt_cheeseball",
-          "name": "???? & ????? (5?)",
+          "name": "카사바칩 & 크림치즈볼 (5개)",
           "quantity": 1,
           "base_price": 6000,
           "selected_options": [],
@@ -703,7 +703,7 @@
         {
           "item_id": "itm_01m74rq0jfbkne8kamkxbkne8k",
           "product_id": "opt_draft500",
-          "name": "?? ??? 500cc (?? ????)",
+          "name": "카스 생맥주 500cc (생맥 보냉팩)",
           "quantity": 1,
           "base_price": 4500,
           "selected_options": [],
@@ -730,30 +730,30 @@
       "status": "PENDING",
       "order_channel": "PWA",
       "fulfillment_type": "DELIVERY",
-      "customer_name": "???",
+      "customer_name": "김민수 고객",
       "customer_phone": "010-9988-7766",
       "use_virtual_phone": true,
       "virtual_phone": "0504-4553-8411",
       "virtual_phone_id": "vnm_01m747pbc58am53dmc958am53d",
       "virtual_phone_expires_at": "2026-11-11T03:41:18.213Z",
-      "road_address": "????? ??? ???? 42? 11",
-      "detail_address": "302?",
+      "road_address": "서울특별시 서초구 서초대로 42길 11",
+      "detail_address": "302호",
       "postal_code": "06647",
-      "delivery_address": "????? ??? ???? 42? 11 302?",
+      "delivery_address": "서울특별시 서초구 서초대로 42길 11, 302호",
       "distance_meters": 500,
       "customer_memo": "",
       "items": [
         {
           "item_id": "itm_01m747pbc5p8hfr8d66dp8hfr8",
           "product_id": "prd_01h7x8basak",
-          "name": "??????",
+          "name": "현미바삭치킨",
           "quantity": 1,
           "base_price": 19900,
           "selected_options": [
             {
               "price": 2000,
-              "option_name": "100% ??? ??? ??",
-              "group_name": "?? ??"
+              "option_name": "100% 닭다리 순살로 변경",
+              "group_name": "부위 선택"
             }
           ],
           "total_price": 21900
@@ -778,23 +778,23 @@
       "status": "PENDING",
       "order_channel": "PWA",
       "fulfillment_type": "DINE_IN",
-      "customer_name": "?????",
+      "customer_name": "박준영 고객",
       "customer_phone": "010-9999-8888",
-      "delivery_address": "매장 홀 [??? 3?]",
+      "delivery_address": "매장 홀 [테이블 3번]",
       "distance_meters": 0,
       "customer_memo": "",
       "items": [
         {
           "item_id": "itm_01m71semgvyhxqeh8a4byhxqeh",
           "product_id": "prd_01h7x8brownrice",
-          "name": "??????",
+          "name": "현미바삭치킨",
           "quantity": 1,
           "base_price": 18900,
           "selected_options": [
             {
               "price": 2000,
-              "option_name": "100% ??? ??",
-              "group_name": "?? ??"
+              "option_name": "100% 닭다리 순살",
+              "group_name": "부위 선택"
             }
           ],
           "total_price": 20900
@@ -812,11 +812,11 @@
       "rider_dispatch_status": "WAITING_ACCEPT",
       "kitchen_ticket_printed": false,
       "created_at": "2026-11-10T03:53:56.507Z",
-      "table_no": "??? 3?",
+      "table_no": "테이블 3번",
       "guest_count": 3,
       "reserved_at": "19:30",
       "ready_type": "NOW",
-      "scheduled_display": "매장 ??? 3? 즉시 착석 주문"
+      "scheduled_display": "매장 테이블 3번 즉시 착석 주문"
     },
     {
       "order_id": "ord_01h7x8live9910",
@@ -1222,15 +1222,15 @@
       "id": "res_01m71semgz43kj8za6nv43kj8z",
       "order_id": "ord_01m71semgsz7rs5ae3tnz7rs5a",
       "display_seq": "A-36",
-      "customer_name": "?????",
+      "customer_name": "박준영 고객",
       "customer_phone": "010-9999-8888",
       "guest_count": 3,
-      "table_no": "??? 3?",
+      "table_no": "테이블 3번",
       "reserved_date": "2026-11-10",
       "reserved_time": "19:30",
       "status": "CONFIRMED",
       "pre_ordered": true,
-      "menu_summary": "?????? 1개",
+      "menu_summary": "현미바삭치킨 1개",
       "total_amount": 20900,
       "special_request": "",
       "created_at": "2026-11-10T03:53:56.511Z"
