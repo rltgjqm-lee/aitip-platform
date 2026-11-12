@@ -178,11 +178,11 @@ aitip-platform/
   - 3-Way 판매 채널(`fulfillment_type`: 'DELIVERY', 'TAKEOUT', 'DINE_IN') 및 피크타임 주방 보호(`busyMode`).
   - D1 스키마 확장 및 무결성 테스트 186/186 통과.
 
-### 📌 [Day 4] 2026-11-09 (금일 전사 16대 명세 100% 완성 및 물리 뼈대 구축)
+### [Day 4] 2026-11-09 (전사 16대 명세 100% 완성 및 물리 뼈대 구축)
 - **하나로마트 다채널 접속 및 위탁 운영 명세서 (`DOC-09`) 수립**:
   - 구매자 3대 접속 및 운영자 4대 모드(POS, 백오피스, 매대, 위탁포털) 확립. D1 확장(Section 24) **198/198 PASS**.
 - **배달대행사 외주 연동 및 쿼드러플 디스패칭·서지·ETA 명세서 (`DOC-10`) 수립**:
-  - 시니어클럽 $\to$ 가맹점 계약 **지역 배달대리점(`LOCAL_AGENCY` 지사망)** $\to$ 전담라이더 $\to$ 외주3사 본사 API. D1 확장(Section 20 & 25) **278/278 PASS**.
+  - 시니어클럽 -> 가맹점 계약 **지역 배달대리점(`LOCAL_AGENCY` 지사망)** -> 전담라이더 -> 외주3사 본사 API. D1 확장(Section 20 & 25) **278/278 PASS**.
 - **결품 부분환불·영수증 재발행 및 보조금 회계 대사 명세서 (`DOC-11`) 수립**:
   - 오프라인 마트/POS 정합성: **[원거래 취소(VOID)] + [최종 재발행(REISSUED)] 듀얼 영수증 라이프사이클** 확립. D1 확장(Section 26) 통과.
 - **CS·분쟁조정·오배송 파손보상 및 악성리뷰 방어 명세서 (`DOC-12`) 수립**:
@@ -195,6 +195,40 @@ aitip-platform/
   - SwadKart BOM 원가 연동 4분면 메뉴 진단 BI, 기상청 날씨 연동 AI 수요예측 자동 발주 추천. D1 확장(Section 30) 통과.
 - **전사 16대 표준 명세 기반 물리 디렉터리 뼈대(42개 폴더) 구축 완료**:
   - `packages/contracts/`, `packages/backend/`, `packages/edge-device/`, `packages/frontend/` 전면 배치 완료.
+
+### [Day 5] 2026-11-10 ~ 2026-11-11 (치킨집 포털 & PWA 위저드 및 인쇄 모듈 고도화)
+- **써브웨이 방식 4단계 풀 코스 세트 위저드 완결**:
+  - `1. 부위 선택 (필수)` -> `2. 소스/토핑 (선택)` -> `3. 사이드 메뉴 (선택)` -> `4. 음료·주류 (선택)` 풀코스 주문 흐름 확립.
+- **주문 방식별 장바구니 100% 완전 분리**:
+  - `state.carts = { DELIVERY: [], TAKEOUT: [], DINE_IN: [] }` 구조 적용으로 배달/포장/매장식사 간 장바구니 데이터 격리.
+- **바코드 및 매장/테이블 QR 인쇄 시스템 탑재**:
+  - 순수 ESM SVG 1D 바코드(Code-128 Subset B) 및 2D QR 코드 벡터 생성기 탑재, 매장 QR 및 6구 테이블 부착용 스티커 시트 브라우저 원클릭 인쇄 연동.
+
+### [Day 6] 2026-11-12 (플랫폼 마스터 관리자(HQ) 구축 및 오리지널 화이트-민트 UI 고도화)
+- **한글 인코딩 결함 및 실시간 주문 0원 계산 버그 완전 해결**:
+  - `store_data.json` mock live orders 내 한글 깨짐(`?????`) 전면 복구.
+  - `pwa-app.js` 및 `[[path]].js` 내 `items_total`, `delivery_tip`, `final_payment_amount` 계산 로직 방어적 보강 완료.
+  - `BroadcastChannel` 기반 PWA-to-KDS 1ms 실시간 주문 동기화 및 5초 주기 폴링/알림 벨 chimes 탑재.
+- **사장님 포털 PWA 시뮬레이터 실제 PWA iframe 100% 미러링 탑재**:
+  - 구형 300라인 정적 렌더러 제거, 실제 고객 PWA 화면(`pwa/`)을 iframe으로 직접 임베딩하여 장바구니/영수증/바코드 100% 정합성 유지.
+- **엔터프라이즈 플랫폼 마스터 관리자 및 다중자산 정산 상세설계서 (`DOC-18`) 완결**:
+  - 해외 5대 서비스(Clover, Meituan, Toast, Square, Shopify Plus) 벤치마크를 통한 전사 3대 결손 영역 보완.
+  - 3계층 유통망: 본사(HQ) -> 17개 광역 총판(`dst_`) -> 226개 지역 대리점(`agn_`) -> 영업사원(`fsr_`).
+  - '수수료 0원' 용어 배제 및 '원가 기반 실비 정산 및 가맹점 정산 요율 체계' 정립.
+  - 다중 자산(신용카드, 카드사 포인트 복합결제, 지자체 지역화폐, 스테이블코인 USDT/USDC) 실시간 3자 대사(Reconciliation).
+  - 가맹점 실지급(D+1), 대리점 사업소득 3.3% 원천징수, 총판 10% 부가세 전자세금계산서 발행 및 국세청 표준 CSV 연계.
+- **플랫폼 마스터 관리자 포털 (`packages/platform-admin/`) 신설 및 구축**:
+  - **오리지널 화이트 & 민트 테마 복원**: 가맹점 관리자 및 PWA와 100% 일치하는 화이트 서피스 + 브랜드 민트(`--brand-mint: #2AC1BC;`, `--brand-mint-text: #0E706C;`, `--brand-mint-light: #E6F7F6;`) 테마 적용.
+  - **대항목 아코디언(접기/펴기) 구조화**: 사이드바 10개 메뉴를 4대 대분류(`nav-group`)로 묶고 원클릭 접기/펴기 및 SVG 화살표 회전 애니메이션 탑재.
+  - **4px 슬림 커스텀 스크롤바**: 윈도우 OS의 거친 기본 스크롤바를 완전히 제거하고 4px 투명 트랙 및 슬림 썸 적용.
+  - **Module 01 전국 통합 경영 BI 대시보드 (`dashboard.js`)**: 4대 핵심 KPI 카드, 다중 자산 점유율 그래프, 6대 외부 게이트웨이 헬스체크, 전국 실시간 주문 스트림 테이블 탑재.
+  - **규칙 4 준수 API 레이어 (`admin-api.js`)**: 컴포넌트 내 인라인 fetch 전면 금지, `/api/admin/*` 전용 API 클라이언트 일원화 및 안전한 TypeID 폴백 목업 내장.
+- **로컬 개발 서버 및 빌드 파이프라인 동기화**:
+  - `dev-server.mjs`: `/admin/` 라우팅 등록 및 AITIP 통합 개발 허브 랜딩 페이지 카드 연동.
+  - `scripts/build-pages.mjs`: `packages/platform-admin/` -> `dist/admin/` 배포 빌드 동기화.
+  - 로컬 포트 `8989`에서 `/`, `/admin/`, `/food/`, `/food/pwa/`, `/mart/` 전 포털 200 OK 실측 검증 완료.
+- **Git 원격 저장소(`main`) 푸시 완료**:
+  - 최신 커밋: `8a4be0b` (`feat(admin): apply authentic white-mint theme and collapsible accordion sidebar`)
 - **소상공인 vs 마트 도메인 분리 철칙 및 공통 척추(Backbone) 아키텍처 확정**:
   - 마트(바코드/피킹/결품정정)와 소상공인 치킨집(옵션트리/주방조리/즉시배달)의 집합 관계 규명: 마트는 음식점의 상위집합이 아니며, 마트를 만들고 숨긴다고 음식점이 되지 않음을 정밀 증명.
   - 해결책: 공통 척추(TypeID, 가맹점, 주문원장, 결제, 쿼드러플 디스패칭) + 2대 전략(OptionTreeCatalog vs BarcodeCatalog, KitchenFulfillment vs MartPickingFulfillment) 분리 확정.
@@ -230,6 +264,7 @@ aitip-platform/
 | **DOC-13** | [docs/DOC-13_카카오알림톡_0504안심번호수명주기_및_고객CRM_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-13_카카오알림톡_0504안심번호수명주기_및_고객CRM_명세서.md) | 알림톡 5단계, 이통사 SMS 폴백, 0504 안심번호 60분 수명주기, 단골 상생 CRM | **V1.0 최신** |
 | **DOC-14** | [docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md) | MDM 5대 텔레메트리 감시망, A/B 파티션 무중단 OTA 배포, 하드웨어 와치독 롤백 | **V1.0 최신** |
 | **DOC-15** | [docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md) | 일간 실질 공헌이익 BI 스냅샷, 4분면 메뉴 진단, 기상 연동 AI 발주 추천, 영양 리포트 | **V1.0 최신** |
+| **DOC-18** | [docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md) | 해외 5대 서비스 벤치마크, 3계층 유통망, 다중자산(카드/포인트/지역화폐/코인) 정산, 세무 대사, 외부 연동 허브 | **V1.0 최신** |
 | **DDL 스키마** | [docs/schema_aitip_v01.sql](file:///c:/Users/user/Desktop/aitip-platform/docs/schema_aitip_v01.sql) | D1 SQLite 정규화 스키마 (278개 제약조건 실측 통과) | **V3.1 최신** |
 | **테스트 스위트** | [scripts/test_schema_integrity.py](file:///c:/Users/user/Desktop/aitip-platform/scripts/test_schema_integrity.py) | 278개 제약조건 자동 검증 파이썬 스크립트 | **100% PASS** |
 | **행동 강령** | [.agents/AGENTS.md](file:///c:/Users/user/Desktop/aitip-platform/.agents/AGENTS.md) | 절대 행동 원칙: 사전 보고·승인제, UID 무결성, ESM/API 모듈화 | **절대 준수** |
@@ -259,4 +294,24 @@ aitip-platform/
   - 경로당 영양급식 수·발주 및 입고 검수 터치 화면
   - `packages/frontend/mart-portal`: 단위농협 하나로마트 피킹/패키징(Pick & Pack) 작업자 뷰
   - `packages/frontend/pwa-rider`: 라이더 실시간 배차 및 가택 안부확인 결합형 배송 PWA
-```
+
+---
+
+## 8. 내일 이어서 즉시 착수할 3대 실무 과제 (Resumption Roadmap)
+
+### 1) Module 02: `distribution.js` (전국 영업 유통망 관리 고도화)
+- 본사(HQ) -> 17개 광역 총판(`dst_`) -> 226개 지역 대리점(`agn_`) -> 영업사원(`fsr_`) 3계층 조직 트리 렌더러 구현.
+- 전국 17개 시/도 권역별 총판 매핑 및 226개 시/군/구 대리점 관할 구역 배정 모달.
+- 가맹점 결제 실적 기반 0.1% 오버라이딩 수수료 자동 배분 시뮬레이터 및 계약 상태(정상/보류/해지) 관리.
+
+### 2) Module 08: `settlement.js` (다중 자산 정산 & 세무 통제 센터)
+- 신용카드, 카드사 포인트 복합결제, 지자체 지역화폐, 스테이블코인 4대 자산 3자 대사(Reconciliation) 상세 원장 테이블.
+- 3단 탭 인터페이스:
+  - 탭 1: 가맹점 실지급액 (D+1 정산, 원가 실비 분리 내역)
+  - 탭 2: 지역 대리점 사업소득 3.3% 원천징수 영수증 발행 및 조회
+  - 탭 3: 광역 총판 10% 부가세 전자세금계산서 청구 및 국세청 홈택스 표준 CSV 다운로더
+
+### 3) Module 09: `integrations.js` (외부 연동 게이트웨이 허브 & 서킷 브레이커)
+- 6대 게이트웨이(토스 PG, NH농협 제로페이, SKB 0504 CTI, 알림톡, 부릉 배달망, Gemini AI) 엔드포인트 및 API Key 관리.
+- 실시간 헬스체크 핑(Ping) 및 장애 임계치 도달 시 0.1초 자동 차단(Circuit Breaker) 및 대체 경로(Fallback) 수동/자동 전환 제어.
+- 감사 로그 연동 (`audit_logs`)으로 설정 변경 이력 영구 보존.
