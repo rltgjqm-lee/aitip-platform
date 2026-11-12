@@ -1368,8 +1368,8 @@
       </div>
       <div class="mobile-device-frame">
         <div class="mobile-notch"></div>
-        <div class="mobile-screen" id="pwa-simulator-screen">
-          <!-- app.js에서 실시간 렌더링 -->
+        <div class="mobile-screen" id="pwa-simulator-screen" style="padding: 0; overflow: hidden;">
+          <iframe id="pwa-simulator-iframe" src="./pwa/" style="width: 100%; height: 100%; border: none; background: #ffffff; display: block;" title="AITIP 고객 주문 PWA 실시간 미리보기"></iframe>
         </div>
       </div>
     </div>
