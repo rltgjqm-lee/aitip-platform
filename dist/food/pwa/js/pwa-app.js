@@ -44,6 +44,7 @@ const state = {
   activeMode: 'DELIVERY', // 'DELIVERY' | 'TAKEOUT' | 'DINE_IN'
   activeTab: 'MENU', // 'MENU' | 'CART' | 'INFO' | 'REVIEWS'
   selectedCategory: 'ALL',
+  collapsedCategories: new Set(),
   tableNoFromUrl: null,
   dineInTime: '19:30',
   dineInGuests: '4',
@@ -106,6 +107,11 @@ async function loadStoreData() {
     state.products = defaultProducts;
     state.option_groups = defaultOptionGroups;
     state.reviews = defaultReviews;
+  }
+
+  // 대문 초기 진입 시: 첫 번째(대표 메인) 카테고리만 펼쳐두고 나머지는 기본 접힘 처리
+  if (state.collapsedCategories.size === 0 && state.categories.length > 1) {
+    state.categories.slice(1).forEach(c => state.collapsedCategories.add(c.id));
   }
 
   renderHeader();
@@ -349,34 +355,52 @@ function renderMenuTab(container) {
     </div>
   `;
 
-  // 메뉴 리스트 (5대 서비스 및 NextOrders/배민 표준: 카테고리별 섹션 분할 렌더링)
+  // 메뉴 리스트 (5대 서비스 및 NextOrders/배민 표준: 카테고리별 아코디언 섹션 렌더링)
   let menuListHtml = '';
   if (state.selectedCategory === 'ALL') {
     menuListHtml = state.categories.map(cat => {
       const catProducts = state.products.filter(p => p.category_id === cat.id);
       if (catProducts.length === 0) return '';
+      const isCollapsed = state.collapsedCategories.has(cat.id);
       return `
-        <div class="pwa-category-section">
-          <div class="pwa-category-section-title">
-            <span>${cat.name}</span>
-            <span class="pwa-category-count-pill">${catProducts.length}개</span>
+        <div class="pwa-category-section ${isCollapsed ? 'collapsed' : ''}" data-category-id="${cat.id}">
+          <div class="pwa-category-section-title" data-toggle-cat="${cat.id}">
+            <div class="pwa-cat-title-left">
+              <span>${cat.name}</span>
+              <span class="pwa-category-count-pill">${catProducts.length}개</span>
+            </div>
+            <div class="pwa-cat-toggle-indicator">
+              <span class="pwa-cat-toggle-text">${isCollapsed ? '펼치기' : '접기'}</span>
+              <span class="pwa-cat-toggle-icon">${isCollapsed ? '▼' : '▲'}</span>
+            </div>
           </div>
-          ${renderCategoryItemsHtml(cat, catProducts)}
+          <div class="pwa-category-items" style="${isCollapsed ? 'display: none;' : ''}">
+            ${renderCategoryItemsHtml(cat, catProducts)}
+          </div>
         </div>
       `;
     }).join('');
   } else {
     const cat = state.categories.find(c => c.id === state.selectedCategory);
     const catProducts = state.products.filter(p => p.category_id === state.selectedCategory);
+    const isCollapsed = cat ? state.collapsedCategories.has(cat.id) : false;
     menuListHtml = `
-      <div class="pwa-category-section">
-        <div class="pwa-category-section-title">
-          <span>${cat?.name || '선택 카테고리'}</span>
-          <span class="pwa-category-count-pill">${catProducts.length}개</span>
+      <div class="pwa-category-section ${isCollapsed ? 'collapsed' : ''}" data-category-id="${cat?.id || ''}">
+        <div class="pwa-category-section-title" data-toggle-cat="${cat?.id || ''}">
+          <div class="pwa-cat-title-left">
+            <span>${cat?.name || '선택 카테고리'}</span>
+            <span class="pwa-category-count-pill">${catProducts.length}개</span>
+          </div>
+          <div class="pwa-cat-toggle-indicator">
+            <span class="pwa-cat-toggle-text">${isCollapsed ? '펼치기' : '접기'}</span>
+            <span class="pwa-cat-toggle-icon">${isCollapsed ? '▼' : '▲'}</span>
+          </div>
         </div>
-        ${catProducts.length > 0
-          ? renderCategoryItemsHtml(cat || { layout_type: 'CARD_DETAILED' }, catProducts)
-          : '<div style="padding: 30px; text-align: center; color: var(--text-muted);">등록된 메뉴가 없습니다.</div>'}
+        <div class="pwa-category-items" style="${isCollapsed ? 'display: none;' : ''}">
+          ${catProducts.length > 0
+            ? renderCategoryItemsHtml(cat || { layout_type: 'CARD_DETAILED' }, catProducts)
+            : '<div style="padding: 30px; text-align: center; color: var(--text-muted);">등록된 메뉴가 없습니다.</div>'}
+        </div>
       </div>
     `;
   }
@@ -387,11 +411,46 @@ function renderMenuTab(container) {
     ${menuListHtml}
   `;
 
-  // 카테고리 칩 이벤트
+  // 카테고리 칩 이벤트 (특정 카테고리 선택 시 자동 펼침)
   container.querySelectorAll('.pwa-cat-chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      state.selectedCategory = chip.getAttribute('data-cat') || 'ALL';
+      const selectedCat = chip.getAttribute('data-cat') || 'ALL';
+      state.selectedCategory = selectedCat;
+      if (selectedCat !== 'ALL') {
+        state.collapsedCategories.delete(selectedCat);
+      }
       renderContent();
+    });
+  });
+
+  // 카테고리 아코디언 접기 / 펴기 토글 이벤트 (스크롤 유지 인라인 토글)
+  container.querySelectorAll('.pwa-category-section-title').forEach(header => {
+    header.addEventListener('click', () => {
+      const catId = header.getAttribute('data-toggle-cat');
+      if (!catId) return;
+      if (state.collapsedCategories.has(catId)) {
+        state.collapsedCategories.delete(catId);
+      } else {
+        state.collapsedCategories.add(catId);
+      }
+      const section = header.closest('.pwa-category-section');
+      const itemsContainer = section?.querySelector('.pwa-category-items');
+      const toggleText = header.querySelector('.pwa-cat-toggle-text');
+      const toggleIcon = header.querySelector('.pwa-cat-toggle-icon');
+      const isNowCollapsed = state.collapsedCategories.has(catId);
+
+      if (itemsContainer) {
+        itemsContainer.style.display = isNowCollapsed ? 'none' : '';
+      }
+      if (section) {
+        section.classList.toggle('collapsed', isNowCollapsed);
+      }
+      if (toggleText) {
+        toggleText.textContent = isNowCollapsed ? '펼치기' : '접기';
+      }
+      if (toggleIcon) {
+        toggleIcon.textContent = isNowCollapsed ? '▼' : '▲';
+      }
     });
   });
 
