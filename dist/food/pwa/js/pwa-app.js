@@ -3,7 +3,7 @@
  * AITIP Customer PWA Application Controller (ESM)
  * 소상공인 요식업 모바일 주문 & 예약 시스템
  * 
- * [배민 2.0 & NextOrders / Enatega 벤치마크 표준 구현]
+ * [AITIP 차세대 상생 & NextOrders / Enatega 오픈소스 표준 구현]
  * 1. 상단 헤더 영구 장바구니 뱃지 버튼 + 4단 네비게이션 탭 (메뉴판/장바구니/정보/리뷰)
  * 2. 서브웨이(Subway) 스타일 다단계(Step-by-Step) 옵션 커스텀 위저드
  *    - 상단 스텝 탭 직접 터치 점프 이동 지원
@@ -42,7 +42,7 @@ const state = {
     }
   },
   activeMode: 'DELIVERY', // 'DELIVERY' | 'TAKEOUT' | 'DINE_IN'
-  activeTab: 'MENU', // 'MENU' | 'CART' | 'INFO' | 'REVIEWS'
+  activeTab: 'MENU', // 'MENU' | 'CART' | 'ORDERS' | 'INFO' | 'REVIEWS'
   selectedCategory: 'ALL',
   collapsedCategories: new Set(),
   tableNoFromUrl: null,
@@ -294,6 +294,8 @@ function renderContent() {
     renderMenuTab(container);
   } else if (state.activeTab === 'CART') {
     renderCartTab(container);
+  } else if (state.activeTab === 'ORDERS') {
+    renderOrdersTab(container);
   } else if (state.activeTab === 'INFO') {
     renderInfoTab(container);
   } else if (state.activeTab === 'REVIEWS') {
@@ -355,7 +357,7 @@ function renderMenuTab(container) {
     </div>
   `;
 
-  // 메뉴 리스트 (5대 서비스 및 NextOrders/배민 표준: 카테고리별 아코디언 섹션 렌더링)
+  // 메뉴 리스트 (AITIP & NextOrders / Enatega 오픈소스 표준: 카테고리별 아코디언 섹션 렌더링)
   let menuListHtml = '';
   if (state.selectedCategory === 'ALL') {
     menuListHtml = state.categories.map(cat => {
@@ -557,7 +559,7 @@ function renderFoodCardHtml(p) {
   `;
 }
 
-// 2열 그리드 사이드 메뉴 카드 HTML (배민/요기요 표준)
+// 2열 그리드 사이드 메뉴 카드 HTML (NextOrders 오픈소스 표준)
 function renderSideCardHtml(p) {
   const isSold = p.status === 'SOLDOUT';
   const hasOptions = Array.isArray(p.option_group_ids) && p.option_group_ids.length > 0;
@@ -993,7 +995,7 @@ function closeWizardModal() {
 }
 
 // ============================================================================
-// 배민 2.0 & NextOrders 스타일 독립 장바구니 확인 화면 (Cart View)
+// AITIP & NextOrders 오픈소스 표준 장바구니 확인 화면 (Cart View)
 // ============================================================================
 function renderCartTab(container) {
   const count = state.cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -1038,7 +1040,7 @@ function renderCartTab(container) {
     </div>
   `;
 
-  // 배민 최소주문금액 게이지 (배달 모드 시)
+  // 상생 배달 최소주문금액 게이지 (배달 모드 시)
   let minOrderGaugeHtml = '';
   if (state.activeMode === 'DELIVERY') {
     minOrderGaugeHtml = `
@@ -1054,7 +1056,7 @@ function renderCartTab(container) {
     `;
   }
 
-  // 장바구니 품목 리스트 (배민 2.0 & NextOrders 정석 규격)
+  // 장바구니 품목 리스트 (AITIP & NextOrders 표준 레이아웃)
   const itemsListHtml = state.cart.map(item => {
     const optsLinesHtml = (item.selected_options && item.selected_options.length > 0)
       ? item.selected_options.map(o => `
@@ -1173,7 +1175,7 @@ function renderCartTab(container) {
       renderCartTab(container);
     });
 
-    // 배민 스타일 [옵션 변경] 클릭 핸들러
+    // 인라인 [옵션 변경] 클릭 핸들러
     card.querySelector('[data-action="edit-options"]')?.addEventListener('click', () => {
       const item = state.cart.find(it => it.cartItemId === cartId);
       if (!item) return;
@@ -1231,7 +1233,7 @@ function renderCartDrawer() {
     return;
   }
 
-  // 품목 목록 렌더링 (배민 2.0 규격 일원화)
+  // 품목 목록 렌더링 (NextOrders 오픈소스 표준 규격 일원화)
   container.innerHTML = state.cart.map(item => {
     const optsLinesHtml = (item.selected_options && item.selected_options.length > 0)
       ? item.selected_options.map(o => `
@@ -1348,9 +1350,9 @@ function updateCartBar() {
   const btnSubmit = document.getElementById('btn-submit-pwa-order');
 
   if (bottomBar) {
-    // 배민 정석: 장바구니 화면('CART')에서는 하단 플로팅 바를 완전히 숨겨 실제 주문서 작성 버튼을 가리지 않음.
+    // 장바구니 화면('CART') 및 주문내역('ORDERS')에서는 하단 플로팅 바를 숨겨 본문 버튼을 가리지 않음.
     // 메뉴판('MENU') 등에서 담긴 수량이 1개 이상일 때만 하단 바를 띄움.
-    if (state.activeTab === 'CART' || count === 0) {
+    if (state.activeTab === 'CART' || state.activeTab === 'ORDERS' || count === 0) {
       bottomBar.style.display = 'none';
     } else {
       bottomBar.style.display = 'flex';
@@ -1648,6 +1650,17 @@ async function handleFinalOrderSubmit() {
         created_at: new Date().toISOString()
       };
     }
+
+    // 고객 브라우저 로컬 저장소에 주문 영속화 (NextOrders / Enatega 규격)
+    try {
+      const storedOrders = JSON.parse(localStorage.getItem('aitip_customer_orders') || '[]');
+      const filtered = storedOrders.filter(o => o.order_id !== createdOrder.order_id);
+      filtered.unshift(createdOrder);
+      localStorage.setItem('aitip_customer_orders', JSON.stringify(filtered));
+    } catch (storageErr) {
+      console.warn('[PWA] 로컬 스토리지 주문 저장 실패:', storageErr);
+    }
+
     state.cart = [];
     updateCartBar();
     closeCheckoutModal();
@@ -1786,6 +1799,120 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 2200);
+}
+
+// ============================================================================
+// AITIP & NextOrders 오픈소스 표준 주문내역 및 영수증 다시보기 화면 (Orders View)
+// ============================================================================
+function renderOrdersTab(container) {
+  let orders = [];
+  try {
+    orders = JSON.parse(localStorage.getItem('aitip_customer_orders') || '[]');
+  } catch (err) {
+    orders = [];
+  }
+
+  if (!orders || orders.length === 0) {
+    container.innerHTML = `
+      <div class="pwa-orders-empty-box">
+        <div class="pwa-orders-empty-icon">[주문내역]</div>
+        <div class="pwa-orders-empty-text">주문 내역이 없습니다</div>
+        <div class="pwa-orders-empty-sub">메뉴판에서 신선하고 맛있는 음식을 주문해 보세요.</div>
+        <button class="pwa-btn-go-menu" id="btn-orders-go-menu">메뉴판 둘러보기</button>
+      </div>
+    `;
+    container.querySelector('#btn-orders-go-menu')?.addEventListener('click', () => {
+      switchToTab('MENU');
+    });
+    return;
+  }
+
+  const fulfillmentLabels = {
+    DELIVERY: '배달 주문',
+    TAKEOUT: '포장 (픽업)',
+    DINE_IN: '매장 식사'
+  };
+
+  const statusLabels = {
+    PENDING: { text: '접수 대기', color: '#0f766e', bg: '#f0fdfa', border: '#99f6e4' },
+    ACCEPTED: { text: '주문 접수', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+    COOKING: { text: '조리 중', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+    DELIVERING: { text: '배달 중', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
+    COMPLETED: { text: '완료됨', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0' },
+    CANCELED: { text: '주문 취소', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' }
+  };
+
+  const ordersListHtml = orders.map(order => {
+    const st = statusLabels[order.status] || { text: order.status || '주문 접수', color: '#0f766e', bg: '#f0fdfa', border: '#99f6e4' };
+    const dateStr = order.created_at ? new Date(order.created_at).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : '최근 주문';
+
+    const itemsSummary = (order.items && order.items.length > 0)
+      ? `${order.items[0].name}${order.items.length > 1 ? ` 외 ${order.items.length - 1}건` : ` × ${order.items[0].quantity}개`}`
+      : '주문 상품';
+
+    const modeLabel = fulfillmentLabels[order.fulfillment_type] || order.fulfillment_type || '주문';
+
+    return `
+      <div class="pwa-order-history-card">
+        <div class="pwa-order-history-head">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="pwa-order-num-tag">[${order.short_display_id || '주문'}]</span>
+            <span class="pwa-order-date-text">${dateStr}</span>
+          </div>
+          <span class="pwa-order-status-badge" style="color: ${st.color}; background: ${st.bg}; border-color: ${st.border};">
+            ${st.text}
+          </span>
+        </div>
+
+        <div class="pwa-order-history-body">
+          <div class="pwa-order-meta-row">
+            <span class="pwa-order-mode-pill">${modeLabel}</span>
+            ${order.virtual_phone ? `<span class="pwa-order-phone-pill">안심번호 ${order.virtual_phone}</span>` : ''}
+          </div>
+          <div class="pwa-order-items-title">${itemsSummary}</div>
+          <div class="pwa-order-price-row">
+            <span style="font-size: 13px; color: var(--text-muted);">총 결제금액</span>
+            <span class="pwa-order-price-num">${(order.final_payment_amount || 0).toLocaleString()}원</span>
+          </div>
+        </div>
+
+        <div class="pwa-order-history-foot">
+          <button class="pwa-btn-view-receipt" data-order-id="${order.order_id}">
+            영수증 및 픽업 바코드 확인 &rarr;
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="pwa-orders-view-container">
+      <div class="pwa-orders-header-row">
+        <div class="pwa-orders-view-title">주문 내역</div>
+        <span style="font-size: 12px; color: var(--text-muted); font-weight: 700;">총 ${orders.length}건</span>
+      </div>
+      <div class="pwa-orders-list">
+        ${ordersListHtml}
+      </div>
+    </div>
+  `;
+
+  // 영수증 / 바코드 다시보기 이벤트 바인딩
+  container.querySelectorAll('.pwa-btn-view-receipt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const orderId = btn.getAttribute('data-order-id');
+      const targetOrder = orders.find(o => o.order_id === orderId);
+      if (targetOrder) {
+        showSuccessReceiptModal(targetOrder);
+      }
+    });
+  });
 }
 
 // ============================================================================

@@ -185,14 +185,16 @@ body {
 
 .pwa-nav-tab {
   flex: 1;
-  padding: 12px 0;
-  font-size: 13px;
+  padding: 12px 2px;
+  font-size: 12.5px;
   font-weight: 700;
   border: none;
   background: transparent;
   color: var(--text-muted);
   border-bottom: 2px solid transparent;
   cursor: pointer;
+  white-space: nowrap;
+  text-align: center;
   transition: all 0.15s ease;
 }
 
@@ -1411,7 +1413,7 @@ body {
   background: #ccfbf1;
 }
 
-/* 배민 스타일 토스트 알림 */
+/* AITIP 시스템 토스트 알림 */
 .pwa-toast {
   position: fixed;
   bottom: 80px;
@@ -1437,4 +1439,172 @@ body {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* ==========================================================================
+   AITIP 주문내역 화면 (Orders View)
+   ========================================================================== */
+.pwa-orders-view-container {
+  padding: 16px;
+  background: #f8fafc;
+  min-height: calc(100vh - 200px);
+}
+
+.pwa-orders-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.pwa-orders-view-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pwa-orders-empty-box {
+  padding: 60px 20px;
+  text-align: center;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-top: 10px;
+}
+
+.pwa-orders-empty-icon {
+  font-size: 36px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.pwa-orders-empty-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.pwa-orders-empty-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.pwa-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pwa-order-history-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.pwa-order-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.pwa-order-num-tag {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.pwa-order-date-text {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.pwa-order-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.pwa-order-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.pwa-order-mode-pill {
+  font-size: 11px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.pwa-order-phone-pill {
+  font-size: 11px;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #ccfbf1;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.pwa-order-items-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.pwa-order-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.pwa-order-price-num {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pwa-order-history-foot {
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 10px;
+}
+
+.pwa-btn-view-receipt {
+  width: 100%;
+  padding: 9px 12px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f766e;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.pwa-btn-view-receipt:hover {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+}
+
 
