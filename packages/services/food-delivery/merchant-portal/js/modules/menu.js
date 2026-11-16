@@ -5,18 +5,60 @@
  * ============================================================================
  */
 import { merchantApi } from '../api.js';
+import { parseBulkCatalogInput } from '/core/merchant-meta/bulk-catalog-parser.mjs';
+
+export function renderMenuCategoryFilterBar(state) {
+  const tabsEl = document.getElementById('menu-category-tabs');
+  const searchEl = document.getElementById('menu-search-input');
+  if (searchEl && !searchEl.dataset.bound) {
+    searchEl.dataset.bound = 'true';
+    searchEl.addEventListener('input', (e) => {
+      state.menuSearchKeyword = (e.target.value || '').trim().toLowerCase();
+      renderMenuGroupBlocks(state);
+    });
+  }
+  if (!tabsEl) return;
+
+  const activeCatId = state.selectedMenuCategoryId || 'ALL';
+  const totalCount = state.products.length;
+  const allBtn = `<button type="button" class="btn ${activeCatId === 'ALL' ? 'btn-primary' : 'btn-secondary'} btn-sm" data-filter-cat="ALL">전체 보기 (${totalCount})</button>`;
+  const catBtns = state.categories.map(cat => {
+    const cnt = state.products.filter(p => p.category_id === cat.id).length;
+    const isActive = activeCatId === cat.id;
+    return `<button type="button" class="btn ${isActive ? 'btn-primary' : 'btn-secondary'} btn-sm" data-filter-cat="${cat.id}">${cat.name} (${cnt})</button>`;
+  }).join('');
+
+  tabsEl.innerHTML = allBtn + catBtns;
+  tabsEl.querySelectorAll('button[data-filter-cat]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.selectedMenuCategoryId = btn.getAttribute('data-filter-cat');
+      renderMenuGroupBlocks(state);
+    });
+  });
+}
 
 export function renderMenuGroupBlocks(state) {
+  renderMenuCategoryFilterBar(state);
   const container = document.getElementById('menu-group-blocks-container');
   if (!container) return;
 
   container.innerHTML = '';
 
-  state.categories.forEach((cat, idx) => {
+  const activeCatId = state.selectedMenuCategoryId || 'ALL';
+  const keyword = state.menuSearchKeyword || '';
+  const visibleCategories = activeCatId === 'ALL'
+    ? state.categories
+    : state.categories.filter(cat => cat.id === activeCatId);
+
+  visibleCategories.forEach((cat, idx) => {
     const block = document.createElement('div');
     block.className = 'menu-group-block';
 
-    const catProducts = state.products.filter(p => p.category_id === cat.id);
+    const catProducts = state.products.filter(p => {
+      if (p.category_id !== cat.id) return false;
+      if (!keyword) return true;
+      return (p.name || '').toLowerCase().includes(keyword) || (p.description || '').toLowerCase().includes(keyword);
+    });
 
     block.innerHTML = `
       <div class="menu-group-block-header">
@@ -51,7 +93,7 @@ export function renderMenuGroupBlocks(state) {
                       <span class="tag ${p.channel === 'TAKEOUT_ONLY' ? 'tag-pickup' : 'tag-mint'}">
                         ${p.channel === 'TAKEOUT_ONLY' ? '포장전용' : p.channel === 'DELIVERY_ONLY' ? '배달전용' : '배달+포장'}
                       </span>
-                      ${p.discount_price ? `<span class="tag tag-neutral" style="color: #f04452; font-weight: 700;">할인중</span>` : ''}
+                      ${(p.discounted_price || p.discount_price) ? `<span class="tag tag-neutral" style="color: #f04452; font-weight: 700;">할인중</span>` : ''}
                     </div>
                     <div class="menu-desc-text">${p.description || '메뉴 설명 없음'}</div>
                     <div class="menu-options-line">
@@ -158,12 +200,7 @@ export function renderMenuGroupBlocks(state) {
 
       const delProdBtn = block.querySelector(`button[data-del-product="${p.product_id}"]`);
       if (delProdBtn) {
-        delProdBtn.addEventListener('click', () => {
-          if (confirm(`'${p.name}' 메뉴를 메뉴판에서 삭제하시겠습니까?`)) {
-            state.products = state.products.filter(item => item.product_id !== p.product_id);
-            renderMenuGroupBlocks(state);
-          }
-        });
+        delProdBtn.addEventListener('click', () => deleteMenuWithConfirm(p.product_id, state));
       }
 
       const rowThumb = block.querySelector(`#row-${p.product_id} .menu-thumb`);
@@ -294,26 +331,50 @@ export async function handleSaveEditMenu(state) {
   }
 
   try {
-    await merchantApi.updatePrice(p.product_id, newPrice);
-    await merchantApi.updateStatus(p.product_id, newStatus);
+    const res = await merchantApi.updateMenuItem(p.product_id, {
+      name: newName,
+      category_id: newCat,
+      subcategory: newSubcat,
+      channel: newChannel,
+      price: newPrice,
+      discounted_price: newDiscount,
+      description: newDesc,
+      status: newStatus,
+      image_url: newImgUrl || p.image_url,
+      schedule: p.schedule
+    });
+    if (res && res.product) {
+      Object.assign(p, res.product);
+    }
   } catch (err) {
-    console.warn('[Menu] 서버 가격/상태 동기화 경고:', err.message);
+    alert('메뉴 수정 저장 실패: ' + err.message);
+    return;
   }
 
   document.getElementById('modal-edit-menu').classList.remove('show');
   renderMenuGroupBlocks(state);
 }
 
-export function handleDeleteMenuFromModal(state) {
-  const productId = document.getElementById('edit-menu-id').value;
+export async function deleteMenuWithConfirm(productId, state, closeModal = false) {
   const p = state.products.find(item => item.product_id === productId);
   if (!p) return;
 
-  if (confirm(`'${p.name}' 메뉴를 메뉴판에서 완전히 삭제하시겠습니까?`)) {
+  if (!confirm(`'${p.name}' 메뉴를 메뉴판에서 완전히 삭제하시겠습니까?`)) return;
+  try {
+    await merchantApi.deleteMenuItem(productId);
     state.products = state.products.filter(item => item.product_id !== productId);
-    document.getElementById('modal-edit-menu').classList.remove('show');
+    if (closeModal) {
+      document.getElementById('modal-edit-menu')?.classList.remove('show');
+    }
     renderMenuGroupBlocks(state);
+  } catch (err) {
+    alert('메뉴 삭제 실패: ' + err.message);
   }
+}
+
+export function handleDeleteMenuFromModal(state) {
+  const productId = document.getElementById('edit-menu-id').value;
+  return deleteMenuWithConfirm(productId, state, true);
 }
 
 export function renderCategoryDropdowns(state) {
@@ -380,9 +441,15 @@ export async function handleCreateMenu(state) {
   const name = document.getElementById('menu-input-name').value.trim();
   const desc = document.getElementById('menu-input-desc').value.trim();
   const price = document.getElementById('menu-input-price').value.trim();
+  const discountVal = document.getElementById('menu-input-discount')?.value.trim();
+  const discountedPrice = discountVal ? Number(discountVal) : null;
   const catId = document.getElementById('menu-input-category').value;
   const subCat = document.getElementById('menu-input-subcategory').value;
   const channel = document.getElementById('menu-input-channel').value;
+
+  const optionGroupIds = [];
+  if (document.getElementById('check-opt-part')?.checked) optionGroupIds.push('optgrp_01h7x8part');
+  if (document.getElementById('check-opt-sauce')?.checked) optionGroupIds.push('optgrp_01h7x8sauce');
 
   const scheduleEnabled = document.getElementById('menu-check-schedule')?.checked || false;
   let schedule = null;
@@ -403,23 +470,48 @@ export async function handleCreateMenu(state) {
   }
 
   try {
+    let imageUrl = '';
+    const previewImg = document.getElementById('image-preview');
+    const pendingDataUrl = previewImg?.dataset?.pendingDataUrl;
+    if (pendingDataUrl) {
+      const uploadRes = await merchantApi.uploadMenuImage({
+        fileName: previewImg.dataset.pendingFileName || 'menu.png',
+        dataUrl: pendingDataUrl
+      });
+      if (uploadRes && uploadRes.image_url) {
+        imageUrl = uploadRes.image_url;
+      }
+    }
+
     const res = await merchantApi.createMenuItem({
       name,
       description: desc,
       price: Number(price),
-      category_id: catId
+      discounted_price: discountedPrice,
+      category_id: catId,
+      subcategory: subCat,
+      channel,
+      image_url: imageUrl,
+      schedule,
+      option_group_ids: optionGroupIds
     });
 
-    const newPrd = res.product;
-    newPrd.subcategory = subCat;
-    newPrd.channel = channel;
-    newPrd.schedule = schedule;
-    state.products.push(newPrd);
+    state.products.push(res.product);
     renderMenuGroupBlocks(state);
 
     document.getElementById('menu-input-name').value = '';
     document.getElementById('menu-input-desc').value = '';
     document.getElementById('menu-input-price').value = '';
+    if (document.getElementById('menu-input-discount')) document.getElementById('menu-input-discount').value = '';
+    if (document.getElementById('menu-file-input')) document.getElementById('menu-file-input').value = '';
+    if (previewImg) {
+      previewImg.src = '';
+      delete previewImg.dataset.pendingDataUrl;
+      delete previewImg.dataset.pendingFileName;
+      previewImg.classList.remove('show');
+    }
+    const placeholder = document.getElementById('image-placeholder');
+    if (placeholder) placeholder.style.display = '';
     document.getElementById('modal-create-menu').classList.remove('show');
   } catch (err) {
     alert('메뉴 등록 실패: ' + err.message);
@@ -523,5 +615,116 @@ export function renderPwaSimulator(state) {
     screen.innerHTML = `
       <iframe id="pwa-simulator-iframe" src="./pwa/" style="width: 100%; height: 100%; border: none; background: #ffffff; display: block;" title="AITIP 고객 주문 PWA 실시간 미리보기"></iframe>
     `;
+  }
+}
+
+export function setupBulkImportModal(state) {
+  const openBtn = document.getElementById('btn-open-bulk-import');
+  const modal = document.getElementById('modal-bulk-import-menu');
+  const fileInput = document.getElementById('bulk-csv-file');
+  const sampleBtn = document.getElementById('btn-bulk-sample');
+  const textarea = document.getElementById('bulk-raw-textarea');
+  const parseBtn = document.getElementById('btn-bulk-parse');
+  const summaryEl = document.getElementById('bulk-preview-summary');
+  const tbody = document.getElementById('tbody-bulk-preview');
+  const submitBtn = document.getElementById('btn-bulk-submit');
+
+  if (!openBtn || !modal) return;
+
+  let parsedItems = [];
+
+  const renderPreview = () => {
+    const defaultCat = (state.selectedMenuCategoryId && state.selectedMenuCategoryId !== 'ALL')
+      ? (state.categories.find(c => c.id === state.selectedMenuCategoryId)?.name || '대표메뉴')
+      : (state.categories[0]?.name || '대표메뉴');
+
+    const res = parseBulkCatalogInput(textarea.value, defaultCat);
+    parsedItems = res.items;
+
+    if (summaryEl) {
+      summaryEl.textContent = `총 ${res.summary.total}건 분석 완료 (등록 가능 ${res.summary.validCount}건 / 오류 ${res.summary.invalidCount}건)`;
+    }
+    if (submitBtn) {
+      submitBtn.disabled = res.summary.validCount === 0;
+    }
+    if (!tbody) return;
+
+    if (parsedItems.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 18px;">분석된 항목이 없습니다.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = parsedItems.map((it, idx) => `
+      <tr style="${it.valid ? '' : 'background: #fef2f2; color: #b91c1c;'}">
+        <td style="text-align: center;"><input type="checkbox" class="bulk-item-check" data-idx="${idx}" ${it.valid ? 'checked' : 'disabled'}></td>
+        <td>${it.category_name}</td>
+        <td><strong>${it.name || '-'}</strong></td>
+        <td style="text-align: right;">${Number(it.price || 0).toLocaleString()}원</td>
+        <td style="text-align: right;">${it.discounted_price !== null ? `${Number(it.discounted_price).toLocaleString()}원` : '-'}</td>
+        <td>${it.valid ? (it.description || '<span style="color:#059669;">정상</span>') : `오류: ${it.error}`}</td>
+      </tr>
+    `).join('');
+  };
+
+  openBtn.addEventListener('click', () => {
+    modal.classList.add('show');
+  });
+
+  if (sampleBtn && textarea) {
+    sampleBtn.addEventListener('click', () => {
+      textarea.value = [
+        '[메인 치킨 (대표메뉴)] 통마늘간장치킨 20,900원 알싸한 마늘 간장 풍미',
+        '사이드 & 안주 | 바삭 어니언링 | 6500 | 5500 | 수제 타르타르 소스 포함',
+        '음료 & 주류 | 제로콜라 1.25L | 3000'
+      ].join('\n');
+      renderPreview();
+    });
+  }
+
+  if (fileInput && textarea) {
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        textarea.value = String(ev.target?.result || '');
+        renderPreview();
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+  }
+
+  if (parseBtn) parseBtn.addEventListener('click', renderPreview);
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const checkedIndices = Array.from(modal.querySelectorAll('.bulk-item-check:checked'))
+        .map(el => Number(el.getAttribute('data-idx')));
+      const selected = checkedIndices.map(i => parsedItems[i]).filter(it => it && it.valid);
+      if (selected.length === 0) {
+        alert('등록할 유효한 메뉴를 선택해 주세요.');
+        return;
+      }
+      try {
+        const res = await merchantApi.bulkCreateMenuItems(selected);
+        if (Array.isArray(res.created_categories)) {
+          state.categories.push(...res.created_categories);
+        }
+        if (Array.isArray(res.products)) {
+          state.products.push(...res.products);
+        }
+        renderCategoryDropdowns(state);
+        renderMenuGroupBlocks(state);
+        textarea.value = '';
+        parsedItems = [];
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 18px;">분석된 항목이 여기에 표시됩니다.</td></tr>';
+        if (summaryEl) summaryEl.textContent = '텍스트 입력 후 [미리보기 분석]을 눌러주세요.';
+        submitBtn.disabled = true;
+        modal.classList.remove('show');
+        alert(`${res.created_count}개의 메뉴가 성공적으로 일괄 등록되었습니다.`);
+      } catch (err) {
+        alert('일괄 등록 실패: ' + err.message);
+      }
+    });
   }
 }

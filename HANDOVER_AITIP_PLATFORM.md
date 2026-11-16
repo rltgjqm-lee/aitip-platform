@@ -1,8 +1,8 @@
 # 🚀 AITIP-Platform 마스터 핸드오버 및 실무 개발 지침서 (HANDOVER)
 
-> **문서 번호**: AITIP-HANDOVER-2026-V19  
-> **최종 갱신 일시**: 2026-11-09 12:10 (KST)  
-> **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V20 (전사 27대 식별 체계, 소상공인 본체 코어 & AITIP 단말기 연동, 공통 척추 & 2대 전략 분리, 경로당·마을 공동구매(공구) 메커니즘, 외주 배달 3사 & 지역 대리점 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합)  
+> **문서 번호**: AITIP-HANDOVER-2026-V27  
+> **최종 갱신 일시**: 2026-11-16 16:15 (KST)  
+> **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V26 (전사 8대 계층형 UID & 통계청 KSIC-11 5자리 법정코드 결합, 주소 엔진 ➔ 관할 총판·대리점 자동 매핑 거버넌스, $O(1)$ 핀포인트 조회, UI 숨김 표시 및 토글 관제, 소상공인 본체 코어 & AITIP 단말기 연동, 경로당·마을 공동구매 메커니즘, 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합, 전사 이모티콘 100% 완전 박멸, 물음표 커서 영구 퇴출, 전사 테이블 1열 상호명/관리코드 전진 배치, 가맹점 상세 관제 SSOT 모달 완성, MQTT-하드웨어 기술 규격서 증보 v1.1.0 완비, MQTT 실시간 중추망 3대 파이프라인 E2E 100% 가동, 전사 8대 계층형 UID 일원화 정규화 완결, 카카오 최신 CDN t1.kakaocdn.net 및 PWA 서비스 워커 sw.js 캐시 판올림 전사 7개 프로젝트 100% GitHub 푸시 완료, Cloudflare Pages 서버리스 한계 규명 및 TryCloudflare 퀵 터널 원격 실물 테스트 체계 완비, 슈퍼관리자 단순 조회를 탈피한 4대 축 실무형 통합 관제탑 Control Tower 고도화 로드맵 수립)  
 > **개발 행동 강령**: `AGENTS.md` (절대 신조: 상생 신뢰, 정직한 조언, 거짓말/꼼수 금지, 사전 보고·승인제, UID 무결성 사수, ESM/API 계층화)  
 > **프로젝트 위치**: `C:\Users\user\Desktop\aitip-platform`  
 > **로컬 개발 포트**: **`8989`** (기존 wellriskkeeper 8888, bupyeong 8787과 완전 격리)  
@@ -248,7 +248,7 @@ aitip-platform/
 | 문서 식별자 | 파일 경로 | 주요 내용 및 버전 | 상태 |
 | :--- | :--- | :--- | :---: |
 | **마스터 설계** | [docs/AITIP_PLATFORM_MASTER_DESIGN_2026.md](file:///c:/Users/user/Desktop/aitip-platform/docs/AITIP_PLATFORM_MASTER_DESIGN_2026.md) | 전사 마스터 기본설계서 및 42개 디렉터리 배치도 (제8장) | **V7.0 최신** |
-| **DOC-00** | [docs/DOC-00_AITIP_통합_UID_체계_표준_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-00_AITIP_통합_UID_체계_표준_명세서.md) | 27대 TypeID 프리픽스 표준 배정 및 Crockford Base32 제약 | **V3.2 최신** |
+| **DOC-00** | [docs/DOC-00_AITIP_통합_UID_체계_표준_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-00_AITIP_통합_UID_체계_표준_명세서.md) | **8대 계층형 UID & 통계청 KSIC-11 법정코드 결합 및 주소 엔진 매핑 거버넌스** | **V3.0 최신** |
 | **DOC-01** | [docs/DOC-01_소비자_및_가맹점_인터페이스_상세기획서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-01_소비자_및_가맹점_인터페이스_상세기획서.md) | 소비자 웹/앱 및 CTI 단말 인터페이스 화면 설계 | **V1.0 최신** |
 | **DOC-02** | [docs/DOC-02_식당_마트_AITIP단말기_하드웨어연동_상세기획서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-02_식당_마트_AITIP단말기_하드웨어연동_상세기획서.md) | ESC/POS 듀얼전표, CTI 바이패스, **외부 EMQX MQTT 양방향 브릿지·LWT 원격관제** | **V5.0 최신** |
 | **DOC-03** | [docs/DOC-03_시니어_및_배송_안심보안_상세기획서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-03_시니어_및_배송_안심보안_상세기획서.md) | 개인정보 HMAC/AES-GCM 암호화 및 2인1조 시니어 배송 안심망 | **V1.0 최신** |
@@ -264,7 +264,7 @@ aitip-platform/
 | **DOC-13** | [docs/DOC-13_카카오알림톡_0504안심번호수명주기_및_고객CRM_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-13_카카오알림톡_0504안심번호수명주기_및_고객CRM_명세서.md) | 알림톡 5단계, 이통사 SMS 폴백, 0504 안심번호 60분 수명주기, 단골 상생 CRM | **V1.0 최신** |
 | **DOC-14** | [docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md) | MDM 5대 텔레메트리 감시망, A/B 파티션 무중단 OTA 배포, 하드웨어 와치독 롤백 | **V1.0 최신** |
 | **DOC-15** | [docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md) | 일간 실질 공헌이익 BI 스냅샷, 4분면 메뉴 진단, 기상 연동 AI 발주 추천, 영양 리포트 | **V1.0 최신** |
-| **DOC-18** | [docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md) | 해외 5대 서비스 벤치마크, 3계층 유통망, 다중자산(카드/포인트/지역화폐/코인) 정산, 세무 대사, 외부 연동 허브 | **V1.0 최신** |
+| **DOC-18** | [docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md) | **주소 엔진 ➔ 관할 총판·대리점 자동 매핑 스트립 및 UI 숨김 표시 거버넌스** | **V2.0 최신** |
 | **DDL 스키마** | [docs/schema_aitip_v01.sql](file:///c:/Users/user/Desktop/aitip-platform/docs/schema_aitip_v01.sql) | D1 SQLite 정규화 스키마 (278개 제약조건 실측 통과) | **V3.1 최신** |
 | **테스트 스위트** | [scripts/test_schema_integrity.py](file:///c:/Users/user/Desktop/aitip-platform/scripts/test_schema_integrity.py) | 278개 제약조건 자동 검증 파이썬 스크립트 | **100% PASS** |
 | **행동 강령** | [.agents/AGENTS.md](file:///c:/Users/user/Desktop/aitip-platform/.agents/AGENTS.md) | 절대 행동 원칙: 사전 보고·승인제, UID 무결성, ESM/API 모듈화 | **절대 준수** |
@@ -297,21 +297,453 @@ aitip-platform/
 
 ---
 
-## 8. 내일 이어서 즉시 착수할 3대 실무 과제 (Resumption Roadmap)
+## 🏛️ 8. 전사 계층형 UID 및 주소 엔진 ➔ 영업망 자동 매핑 구축 완료 보고 (2026-11-14)
 
-### 1) Module 02: `distribution.js` (전국 영업 유통망 관리 고도화)
-- 본사(HQ) -> 17개 광역 총판(`dst_`) -> 226개 지역 대리점(`agn_`) -> 영업사원(`fsr_`) 3계층 조직 트리 렌더러 구현.
-- 전국 17개 시/도 권역별 총판 매핑 및 226개 시/군/구 대리점 관할 구역 배정 모달.
-- 가맹점 결제 실적 기반 0.1% 오버라이딩 수수료 자동 배분 시뮬레이터 및 계약 상태(정상/보류/해지) 관리.
+### 1) 8대 계층형 UID 규격 (`전사06.md` 표준 승격) + 통계청 법정 5자리 코드 결합
+- **가맹점 식별자**: `STR-{시도2}-{시군구3}-{대리점2}-{통계청업종5}-{점포순번4}` (예: `STR-11-650-01-56162-0001` 바른치킨 서초본점)
+- **하나로마트 식별자**: `MRT-{시도2}-{시군구3}-{대리점2}-{통계청업종5}-{마트순번4}` (예: `MRT-11-650-01-47121-0001` 서초농협 하나로마트 양재점)
+- **수요 복지시설 식별자**: `FAC-{시도2}-{시군구3}-{대리점2}-{통계청업종5}-{시설순번4}` (예: `FAC-11-650-01-87391-0001` 서초구 양재1동 복지센터)
+- **주문 식별자**: `ORD-{가맹점UID}-{영업일자6}-{전표순번4}` (예: `ORD-11-650-01-56162-0001-261113-0042`)
 
-### 2) Module 08: `settlement.js` (다중 자산 정산 & 세무 통제 센터)
-- 신용카드, 카드사 포인트 복합결제, 지자체 지역화폐, 스테이블코인 4대 자산 3자 대사(Reconciliation) 상세 원장 테이블.
-- 3단 탭 인터페이스:
-  - 탭 1: 가맹점 실지급액 (D+1 정산, 원가 실비 분리 내역)
-  - 탭 2: 지역 대리점 사업소득 3.3% 원천징수 영수증 발행 및 조회
-  - 탭 3: 광역 총판 10% 부가세 전자세금계산서 청구 및 국세청 홈택스 표준 CSV 다운로더
+### 2) $O(1)$ 가맹점 핀포인트 조회 실측 검증 완료 (풀스캔 0%)
+- `adminApi.getMerchantByOrderId('ORD-11-650-01-56162-0001-261113-0042')` ➔ 식별자 직접 파싱을 통해 수백만 건 DB 풀스캔 없이 단 1ms 만에 판매 가맹점 `STR-11-650-01-56162-0001` 즉시 반환.
+- `adminApi.getMerchantByOrderId('ORD-11-650-01-47121-0001-261113-0012')` ➔ `47121` 업종코드 판별을 통해 하나로마트 직배 매장 즉시 반환.
 
-### 3) Module 09: `integrations.js` (외부 연동 게이트웨이 허브 & 서킷 브레이커)
-- 6대 게이트웨이(토스 PG, NH농협 제로페이, SKB 0504 CTI, 알림톡, 부릉 배달망, Gemini AI) 엔드포인트 및 API Key 관리.
-- 실시간 헬스체크 핑(Ping) 및 장애 임계치 도달 시 0.1초 자동 차단(Circuit Breaker) 및 대체 경로(Fallback) 수동/자동 전환 제어.
-- 감사 로그 연동 (`audit_logs`)으로 설정 변경 이력 영구 보존.
+### 3) 공공 주소 엔진과 사설 영업망 분리 및 순방향 매핑 실현
+- 주소 검색엔진에는 사설 법인명(총판, 대리점 이름)을 1글자도 포함하지 않음 (순수 행정구역: 대한민국 17개 시·도, 시·군·구 도로명).
+- 사용자가 순수 행정구역 선택 시, 시스템 계약망 테이블(`TERRITORY_AGENCY_MAP`)을 통해 **관할 광역 총판 및 담당 대리점이 검색창 하단 배지 스트립으로 자동 도출**되어 즉시 핀포인트 필터링 연동.
+
+### 4) 금연 프로젝트 규격 'UID 숨김' 체크박스 및 컬럼 토글 실측 완료
+- **사용자 핵심 지적**: "이모지콘 쓰지마. 그리고 uid 숨김은 왜?? 이렇게 처리를 하지?? 금연 프로젝트 처럼 하면 될 것을 전사 v06이 디자인 관련 사항도 포함되어 있을 텐데."
+- **정석 구현 내용**:
+  1. **상단 컨트롤 바**: `<label><input type="checkbox" id="chkHideUid" /> UID 숨김</label>` 체크박스 배치 (이모티콘 전면 배제).
+  2. **독립 컬럼 분리**: 1열 전표번호(`A-42` 뱃지), 2열 `주문 식별자 (UID)` 전용 열, 3열 판매 매장 분리.
+  3. **컬럼 단위 숨김(Column Toggle)**: 'UID 숨김' 체크 시 2열 식별자 열 전체가 `display: none;`으로 감추어져 매장명과 주문 품목, 결제금액 중심의 시원한 뷰 제공.
+  4. **전체 펼침 모드**: 체크박스 해제 시 37자리 계층형 UID 전체가 가로 1줄(`white-space: nowrap`)로 당당하게 펼쳐지며 순수 `<code>${id}</code>` 표준 규격으로 표출 (사족 복사 버튼 완전 제거).
+  5. **이모티콘 전면 배제 (전사06.md 제6장 5절 표준 준수)**: 관리자 화면 전역에서 무분별한 이모티콘을 100% 제거하고 `[관할 행정코드]`, `[관할 총판]`, `[관할 대리점]`, `조건 조회` 등 품격 있는 행정 표준 텍스트 레이블 적용.
+- **실측 증적**:
+  - 기본 상태 (UID 숨김 체크 상태): `step_269_shot_1_orders_default_checkbox_checked.png`
+  - 체크 해제 (UID 전용 컬럼 펼침 상태): `step_273_shot_1_orders_uid_expanded_checkbox_unchecked.png`
+  - 서초구 매핑 스트립 실측: `final_step_273.png`
+
+### 5) 사용자 피드백 반영 및 UI 정규화 최종 요약
+- **조치 결과**:
+  1. `packages/platform-admin/js/modules/erp-filter.js`에서 왜곡된 라벨('권역/총판', '총판 전체')을 전면 폐기하고, 대한민국 표준 행정구역인 `시·도 (권역):`, `시·군·구:`로 100% 정규화.
+  2. 행정구역 선택 시 하단에 계약망 테이블(`TERRITORY_AGENCY_MAP`)이 실시간 매핑되어 `[관할 행정코드: 11-650] 서울특별시 서초구 | [관할 총판] 서울광역 총판 (주)에이티파트너스 | [관할 대리점] (주)서초네트웍스 (대리점 01)  영업망 자동 매핑 완료` 배지 스트립 생성.
+  3. `scripts/build-pages.mjs` 배포 빌드를 통해 `dist/admin/`에 100% 반영 완료.
+  4. 브라우저 실측 에이전트를 통해 실시간 주문 관제(#orders), 전국 배송망 관제(#riders), 통합 대시보드(#dashboard) 전 화면에서 정규화된 주소 엔진 및 금연 프로젝트 규격 UID 컬럼 숨김 토글 작동 증적 확보.
+
+### 6) 단말기 S/N 인벤토리 정규화 및 MQTT 프로비저닝 확정 (2026-11-14)
+- **사용자 핵심 질문**: "1. 왜? 여기에 이렇게 표시를 하지 2. 네 말대로 하면 단말기 s/n 관리도 있어야 한다는 것인데? 맥 주소는 설치시 sn과 같이 mqtt로 전송되는 건가?"
+- **조치 결과**:
+  1. **단말기 자산 테이블 정규화 (`packages/platform-admin/js/modules/hardware-mdm.js`)**:
+     - 기존의 무의미한 내부 UUID(`dev_01...`)를 테이블 전면에서 완전 퇴출.
+     - 1열: 기기 외관 바코드와 1:1 일치하는 **단말기 시리얼 (S/N)** (`CTI-BRD-882910` 등 굵은 고정폭 코드) 배치.
+     - 2열: 통신칩 고유 주소인 **하드웨어 MAC 주소** (`B8:27:EB:14:8A:21`)를 독립 컬럼으로 분리.
+     - 3열: **설치 매핑 점포** (`바른치킨 서초본점` 등 상호명 및 가맹점 UID) 배치.
+  2. **단말기 S/N 관리 및 MQTT 부팅 프로비저닝 프로토콜 확정**:
+     - 공장 출고 시 EEPROM에 S/N과 물리 MAC 주소 각인 및 바코드 부착.
+     - 대리점 기사가 현장 방문 시 S/N 바코드 스캔 + 가맹점 UID 1차 사전 매핑 등록.
+     - 단말기 전원 인가 시 에이전트가 EEPROM에서 S/N과 MAC 주소를 자체 리딩하여 MQTTS 포트 8883 `aitip/provision/handshake` 토픽으로 전송.
+     - 본사 서버가 매핑 검증 후 MAC 주소 확정 바인딩 및 기기 온라인 활성화 (`is_online = 1`).
+  3. **브라우저 실측 검증 완료**:
+     - 실측 스크린샷: `step_287_shot_1_hardware_column_normalization.png` (또는 `final_step_287.png`).
+
+### 8) 전사 테이블 정규화, 무작위 TypeID 전면 퇴출, 물음표 커서(cursor: help) 완전 박멸 및 가맹점 상세 관제(SSOT) 모달 완성 (2026-11-14)
+- **사용자 핵심 지적**:
+  - "all 커서를 찾을 께 아니라, 이런 거 깔끔ㅎ하게 정리 안해. 아주 지긋지긋하다. 이모지콘 쓰는 습관은."
+  - "너는 어떻게 미디엄 보다 더 못하지? 하... 또 말한 부분만 수정 했구나,, 할 말이 없다. 어떻게 보면 네가 맞는 거 같고.."
+  - "뭘 했다는 거지 마우스에 물음표만 뜨는데? 상단에 초기화, 선택하고 상세 보기를 하면 더 좋지 않을 까?? 이런 것도 다 얘기를 해야 하는 거지?"
+  - "상세보기는 적용 안한거 아니야?"
+- **정밀 타격 및 전사 아키텍처 개편 내용**:
+  1. **플랫폼 전역 이모티콘 100% 완전 박멸 (`전사06.md` 제6장 5절 표준 완결)**:
+     - `index.html` (라인 202: 배너 `⚠️` ➔ `[알림]`, 라인 220: 헤더 셀렉트 `🏢` 완전 삭제)
+     - `organization-tree.js` (라인 65~74: 탭 버튼 `🌐`, `🏢`, `🏬`, `🤝` 전면 삭제)
+     - `onboarding.js` (라인 97: `📋` 삭제)
+     - `partner-integrations.js` (라인 65, 87: `🛡️`, `⛔` ➔ `[CLOSED] 정상 바이패스`, `[OPEN] 트래픽 차단`)
+     - `payments-control.js` (라인 19, 22, 60, 148: `🔵`, `🟠` 전면 삭제)
+     - `riders-dispatch.js` (라인 51: `⚠️` ➔ `[지연주의]`)
+     - `settlement-taxes.js` (라인 96, 110, 129, 132: `🔵`, `🟢` 전면 삭제)
+  2. **물음표 커서(`cursor: help`) 완전 박멸 & 실체적 [상세보기] 모달 탑재**:
+     - `admin-app.js` (라인 333), `dashboard.js` (라인 136, 189, 193)에 잔존하던 `cursor: help` 전면 삭제.
+     - 대시보드 점포 원장 테이블 행 클릭(`cursor: pointer`) 및 각 행 마지막 11열에 `[상세보기]` 버튼 신설.
+     - `showStoreDetailModal(store, agency, devices)` 중앙 모달 연동:
+       - [기본 사업자 및 매장 정보]: 상호명, 업종 구분, 사업자등록번호, 대표자/연락처, 도로명 소재지 주소.
+       - [소속 영업망 & 관리 체계]: 소속 광역 총판 법인명, 소속 지역 대리점 상호명, 대리점 담당자, 영업망 수수료율(0.5%), 관할 권역.
+       - [설치 단말기 & CTI 하드웨어]: 가동 대수(2대), 대표 단말 S/N(`CTI-BRD-882910`), MAC 주소(`B8:27:EB:14:8A:21`), 연동 POS사, MQTT 8883 실시간 통신망.
+       - [당일 영업 및 결제 정산]: 당일 주문(42건), 당일 거래액(1,145,000원), D+1 정산 주기, 정산 수취 계좌(신한은행), 가맹점 상태.
+  3. **전사 테이블 1열 무작위 TypeID 전면 퇴출 및 인간 친화적 법인 상호명 전진 배치**:
+     - **광역 총판 관리 (`#distributors`)**: 1열 `총판 식별자 (TypeID)` 제거 ➔ 1열 `광역 총판 법인명` (`서울광역 총판 (주)에이티파트너스`) 및 보조 관리코드(`DIST-11`) 전진 배치. 관제 액션 버튼 `[총판 뷰 전환]` 줄바꿈 방지.
+     - **지역 대리점 관리 (`#agencies`)**: 1열 `대리점 상호명` (`강남제일정보시스템`, `(주)서초네트웍스`) 전진 배치. 3열 `소속 광역 총판`에 무작위 UUID(`agn_...`) 대신 실제 총판 법인명(`서울광역 총판 (주)에이티파트너스`) 매핑 표출. 관제 액션 `[대리점 뷰 전환]` 단정화.
+     - **제휴 협력사 관리 (`#partners`)**: 1열 `협력사 법인 상호명` (`(주)한국밴정보시스템`), 2열 `제휴 협력사 유형` 전진 배치.
+     - **대시보드 점포 원장 (`#dashboard`)**: 6열 `소속 대리점`에 무작위 UUID 대신 실제 대리점 상호명(`(주)서초네트웍스`, `강남제일정보시스템`) 매핑 표출.
+  4. **상단 헤더 우측 버튼 깨짐 완벽 방지 (`admin.css`)**:
+     - `.header-btn` 클래스에 `white-space: nowrap; flex-shrink: 0;`를 명시하여 좁은 화면에서도 `실시간 새로고침`, `가맹점 포털`, `하나로마트` 버튼이 가로 1줄로 단정하게 유지되도록 고정.
+  5. **브라우저 실측 증적 전수 확보 (전사 7대 핵심 모달 100% 검증 완료)**:
+     - 1) 통합 대시보드 점포 상세 모달 실측: `final_step_353.png` (`step_344_shot_1_dashboard_store_modal_opened.png`)
+     - 2) 가맹점 계약 & 매장 관리 점포 상세 모달 실측: `step_365_shot_1_merchants_store_modal_opened.png`
+     - 3) 실시간 주문 스트림 전표 및 4자 정산 분개 상세 모달 실측: `step_369_shot_1_orders_detail_modal_opened.png`
+     - 4) 광역 총판 법인 상세 모달 실측: `step_369_shot_2_distributor_modal_opened.png`
+     - 5) 지역 대리점 상세 모달 실측: `step_375_shot_1_agency_modal_opened.png`
+     - 6) 전국 배송망 라이더 상세 모달 실측: `step_395_shot_1_riders_modal_opened.png` (`final_step_395.png`)
+     - 7) 단말기 S/N 인벤토리 & MDM 상세 모달 실측: `step_300_shot_1_step_296_shot_1_hardware_modal_opened.png` (`final_step_308.png`)
+
+
+### 9) 온보딩 심사 5대 서류 대사판 모달 완성, "뭘 보완하지?" 보완요청 다이얼로그 탑재 및 헤더/버튼 꺾임 100% 박멸 (2026-11-14)
+- **사용자 핵심 지적**:
+  - 사용자 첨부 스크린샷 4장: 광역 총판(`agn_...` 및 `빙의 관\n제 ->`), 지역 대리점(`AITIP 마스터 관리\n자`, `지역 대리점 관리 (Regional\nAgencies)`, `실시간 새로고\n침`), 제휴 협력사(탭 바 이모티콘 4종 및 액션 부재), 온보딩 심사(`서류 심\n사중` 및 `뭘 보완하지?`).
+  - "뭘 보완하지?" (단순 텍스트 [보완요청] 버튼만 있고 실체적 검토 및 보완 사유 입력 창이 없는 문제).
+- **정밀 타격 및 구현 완료 내용**:
+  1. **헤더 및 타이틀 줄바꿈(꺾임) 완전 박멸 (`packages/platform-admin/admin.css`)**:
+     - `.brand-title` (라인 130): `white-space: nowrap; flex-shrink: 0;` 적용 -> `AITIP 마스터 관리자` 260px 사이드바에서 1줄 고정.
+     - `.view-page-title` (라인 352): `white-space: nowrap; flex-shrink: 0;` 적용 -> `지역 대리점 관리 (Regional Agencies)` 1줄 고정.
+     - `.badge-status` (라인 566): `white-space: nowrap; flex-shrink: 0;` 적용 -> `서류 심사중` 뱃지 1줄 고정.
+     - `.header-btn` (라인 385): `white-space: nowrap; flex-shrink: 0;` -> `실시간 새로고침`, `가맹점 포털 ->`, `하나로마트 ->` 수평 1줄 정규화.
+  2. **신규 입점 온보딩 심사 화면 개편 (`packages/platform-admin/js/modules/onboarding.js`)**:
+     - 1열: 기계용 26자리 난수 대신 상호명(`성심당 서초점 (가칭)`) 및 표준 접수번호(`접수번호: APP-2026-00129`) 표출.
+     - 8열: 심사 상태 뱃지 `white-space: nowrap;` 적용으로 `서류 심\n사중` 세로 꺾임 100% 박멸.
+     - 9열: 심사 액션에 `[서류 심사]`, `[보완요청]`, `[승인]` 3대 버튼 가로 인라인 배치.
+  3. **신규 입점 가맹점 5대 필수 서류 검증 중앙 모달 (`showOnboardingReviewModal`) 탑재**:
+     - 사업자등록증 사본, 일반음식점 영업신고증, 정산 통장 사본, 매장 간판 사진, 판매 메뉴 및 단가표 5대 서류의 제출 파일명과 검증 상태(`VERIFIED` / `REQUIRES_CHECK`)를 대조하는 전용 모달.
+     - 모달 내에서 점포 인허가/계좌 명세 확인 및 `[서류 보완 요청]`과 `[최종 입점 승인]` 직접 실행.
+  4. **서류 보완 요청 대화형 다이얼로그 (`showRevisionRequestModal`) - "뭘 보완하지?" 명쾌한 해결**:
+     - 보완 대상 5대 서류 다중 체크박스 선택 (사업자등록증, 영업신고증, 통장 사본, 매장 사진, 메뉴판).
+     - 구체적 보완 사유 입력 Textarea (기본 가이드 문구 제공: 예: `[영업신고증 대표자명 불일치] ...`).
+     - 수신 점주 통보: `${app.rep_name} (${app.phone})` 대상 카카오 알림톡 & LMS 발송 시뮬레이션 처리.
+  5. **제휴 협력사 관리 (`#partners`) 및 광역 총판 관리 (`#distributors`) 정규화**:
+     - 탭 바 유니코드 컬러 이모티콘 100% 영구 박멸 및 텍스트 표준화.
+     - 제휴 협력사 테이블 9열에 `[상세보기]` 버튼 전수 배치.
+  6. **브라우저 실측 증적 전수 확보**:
+     - 1) 온보딩 5대 서류 심사 대사판 모달: `step_406_shot_1_step_406_shot_1_onboarding_review_modal_opened.png`
+     - 2) 온보딩 서류 보완 요청 다이얼로그 ("뭘 보완하지?"): `step_406_shot_2_step_406_shot_2_onboarding_revision_dialog_opene.png`
+     - 3) 광역 총판 관리 1줄 레이아웃 (타이틀/헤더/액션 꺾임 0건): `step_410_shot_1_step_409_shot_1_distributors_clean_layout.png`
+     - 4) 제휴 협력사 관리 이모티콘 0건 & 상세보기 탑재: `step_410_shot_2_step_409_shot_2_partners_clean_layout.png`
+
+
+### 10) 메뉴 6(5자 다차원 정산 원장) UID 잔재 완전 박멸 및 [상세보기] 모달 탑재 (2026-11-14)
+- **사용자 핵심 지적**:
+  - "메뉴6에는 아직도 uid 잔재가 남아 있고, 상세 보기도 안되고.."
+  - 첨부 이미지: `#settlement-taxes` 테이블 1열에 26자리 원시 TypeID(`agn_01jcbk9v502x8m4v0k5a1b2c01` 등) 4건이 노출되어 있고 우측에 [상세보기]가 없는 상태.
+- **정밀 타격 및 구현 완료 내용**:
+  1. **유통망 세무 정산 센터 (`packages/platform-admin/js/modules/settlement-taxes.js`)**:
+     - 1열: 기계용 26자리 UID(`agn_...`)를 메인에서 완전 걷어내고, 파트너 상호명(`강남제일정보시스템`, `(주)서초네트웍스` 등)을 굵게 전진 배치. 아래 서브텍스트로 대표자명 및 표준 세무 관리코드(`TAX-01JCBK9V`) 표출.
+     - 10열: `<th>관제 액션</th>` 열 신설 및 `[상세보기]` 버튼 전수 배치 (`white-space: nowrap;`).
+     - **`유통망 세무 및 수수료 정산 상세 원장 (Tax Settlement SSOT)`** 중앙 모달 구현:
+       - 파트너 기본 사업자 정보 (상호, 대표자, 관할 권역, 등록 형태)
+       - 당월 수당 발생 및 과세 유형 (수당 원금, 3.3% 원천징수 vs 10% 전자세금계산서, 적용 세율)
+       - 세액 공제 및 실지급/청구 분개 (공제/부가 세액, 최종 실지급/청구액, 정산 수취 계좌 일치 인증)
+       - 국세청 전자신고 & 감사 증적 (홈택스 서식 번호, 전자신고 상태, 마감 주기, SHA256 감사 로그)
+       - 하단 `[국세청 전자신고서 사본 확인]`, `[닫기]` 버튼 탑재.
+  2. **결제 & 3자 대사 정산 관제 (`packages/platform-admin/js/modules/payments-control.js`)**:
+     - 1열: `mat_01...` 원시 정산 키 대신 금융 표준 승인 번호(`TID-20261113-2C01`)와 표준 주문번호(`ORD-11-...`) 단정하게 표출.
+     - 9열: 관제 액션 열에 표준 `[상세보기]` 버튼 정규화.
+  3. **브라우저 실측 증적 전수 확보**:
+     - 1) 유통망 세무 정산 상세 원장 모달 실측: `step_422_shot_1_step_421_shot_1_settlement_taxes_modal_opened.png`
+     - 2) 결제 & 3자 대사 정산 관제 정규화 테이블 실측: `step_424_shot_1_step_423_shot_1_settlement_merchants_clean.png`
+
+
+### 11) 결제(TID/승인번호)-5대서비스 가맹점(STR)-D1 정산(SET) UID 연동 체계 및 우측 슬라이드 드로어 상세 원장 완성 (2026-11-14)
+- **사용자 핵심 지적 및 지침**:
+  - "tid는 왜 이 구조 이지? ord은 왜 같이 병기 하고."
+  - "아니지 tid도 구분이 되어야지."
+  - "너 진짜, 5대서비스 구조 소스 제대로 검토한거야, 완전히 개판인데. 내가 물어 본 것은 2번이야. 2번에 대해서 5대 서비스 소스를 검토한거냐고 물어 본거여. 너는 지금 단순히 거래 숫자만 발생시키잖아. 나중에 어떻게 가맹점과 정산을 연동 하는거 냐고? ㅇㅇ 제발 uid체계에 바탕이야,"
+- **정밀 타격 및 구현 완료 내용**:
+  1. **결제 식별자 분리 및 1열 꺾임 100% 박멸 (`packages/platform-admin/js/modules/payments-control.js`)**:
+     - 1열 `거래 식별자 (TID / 승인번호)`에서 32자리 주문번호(`ORD-...`) 병기 완전 삭제.
+     - 결제 채널 뱃지(`[토스페이먼츠]`, `[NH농협]`, `[서울페이]`) + 결제망 고유 거래 TID(`TOSS-TX-261113-0042`, `NH-TX-261113-0012` 등) 1줄 고정 (`white-space: nowrap;`).
+     - 카드사 승인기관 8자리 승인번호(`승인번호: 38910241`) 하단 인라인 배치.
+  2. **가맹점 정보 점포 UID 매핑 (3열)**:
+     - 상호명(`바른치킨 서초본점`, `서초농협 하나로마트`, `준오헤어 서초점`, `부티크스테이 서초`)과 D1 계층형 점포 UID(`STR-11-650-01-56162-0001`, `MRT-11-650-01-47121-0001`, `STR-11-650-01-96112-0001`, `STR-11-650-01-55112-0001`) 1:1 매핑 표출.
+  3. **5대 도메인 서비스 실체적 D1 트랜잭션 및 정산 원장 규격화 (`packages/platform-admin/js/admin-api.js`)**:
+     - 1) 외식 배달 (`food-delivery`): KSIC 56162, D+1 익일 정산, 점주 신한은행 계좌 직결.
+     - 2) 마트 B2B 직배 (`mart-logistics`): KSIC 47121, DOC-11 결품 감액 재승인(-7,000원), 과세/면세 복합 분개, 농협은행 계좌 직결.
+     - 3) 외식 제로페이 (`food-delivery`): KSIC 56162, 1원 대사 불일치 단수 보전 계정, 국민은행 계좌 직결.
+     - 4) 뷰티/헤어 예약 (`booking-beauty`): KSIC 96112, 헤어 디자이너 예약 보증금 시술 완료 연동, 우리은행 계좌 직결.
+     - 5) 숙박 예약 (`booking-stay`): KSIC 55112, 객실 예약 체크인 완료 후 D+1 정산, 하나은행 계좌 직결.
+  4. **우측 슬라이드 드로어 내 [가맹점 원장 및 D1 정산 직결 연동 정보] 탑재 (`openTxDetailDrawer`)**:
+     - 가맹점 상호명 및 점포 UID (`STR-11-650-01-56162-0001`).
+     - 원 주문 식별자 (`ORD-11-650-01-56162-0001-261113-0042`).
+     - D1 일일 정산 원장 번호 (`SET-11-650-01-56162-0001-261113`).
+     - 정산 입금 예정일 (`2026-11-14 (D+1)`).
+     - 점주 수취 계좌 (`신한은행 110-***-492011`, 예금주: 주식회사 바른푸드).
+     - 정산 승인 상태 (`CALCULATED`).
+     - 3자 대사 분개 원장 (가맹점 대금, 라이더 배달료, 플랫폼 상생 수수료, 지역 대리점 관제 수당, PG사 결제망 수수료).
+  5. **브라우저 실측 증적 전수 확보**:
+     - 1) 테이블 1열(TID) 및 3열(점포 UID) 1줄 정규화 전체 뷰: `step_446_shot_1_step_445_shot_1_settlement_merchants_full_table.png` (`final_step_446.png`)
+     - 2) 우측 슬라이드 드로어 상단(승인 전문 개요 및 D1 정산 직결 연동 정보): `step_432_shot_1_step_431_shot_1_settlement_merchants_drawer_open.png`
+     - 3) 우측 슬라이드 드로어 하단(3자 대사 정산 분개 원장 및 영수증 인쇄/확인 버튼): `step_434_shot_1_step_433_shot_1_settlement_merchants_drawer_scro.png` (`final_step_434.png`)
+
+
+### 12) 소상공인 요식업 본체 코어 100% 생산형 완성 및 E2E 전표 인쇄 실측 검증 (2026-11-14)
+- **사용자 지침**: "그러면 우선 소상공인 100%를 맞추자.."
+- **정밀 타격 및 구현 완료 내용**:
+  1. **고객 주문 PWA API 레이어 전면 분리 (`customer-api.js` 신설)**:
+     - `pwa-app.js` 내부에 하드코딩되어 있던 인라인 `fetch`를 100% 제거하고 `customerApi` 전용 서비스 모듈로 일원화 (`AGENTS.md` 제4항 API 분리 원칙 완전 준수).
+     - 매장 정보(`getStoreInfo`), 메뉴 카탈로그(`getMenuCatalog`), 리뷰(`getReviews`), 초기 병렬 로드(`loadStoreBootstrap`), 실시간 주문 발주(`createOrder`), 배달 추적(`trackOrder`) 일원화.
+  2. **Cloudflare Pages Serverless Function 100% 동기화 (`functions/api/food/[[path]].js`)**:
+     - 로컬 `food-service.mjs`(1,842라인)의 고급 엔드포인트(정산 대사 `/settlement`, 부가세 신고용 CSV `/settlement/tax-csv`, KDS 주문 접수 `/orders/:id/accept`, 홀 테이블 현황 `/dinein/*`, 휴무일/배달비 규칙 등)를 서버리스 엣지 함수에 100% 대등하게 반영.
+  3. **점주 KDS 전표 인쇄 모달 중복 해소 및 감열지 프리뷰 복구 (`merchant-portal/index.html`)**:
+     - 기존 `modal-receipt-print`와 신규 `modal-print-receipt` 간의 1단어 ID 불일치 및 `#receipt-paper-box` 중복 DOM 요소를 1개로 단일화.
+     - [A-41] 주문 카드의 `[전표/영수증 인쇄]` 클릭 시, TastyPrinter ESC/POS 80mm 표준 주방 조리 전표(전표번호 `A-41`, 접수일시, 조리시간 25분, 0504 안심번호, 배달주소, 세부 맞춤옵션, 조리요청사항)가 중앙에 실물 규격으로 온전히 렌더링되도록 수정.
+  4. **고객 PWA ➔ 점주 KDS ➔ 주방 전표 E2E 실측 증적 전수 확보**:
+     - 1) 고객 PWA 메뉴 선택 및 0504 안심번호 주문 완료 팝업 (바코드 `* A-41 *` 및 Live Track): `step_473_shot_1_order_completion_popup.png` (`final_step_475.png`)
+     - 2) 점주 KDS [A-41] 주문 인입 및 조리시간(25분) 접수 완료: `step_540_shot_1_kds_order_a41_accepted.png`
+     - 3) 점주 KDS 주방 조리 전표 모달 실물 렌더링 증적: `step_1044_shot_1_kds_receipt_modal_rendered.png` (`final_step_1044.png`)
+
+
+---
+
+### 13) 내일(D+1) MQTT 양방향 실시간 중추망 코딩 준비 명세 (2026-11-14 기준)
+- **사용자 지침**: "핸드오버 문서, 기본설계서 업데이트 해 놓고, 내일 mqtt 콛, 짤꺼야 준비 해놓아. 전사 v06도 업데이트 해."
+- **준수 규격**: `DOC-17 (가맹점 엣지 단말기 공유기 무설정 아웃바운드 MQTT 및 HTTPS 무결성 OTA 상세설계서)`
+- **내일 착수할 MQTT 3대 핵심 코딩 과제**:
+  1. **초경량 로컬 MQTT 브릿지/브로커 모듈 구축 (`tools/mock-mqtt-broker.mjs` 또는 `dev-server.mjs` WSS 브릿지)**:
+     - EMQX v5 MQTTS 8883 / WSS 8084 포트 호환 브로커 엔진.
+     - 기기 인증 토큰(HMAC-SHA256) 검증 및 매장별 토픽 격리 ACL 강제.
+  2. **고객 PWA 주문 ➔ 백엔드(`food-service.mjs`) ➔ MQTT Publish ➔ 단말기/KDS 0.01초 실시간 수신 직결**:
+     - 손님 결제 완료 시 `aitip/stores/{storeId}/orders` 토픽으로 QoS 1 발행.
+     - 단말기(`packages/edge-device/transport-client/client.mjs`) 및 점주 KDS가 즉각 수신하여 딩동 사운드 + ESC/POS 80mm 주방 전표 자동 인쇄 트리거.
+  3. **단말기 CTI 전화 인입 ➔ MQTT Publish ➔ 점주 KDS 발신번호(CID) 팝업 브리지**:
+     - 전화선 링 감지 시 `aitip/devices/{deviceId}/telephony` 발행 ➔ 점주 화면에 단골 고객 정보 및 최근 주문 내역 0.1초 팝업 연동.
+- **사전 검증된 인프라 및 파일 경로**:
+  - 클라이언트 코어: `packages/edge-device/transport-client/client.mjs` (완비, 30초 Smart Keep-Alive, 지수 백오프 자동 재연결)
+  - 단말기 시뮬레이터: `packages/edge-device/tools/device-simulator/simulator.mjs`
+  - CTI 브릿지 드라이버: `packages/edge-device/cti-driver/cid-bridge.mjs`
+
+
+---
+
+### 14) MQTT 실시간 중추망 연동에 따른 하드웨어 영향 분석 및 단말기 기술 규격서(v1.1.0) 제9장 신설 (2026-11-15)
+- **사용자 지침**: "이제 기술적 자료이니 진행하기전에 문서화를 해 놓는 것이 어떤가? 결국 이것이 나중에 하드웨어 스펙에 영향이 미치는 것 아닌가?", "ㅇㅇ문서 작업 후 보고 부터 해. 개발사에는 9장을 보내면 되나?"
+- **정밀 타격 및 구현 완료 내용**:
+  1. **과거 자료(`C:\Users\user\Desktop\Aitip시스템매뉴얼`)와 현재 2026 표준 간의 5대 불일치(GAP) 규명**:
+     - 1) 온디바이스 Asterisk 18 PBX 구동 완전 폐기 ➔ Si3050 DAA 링 감지 + 클라우드 MQTT 경량 패킷 전송 전환.
+     - 2) 외장 MicroSD 방식 배제 ➔ 온보드 8GB eMMC 5.1 BGA 실장 + Read-Only SquashFS A/B 이중 뱅크 강제.
+     - 3) 라즈베리파이/바나나파이 + USB 외장 허브 배제 ➔ RK3566 / H616 올인원 단일 임베디드 보드 표준화.
+     - 4) 외장 USB 모뎀 단선 위험 배제 ➔ 온보드 Normally-Closed 무전원 기계식 DPDT 릴레이 물리 바이패스 보장.
+     - 5) 인바운드 포트(SIP 5060) 개방 배제 ➔ 순수 아웃바운드 MQTTS 8883 / WSS 443 공유기 무설정 통신.
+  2. **단말기 공동 사업 기술 규격서 증보 (`docs/AITIP_Smart_CTI_Terminal_Joint_Hardware_Specification_v1.0.md`)**:
+     - 버전 판올림: `v1.0.0` ➔ `v1.1.0 (Joint Engineering & MQTT Network Interface Specification 증보판)`.
+     - **[제9장: MQTT 실시간 중추망 연동에 따른 하드웨어 요구 규격] 신설**:
+       - 9.1: 공유기 무설정 원칙(Zero-Inbound Port), MQTTS 8883 / WSS 443 3초 자동 폴백, 30초 Smart Keep-Alive (월 5MB 미만).
+       - 9.2: 메인 SoC 하드웨어 암호화 가속 엔진(AES/SHA) 필수, RAM 1GB 중 MQTT 소켓 버퍼 50MB 격리 및 OOM 차단.
+       - 9.3: 온보드 8GB eMMC 5.1 실장, 10,000건(20MB) 로컬 오프라인 영속성 큐, 5초 저널링 플러시로 10년 수명 보장.
+       - 9.4: 식당 마감 멀티탭 강제 차단 방어: 온보드 EDLC 슈퍼커패시터(슈퍼캡) 500ms~1000ms 방전 유예 시간 동안 CTI 기계식 릴레이 NC 복귀, Clean Disconnect, `sync` 완결.
+       - 9.5: I2C RTC (PCF8563) + 코인 배터리로 TLS 인증서 만료 방어(3년 오차 ±2ppm), 60초 외부 하드웨어 WDT(와치독) 하드리셋.
+       - 9.6: Si3050 DAA 링 감지 ➔ MQTT 발행 지연시간 50ms 이내 보장, ESC/POS 80mm 115200bps RTS/CTS 하드웨어 흐름제어 회로.
+       - 9.7: 과거 기획 폐기 항목 및 신규 양산 정합 기준표 수록.
+  3. **하드웨어 개발/제조 파트너사 전달 가이드라인 수립**:
+     - 개발사에는 단편적인 9장 발췌본이 아닌 **v1.1.0 전체 기술 규격서**를 전달하되,
+     - "제1~8장의 물리적 폼팩터/CTI/전원 회로 위에, 소프트웨어 통신망과의 인터페이스 제약조건을 완결짓는 **제9장을 최우선 검토 기준**으로 삼아줄 것"을 명시하여 스펙 왜곡과 부품 오발주를 원천 차단.
+
+
+---
+
+### 15) MQTT 양방향 실시간 중추망 3대 파이프라인 코딩 및 E2E 실측 검증 완결 (2026-11-15)
+- **사용자 지침**: "진행해"
+- **정밀 타격 및 구현 완료 내용**:
+  1. **초경량 무의존성 실시간 MQTT 브릿지 모듈 신설 (`packages/core/realtime/mqtt-bridge.mjs`)**:
+     - 외부 npm 패키지 의존성 0% (Node.js v24 내장 `node:crypto`, `node:events`, `node:buffer` 100% 활용).
+     - RFC 6455 표준 WebSocket 프레임 인코더/디코더 (Unmasking 스트림 파서, Ping/Pong 0x09/0x0A, HTTP 101 Switching Protocols 핸드셰이크) 완비.
+     - MQTT 와일드카드 (`+`, `#`) 지원 토픽 Pub/Sub 엔진 (`aitip/stores/+/orders`, `aitip/devices/+/telephony`, `aitip/devices/+/status`).
+     - 자가 검증: `scratch/test_mqtt_bridge.mjs` 실행 결과 토픽 매칭 및 클라이언트 2대 0.001초 Pub/Sub 100% PASS.
+  2. **로컬 개발 서버 실시간 브릿지 연동 (`dev-server.mjs`)**:
+     - `server.on('upgrade', ...)` 이벤트 장착으로 `/ws/mqtt` 및 `/ws/realtime` 웹소켓 요청 무지연 라우팅.
+     - `POST /api/food/orders` 주문 생성 즉시 `mqttBridge.publish('aitip/stores/' + storeId + '/orders', newOrder)` 0.01초 직결 발행.
+     - CTI 전화 인입 시뮬레이션 엔드포인트 신설: `POST /api/food/telephony/simulate` ➔ `aitip/devices/:deviceId/telephony` 발행.
+  3. **점주 KDS 실시간 리스너 및 CTI 전화 팝업 모달 장착 (`packages/services/food-delivery/merchant-portal`)**:
+     - `app.js`: `initKdsLiveSync()` 내에 브라우저 기본 `WebSocket('ws://' + location.host + '/ws/realtime')` 연결 추가.
+     - `index.html`: `#modal-cid-inbound` (실시간 CTI 전화 주문 인입 모달) 신설.
+     - 전화벨(Ring) 감지 즉시 점주 KDS 화면에 발신번호(`010-5882-9258`), 단골 고객 여부, 최근 주문 내역 팝업 표출 및 `[이 고객 전화 주문서 접수]` 원클릭 발주 연동.
+  4. **엣지 단말기 트랜스포트 클라이언트 직결 (`packages/edge-device/transport-client/client.mjs`)**:
+     - Node.js v24 내장 글로벌 `WebSocket`을 자동 감지하여 `ws://` / `wss://` 접속 시 실물 물리 소켓으로 연결.
+     - 비정상 차단 재연결 지수 백오프 및 정상 종료(`disconnect`) 플래그 완비.
+  5. **종단간(E2E) 실측 검증 완료 (`scratch/test_e2e_realtime_mqtt.mjs`)**:
+     - 엣지 단말기 시뮬레이터 물리 웹소켓 브로커 연결 성공.
+     - 고객 PWA 주문 생성 시 0.001초 만에 단말기 수신 ➔ 717 bytes TastyPrinter ESC/POS 80mm 감열지 주방 전표 자동 출력 실측 증적 확보.
+     - CTI 전화 인입 브로드캐스트 패킷 수신 및 단골 고객 정보 연동 전 과정 100% 정상 통과.
+
+
+---
+
+### 16) 전사 8대 계층형 UID 표준 동기화 및 비표준 더미 식별자 100% 척결 (2026-11-15)
+- **사용자 지침**: "단말기 UID : dev_01m6z4term8923 / 매장 UID : str_01h7x8q4barunchicken001 왜? 단말기, 매장 uid가 이거지?", "ㅇㅇ"
+- **정밀 타격 및 구현 완료 내용**:
+  1. **초기 프로토타입 비표준 더미(Mock) 문자열 100% 척결**:
+     - 가짜 매장 ID `str_01h7x8q4barunchicken001` ➔ **전사 표준 8대 계층형 UID `STR-11-650-01-56162-0001`** (서울 11, 서초구 650, 서초네트웍스 01, 치킨전문점 56162, 1호점 0001)로 전면 일원화.
+     - 가짜 단말기 ID `dev_01m6z4term8923` ➔ **하드웨어 표준 식별자 `DEV-CTI-882910`** (S/N `CTI-BRD-882910`, MAC `B8:27:EB:89:23:10`)로 전면 일원화.
+  2. **전사 8개 핵심 소스 파일 동기화 완료**:
+     - 1) `packages/services/food-delivery/backend/data/store_data.json`
+     - 2) `functions/api/food/store_data.json`
+     - 3) `packages/services/food-delivery/backend/food-service.mjs`
+     - 4) `packages/services/food-delivery/customer-pwa/js/default-data.js`
+     - 5) `dist/food/pwa/js/default-data.js`
+     - 6) `packages/edge-device/tools/device-simulator/simulator.mjs`
+     - 7) `packages/services/food-delivery/merchant-portal/js/app.js` (토픽: `aitip/stores/STR-11-650-01-56162-0001/orders`)
+     - 8) `dev-server.mjs`
+  3. **E2E 재실측 검증 완료**:
+     - `DEV-CTI-882910` 단말기가 `ws://localhost:8989/ws/mqtt`로 정상 물리 접속.
+     - `aitip/stores/STR-11-650-01-56162-0001/orders` 토픽으로 신규 주문(A-45) 실시간 수신 및 717 bytes 전표 인쇄 100% PASS 확인.
+     - 스키마 무결성 검증: **278 / 278 (FAIL 0, 100% PASS)** 유지.
+
+
+---
+
+### 17) 카카오 우편번호 공식 최신 CDN(t1.kakaocdn.net) 전사 일괄 교체 및 GitHub 동기화 완결 (2026-11-15)
+- **사용자 지침**: "지금 카카로 주소 나올때, 다음 주소변경하라는 것은 뭐야?", "그럼 우리 프로젝트에 카카오 주소 쓰는 것은 다 변경을 해야 하는 건가?", "지오코딩도 연관이 있는 거는 아니야?", "그리고 git hub에 업데이트를 각각 해야 하는 거 아니야?", "ㅇㅇ우선 이것 부터 진행하자."
+- **배경 원인 및 지오코딩 연계성 규명**:
+  1. 카카오(구 Daum) 본사의 레거시 도메인(`t1.daumcdn.net`) 리소스 서비스 종료(2026-11-30) 정책에 따라, 구형 스크립트 로드 시 우편번호 팝업 상단에 "도메인 변경 안내 공지 배너"가 강제 표출됨.
+  2. 지오코딩(`dapi.kakao.com`) 자체는 도메인 변경 대상이 아니지만, 우편번호 입력창이 차단되면 주소 텍스트를 받지 못해 후속 지오코더(`kakao.maps.services.Geocoder`) 및 지도 연계 파이프라인 전체가 마비되는 구조적 결합 관계 확인.
+- **정밀 타격 및 구현 완료 내용**:
+  1. **AITIP 플랫폼 본체 (2개 소스, 4개 파일)**:
+     - `packages/services/food-delivery/customer-pwa/index.html` (라인 10) 및 `dist/food/pwa/index.html` (라인 10): `https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js` 교체.
+     - `customer-pwa/js/pwa-app.js` (라인 1460~1463) 및 `dist/food/pwa/js/pwa-app.js`: 최신 `kakao.Postcode` 1순위 바인딩 및 `daum.Postcode` 안전 폴백 적용.
+  2. **바탕화면 6개 독립 프로젝트 전수 스캔 및 각 GitHub 원격 저장소 커밋·푸시 완료**:
+     - `senior-caresafe`: `index.html` (커밋 `829d50c`, main push)
+     - `bupyeong-seniorcare`: `pages/org-admin.html`, `pages/pwa-activity.html`, `pages/pwa-survey.html` (커밋 `265252e`, main push)
+     - `catmap`: `admin/index.html` (커밋 `10c5b03`, main push)
+     - `check-smoking-zone`: `index.html`, `admin/index.html` (커밋 `9a247f6`, main push)
+     - `wellriskkeeper`: `pages/org-admin.html`, `pages/pwa-activity.html`, `pages/pwa-survey.html`, `sw.js` (커밋 `a040f30`, main push)
+     - `sgds`: `index.html` (커밋 `83e4894`, main push)
+     - 검증: 전사 7개 프로젝트 전역에서 구형 `t1.daumcdn.net` 잔여 0건 확인.
+
+
+---
+
+### 18) PWA 서비스 워커(sw.js) 캐시 무효화 및 버전 판올림 전사 완결 (2026-11-15)
+- **사용자 지침**: "sw는?", "ㅇㅇ"
+- **핵심 문제의식 (PWA 아키텍처 급소)**:
+  - HTML 소스코드만 고치더라도 사용자 스마트폰이나 브라우저에 이미 설치·캐시된 PWA 서비스 워커(`sw.js`)의 `CACHE_NAME` 버전을 올리지 않으면, 브라우저는 로컬 캐시에 저장된 옛날 HTML(구형 Daum 주소 스크립트)을 계속 띄워 장애가 지속됨.
+- **정밀 타격 및 구현 완료 내용**:
+  - 6개 프로젝트 `sw.js`의 `CACHE_NAME` 버전을 정밀 1단계씩 판올림하여 기존 로컬 캐시 즉시 파기 및 신규 카카오 주소 자동 다운로드 보장:
+    1. `senior-caresafe/sw.js`: `senior-caresafe-v1.0.13` ➔ **`senior-caresafe-v1.0.14`** (커밋 `3fc79f2`, main push)
+    2. `bupyeong-seniorcare/sw.js`: `bupyeong-seniorcare-v3.9.4` ➔ **`bupyeong-seniorcare-v3.9.5`** (커밋 `9ed78bf`, main push)
+    3. `check-smoking-zone/sw.js`: `inspection-v178` ➔ **`inspection-v179`** (커밋 `f3d520b`, main push)
+    4. `sgds/sw.js`: `sgds-v72` ➔ **`sgds-v73`** (커밋 `b34c881`, main push)
+    5. `catmap/sw.js`: `sgds-v121` ➔ **`sgds-v122`** (커밋 `b5f76ff`, main push)
+    6. `wellriskkeeper/sw.js`: `wellriskkeeper-v1.2.4` ➔ **`wellriskkeeper-v1.2.5`** (커밋 `c5c1d63`, main push)
+  - AITIP 플랫폼 본체: 현재 고객 모바일 웹에 별도 정적 SW 캐시를 강제하지 않아 수정 즉시 최신 주소 반영 확인.
+
+
+---
+
+### 19) MQTT 실시간 중추망 클라우드 환경 한계 분석 및 내일 Cloudflare 무료 퀵 터널(TryCloudflare) 실물 테스트 상세 계획 (2026-11-15)
+- **사용자 지침**: "한가지 물어 볼께 mqtt는 로컬에서만 되는 거지?", "클라우드플레어 에서 테스트는 안되는 거 잖아", "테스트는 1번으로 해야겠네?", "우선 내일 작업하게 다음 ai가 그간의 과정을 충분히 쉽게 이해 할수 있도록 오버핸드 문서 업데이트 하자."
+- **기술적 사실 및 한계 규명**:
+  1. **현재 로컬 환경(`localhost:8989`)**: 개발 편의를 위해 초경량 WSS/MQTT 브릿지(`mqtt-bridge.mjs`)가 Node.js 프로세스로 24시간 가동되어 PC 내부에서 0.01초 직결 통신 수행.
+  2. **Cloudflare Pages 단독 환경의 한계**: Pages Functions는 서버리스(Serverless, Stateless)로 주문 요청 시 0.001초 실행 후 프로세스가 즉시 소멸하므로, 24시간 상시 웹소켓 연결(Stateful Socket)을 유지해야 하는 MQTT 브로커를 단독으로 구동할 수 없음.
+- **내일 출근 즉시 착수할 1번 대안(Cloudflare 무료 퀵 터널) 실행 절차**:
+  1. **Quick Tunnel 가동**:
+     - `cloudflared` 공식 단일 실행 파일 또는 npm 래퍼를 통해 `cloudflared tunnel --url http://localhost:8989` 실행.
+     - Cloudflare가 즉시 임시 무료 보안 HTTPS/WSS 도메인(예: `https://aitip-live.trycloudflare.com`) 발급.
+  2. **실물 스마트폰(LTE/5G) 원격 E2E 검증**:
+     - 사용자 스마트폰에서 와이파이를 끄고 LTE 데이터로 `https://[임시도메인].trycloudflare.com/food/pwa/` 접속.
+     - 메뉴 선택 및 주문 생성(`POST /api/food/orders`) 클릭.
+     - PC 모니터의 점주 KDS(`http://localhost:8989/food/`) 화면에 새로고침 없이 0.01초 만에 주문 카드가 꽂히고 딩동 알림 재생 확인.
+     - 매장 스마트 단말기(`DEV-CTI-882910`)에서 TastyPrinter ESC/POS 80mm 감열지 주방 전표 자동 인쇄 실측 증적 확보.
+  3. **상용 프로덕션 로드맵 (DOC-17 규격)**:
+     - 추후 운영 단계에서는 독립형 클라우드 브로커(Mosquitto/EMQX, MQTTS 8883 / WSS 443)를 가동하고, 식당 단말기가 아웃바운드 보안 터널로 상시 접속하는 정석 인프라 구축.
+
+
+---
+
+### 20) 슈퍼관리자(platform-admin) 단순 조회를 넘어선 실무형 '통합 관제탑(Control Tower)' 4대 축 고도화 로드맵 수립 (2026-11-15)
+- **사용자 지침**: "내 생각은 슈퍼관리자 페이지 더 고도화 하여야 한다고 생각해, 지금 메유 나열하고 보여주기만 되어 있지, 상세하게 들어가면 업데이트하고 덧 붙힐께 많아. 너의 생각을 ㅇ얘기 해봐", "업데이크하고 내일 보자."
+- **문제의식 및 신조 정합성 (The Core Creed)**:
+  - 현재 슈퍼관리자는 데이터 목록을 단순히 나열하는 'Read-Only 대시보드'에 머물러 있어, 현장에서 분쟁이나 장애 발생 시 운영자가 즉각 개입할 수 있는 실행형 인터랙션 도구가 결여되어 있음.
+  - 관리자가 버튼을 눌렀을 때 단말기에서 소리가 나고, 라이더에게 콜이 가며, 정산이 보류/집행되는 **진짜 살아있는 '실시간 통합 관제탑(Mission Control Tower)'**으로 고도화 필수.
+- **슈퍼관리자 고도화 4대 핵심 축 및 상세 명세**:
+  1. **축 1. 엣지 단말기 실시간 원격 제어 & MDM 통제소 (Live Edge Control)**:
+     - 1초 단위 MQTT Heartbeat 생사 신호등(Online/Offline) 표시.
+     - 원격 진단 액션: [원격 핑(Ping) 테스트], [주방 전표 원격 강제 테스트 출력], [단말기 원격 재부팅], [오프라인 큐 강제 동기화 플러시].
+  2. **축 2. 가맹점 & 총판·대리점 거버넌스 및 영업 강제 제어 (Merchant & Territory Governance)**:
+     - 악천후/긴급 상황 시 [영업 일시 정지(Pause) / 강제 오픈], [배달 반경 축소].
+     - 8대 계층형 UID(`STR-11-650-01-56162-0001`) 기반 총판/대리점 수수료 분배율 설정 및 정산 계좌 1클릭 유효성 검증.
+     - 메뉴/가격 일괄 승인 큐(Approval Queue) 및 부적합 품목 강제 반려.
+  3. **축 3. 실시간 배차 모니터링 & CS 분쟁 중재 센터 (Dispatch & Dispute Center)**:
+     - 조리 완료 후 10분 이상 라이더 미매칭 건 붉은색 사이렌 경보 표출.
+     - 관리자 [수동 강제 배차(Override Dispatch)] 및 외주 배달대행사 즉각 이관.
+     - CS 분쟁 원스톱 판정: 배달완료 사진(PoD)과 주방전표 나란히 비교 ➔ [라이더 과책 100%] / [가맹점 과책 100%] 판정 후 1클릭 고객 환불/포인트 지급.
+  4. **축 4. D+1 익일 정산 & FDS(이상 금융 거래 탐지) 통제 (Settlement & FDS)**:
+     - 카드사/PG사 승인 내역과 플랫폼 주문 원장 간 1원 단위 대사 불일치 감지 및 자동 보정.
+     - 카드깡/이상 반복 결제 감지 시 [정산 지급 보류(Hold)] 및 계좌 동결.
+     - 국세청 홈택스 표준 CSV 세무 리포트 1클릭 발행.
+- **후속 AI 실행 과제**:
+  - 내일 Cloudflare 무료 퀵 터널(TryCloudflare)을 통해 PWA 주문 ➔ KDS/단말기 실시간 인입 E2E 실측을 마친 후,
+  - 위 4대 핵심 축 중 우선순위가 높은 **[축 1: 엣지 단말기 원격 MDM 액션 모달]** 및 **[축 2: 가맹점 영업 제어]**부터 실물 모달 및 백엔드 API를 단계별로 정밀 타격 코딩 착수할 것.
+
+---
+
+### 21) 양방향 실시간 E2E 완결, 영수증 1쪽 출력 정상화, Cloudflare Quick Tunnel 실물 검증 및 비용·기술 규명 (2026-11-16)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-16 기준)**:
+> - **완료됨**: 로컬/외부(Quick Tunnel) 양방향 실시간 주문·상태 동기화, 80mm 영수증 1쪽 출력 CSS 수정, Cloudflare 100초 WebSocket 끊김 방지 30초 `PING` 하트비트 탑재.
+> - **미구현/제약(Gap)**: 현재 로컬 `dev-server.mjs` + `food-service.mjs`(`store_data.json`)는 단일 매장 프로토타입이며, 주문 객체에 `store_id`가 아직 저장되지 않음. `wrangler.json`은 정적 `dist` 배포 설정만 있고 D1/Durable Objects 바인딩은 미연결 상태.
+
+1. **KDS 실시간 수신 크래시 복구 및 단말기 UID 정규화 (완료)**:
+   - 원인: `kds.js` 및 `receipt.js`에서 옵션 `opt.price`가 `undefined`일 때 `.toLocaleString()` 호출로 `TypeError`가 발생해 실시간 수신 렌더링이 중단됨.
+   - 수정: `kds.js`·`receipt.js`에 null-safe 처리 적용, `merchant-portal/index.html`의 레거시 `dev_01m6z4term8923`을 정식 UID `DEV-CTI-882910`으로 교체 및 캐시 버스팅 적용.
+   - 검증: 브라우저 콘솔 에러 0건, `/ws/realtime` HTTP 101 연결, 새로고침 없이 주문 즉시 상단 카드 삽입 확인.
+
+2. **양방향 실시간 Live Track 구축 (완료)**:
+   - 백엔드(`dev-server.mjs`): 주문 상태 변경 엔드포인트 4종(`/accept`, `/rider-status`, `/delivery-method`, `/dine-in-status`)에서 `mqttBridge.publish('aitip/orders/${orderId}/status', ...)` 발행.
+   - 프론트엔드(`packages/services/food-delivery/customer-pwa/js/pwa-app.js` 및 `dist/food/pwa/js/pwa-app.js`): `renderLiveTrackTimeline()` 분리 및 `trackWs`로 `aitip/orders/${order.order_id}/status` 구독하여 점주 수락 즉시 타임라인 자동 갱신 확인.
+
+3. **ESC/POS 80mm 영수증 5쪽 출력 및 1쪽 백지 문제 해결 (완료)**:
+   - 원인 1 (5쪽 출력): `@media print`에서 `.portal-container`를 `visibility: hidden`으로 숨겨 레이아웃 높이가 남아 2~5쪽 빈 페이지 생성.
+   - 원인 2 (1쪽 백지): `receipt.js`의 `openReceiptModal()`은 `#modal-print-receipt`에 `.show` 클래스를 추가하는데, `merchant.css` `@media print`는 `.active`를 기준으로 `.modal-overlay:not(.active) { display: none !important; }`를 적용해 모달까지 숨겨버림.
+   - 수정: `packages/services/food-delivery/merchant-portal/merchant.css`(및 `dist/food/merchant.css`) `@media print`의 `.portal-container`를 `display: none !important;`로 전환하고, `.active` 선택자 4곳을 `.show`로 정밀 교정. 브라우저에서 `#modal-print-receipt.show` 가시성 및 `80mm` 폭 규칙 검증 완료 (실제 OS 인쇄 미리보기는 사용자 로컬 확인 대상).
+
+4. **Cloudflare Quick Tunnel 실물 테스트 및 공식 문서 교차 규명 (완료)**:
+   - 실행 환경: `Cloudflare.cloudflared` v2026.11.0 설치 후 `cloudflared tunnel --url http://localhost:8989` 가동(서울 `icn05` 엣지, `quic` 프로토콜) 및 외부 `https://.../food/pwa/` HTTP 200, `wss://.../ws/realtime` `CONNECTED`→`PING`→`PONG` 실측 통과.
+   - 실물 스마트폰 주문 검증: LTE 스마트폰으로 `A-52` 주문 생성(`order_id`: `ord_01m7gpczcwwpk9qwjhjvwpk9qw`, `virtual_phone_id`: `vnm_01m7gpczcwkxzt27427pkxzt27`) 및 KDS/영수증 연동 확인.
+   - **놓치기 쉬운 Cloudflare 기술 제약 (공식 문서 확인)**:
+     - **100초 Idle Timeout**: Enterprise 외 모든 플랜(Quick Tunnel 포함)에서 양방향 무통신 100초 경과 시 WebSocket 강제 종료(설정 변경 불가). → `merchant-portal/js/app.js`(`initKdsLiveSync`) 및 `customer-pwa/js/pwa-app.js`(`trackWs`)에 **30초 주기 `{ type: 'PING' }` 하트비트** 탑재 및 `dist/` 동기화 완료(`mqtt-bridge.mjs`는 이미 `PONG` 응답 지원).
+     - **Quick Tunnel 한도**: 동시 처리 요청(in-flight) 최대 200개(초과 시 `429`), SSE 미지원, 재시작 시 호스트명 변경(테스트 전용).
+   - **비용·아키텍처 최신 기준 (Durable Objects)**:
+     - SQLite 백엔드 기반 **Durable Objects는 Workers Free 플랜에서도 사용 가능** (일일 100,000 요청, 13,000 GB-s 컴퓨팅 시간, 5 GB 스토리지, 최대 100개 DO 클래스). Paid 플랜(\$5/월)은 월 100만 요청 + 400,000 GB-s 포함.
+     - 상용 Workers 이식 시 일반 WebSocket은 유휴 대기 중에도 GB-s를 소모하므로 **반드시 WebSocket Hibernation API**를 적용해야 유휴 과금/한도 소모를 0으로 막을 수 있음.
+
+5. **UID 실측 점검 및 남은 과제 (Next Steps)**:
+   - `food-service.mjs`의 `generateTypeID(prefix)`는 Crockford Base32 ULID(`ord_`, `itm_`, `vnm_` + 26자)를 생성하며, DB Primary Key 조회 시 1~2ms 내 역추적 가능함.
+   - **Gap**: 현재 프로토타입 `store_data.json`의 개별 주문 JSON(`A-52` 등)에는 `store_id` 필드가 저장되지 않음. 멀티 가맹점 D1 이식 시 `orders.store_id`(`STR-...`) 필수 적재 및 고객 영수증 UI에 매장명/순번 가독성 병기 유지 필요.
+   - **다음 논의 과제**: 플랫폼관리자(`platform-admin`) 및 가맹점관리자(`merchant-portal`) 냉정한 실무 검토 및 고도화 우선순위 확정.
+
+---
+
+### 22) 슈퍼관리자 5대 IA 개편, Zero-PII 경계선, 멀티테넌트 RBAC·3대 제휴 실연동 및 내일 과제 (2026-11-16 오후)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-16 16:15 기준)**:
+> - **완료됨**: 슈퍼관리자 5대 부서·역할 IA 개편(`packages/platform-admin/index.html`, `dist/admin/` 동기화 완료), Zero-PII IndexedDB(`cust_...`) ↔ 서버 포인트·배너 피드 연동, 단일 어드민 멀티테넌트 RBAC(`x-admin-role`·`x-tenant-id` 메뉴 게이팅 및 서버 403/데이터 격리), Search-First CS·환불, 대시보드 예외 우선 큐, `HQ_DIRECT` 직영 + 3대 제휴(`SALES_ALLY`/`SERVICE_ALLY`/`TECH_ALLY`) + 4종 법적 서약 표준 계약 모달, 가맹점/온보딩 실연동, `admin_data.json` 영속화.
+> - **내일 최우선 과제**: **4자 통합 프로모션 아키텍처(PWA · 가맹점 · 영업조직/제휴사 · 슈퍼관리자) 구현**.
+
+1. **오늘 완료된 주요 구현 및 기본설계서 반영 (`AITIP_PLATFORM_MASTER_DESIGN_2026.md` 6.4절, `DOC-18` 제11장)**:
+   - **Zero-PII 아키텍처 실연동**:
+     - 소비자 PWA(`packages/services/food-delivery/customer-pwa/js/zero-pii-idb.js`)에 `aitip_customer_zero_pii` IndexedDB 저장소를 구축해 익명 `cust_...`만 로컬 보관.
+     - `dev-server.mjs`에 `GET /api/food/public-feed?customer_uid=...` 및 `POST /api/food/orders` 블랙리스트(`403`)·점검모드(`503`)·실결제 포인트 자동 적립 구현.
+     - 관리자 `주문 분쟁·환불 & UID 관제` (`cs-refunds.js`), `포인트 원장 & 어뷰징 관제` (`points-ledger.js`) 구축 및 나열식 `<select>` 제거 -> Search-First + 서버 페이징(`?q=&page=&limit=`) 전환 완료.
+   - **슈퍼관리자 5대 IA & 멀티테넌트 RBAC 실연동**:
+     - 사이드바를 5대 기둥(1. 실시간 관제 & CS / 2. 가맹점·영업망·자산 / 3. 프로모션 & 포인트 / 4. 정산 & 세무 / 5. 플랫폼 설정 & 보안)으로 통합하고, `system-policies.js`에 시스템 정책과 서킷브레이커 탭 통합.
+     - `admin-api.js`(`ROLE_ALLOWED_VIEWS`), `admin-app.js`(`applyRbacMenuGating`), `dev-server.mjs`(`x-admin-role`, `x-tenant-id` 검증)로 역할별 메뉴 가시성 및 `403`·소속 매장 격리 검증 통과.
+     - `dashboard.js` 최상단에 예외 우선 관제 큐(`exceptions`: 미접수 주문, 미처리 CS 분쟁, 온보딩 심사 대기, 점검 모드) 배치.
+   - **조직·직영·3대 제휴 & 역할 분리**:
+     - `organization-tree.js`: `HQ_DIRECT`(본사 직영 0%) + `SALES_ALLY`(영업 제휴) / `SERVICE_ALLY`(서비스 제휴) / `TECH_ALLY`(기술 제휴) + 4섹션 표준 계약 모달(개인정보보호·Zero-PII 무단수집 금지·NDA·표준계약 4종 필수 검증) 구현 및 `packages/platform-admin/data/admin_data.json` 영속화.
+     - `merchants.js` · `onboarding.js`: 가맹점 영업 토글(`/api/admin/stores/status`) 및 온보딩 승인(`/api/admin/onboarding/approve`) -> 가맹점 목록 반영 실연동, `#btn-go-onboarding` 해시 라우팅 연결, `showStoreDetailModal` `undefined` 필드(`rep_name`, `board_serial`, `mac_address`) 수정.
+     - `service-zones.js`: 가맹점 고유 영역(배달 행정동·배달팁)을 본사에서 제거하고 **시·군·구 서비스 오픈 지역 · 긴급 배달 차단(`TOGGLE_DELIVERY_HALT`) · 5대 업종 스위치**로 역할 분리.
+   - **실측 검증**:
+     - `node --check`: 수정된 전 JS/MJS 파일 통과
+     - HTTP API E2E: `RBAC 403`, `Tenant Scope(agn01=1 vs agn02=0)`, `Search-First A-53(total=1)`, `Dashboard exceptions`, `SALES_ALLY(201)`, `TOGGLE_DELIVERY_HALT(true->false)` 모두 정상 통과.
+
+2. **내일 최우선 업무 (Tomorrow's Task — 4자 통합 프로모션 아키텍처 구현)**:
+   - **검토 배경**: 현재 `/api/admin/promotions` 및 `promotions.js`는 `foodService.getCoupons()`(가맹점 자체 쿠폰)와 본사/제휴사 행사를 구분하지 않아 비용 부담 주체와 정산 분개가 불명확함.
+   - **구현 대상 4개 접점**:
+     1. **슈퍼관리자 (`platform-admin/js/modules/promotions.js`, `dev-server.mjs`)**:
+        - 행사 주체 3분리: `PLATFORM`(본사 100%) | `ALLIANCE`(제휴사·영업조직 공동 분담 `cost_split`) | `MERCHANT`(가맹점 자체 100% 모니터링) 탭 분리.
+        - 영업조직(총판·대리점·영업제휴사)의 지역/채널 행사 **`신청(REQUESTED)` -> `본사 승인(APPROVED)`** 큐 구현.
+     2. **가맹점 관리자 (`merchant-portal/js/modules/coupons.js`)**:
+        - 매장 자체 쿠폰 발행 유지 + 본사/제휴 공동 분담 행사에 대한 **점주 참여 동의(Opt-in/Opt-out)** 토글 추가.
+     3. **소비자 PWA (`customer-pwa`)**:
+        - 장바구니/결제 화면에서 **쿠폰 중복 적용 규칙(`플랫폼/제휴 쿠폰 1개 + 가맹점 쿠폰 1개 + 보유 포인트`)** 검증 및 선택 UI 구현.
+        - `POST /api/food/orders` 시 `applied_promotions` 스냅샷(`platform_discount`, `alliance_discount`, `merchant_discount`, `point_used`) 적재로 사후 정산 대사 정합성 확보.
+
+

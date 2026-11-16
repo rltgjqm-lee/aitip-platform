@@ -13,8 +13,8 @@ import { AitipOtaAgent } from '../../ota/ota-agent.mjs';
 
 export class AitipDeviceSimulator {
   constructor(options = {}) {
-    this.deviceId = options.deviceId || 'dev_01m6z4term8923';
-    this.storeId = options.storeId || 'str_01h7x8q4barunchicken001';
+    this.deviceId = options.deviceId || 'DEV-CTI-882910';
+    this.storeId = options.storeId || 'STR-11-650-01-56162-0001';
 
     // 1. 통신 클라이언트 초기화 (시뮬레이터 모드)
     this.transport = new AitipTransportClient({

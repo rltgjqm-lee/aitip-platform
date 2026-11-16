@@ -64,6 +64,7 @@ export class AitipTransportClient extends EventEmitter {
    * 아웃바운드 연결 수립 (공유기 설정 제로)
    */
   async connect() {
+    this.isManualDisconnect = false;
     if (this.simulatorMode) {
       console.log(`[TransportClient] 시뮬레이터 모드로 가상 연결 수립 (단말기: ${this.deviceId})`);
       this.isConnected = true;
@@ -129,6 +130,53 @@ export class AitipTransportClient extends EventEmitter {
           console.error('[TransportClient] 브로커 에러:', err.message);
           this.emit('error', err);
         });
+
+      } else if (typeof globalThis.WebSocket !== 'undefined' && (this.brokerUrl.startsWith('ws://') || this.brokerUrl.startsWith('wss://'))) {
+        // 2. Node.js v24 내장 글로벌 WebSocket 클라이언트를 통한 무설정 직결 (DOC-17 규격)
+        console.log(`[TransportClient] Node.js 내장 WebSocket을 통해 브로커 연결 시도: ${this.brokerUrl}`);
+        const ws = new globalThis.WebSocket(this.brokerUrl);
+        this.client = ws;
+
+        ws.onopen = () => {
+          this.isConnected = true;
+          this.reconnectAttempts = 0;
+          console.log(`[TransportClient] 브로커 WebSocket 연결 성공 (WSS/WS) -> 토픽 구독 시작`);
+
+          // 핵심 토픽 3종 일괄 구독 (QoS 1)
+          const subscribeTopics = [this.topics.orders, this.topics.config, this.topics.otaRequest];
+          subscribeTopics.forEach((top) => {
+            ws.send(JSON.stringify({ type: 'SUBSCRIBE', topic: top }));
+          });
+
+          this._startKeepAlive();
+          this.emit('connect', { deviceId: this.deviceId, mode: 'WEBSOCKET_NATIVE' });
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'MESSAGE' && msg.topic) {
+              this._handleIncomingMessage(msg.topic, JSON.stringify(msg.payload || msg));
+            }
+          } catch (e) {
+            console.error('[TransportClient] WS 메시지 처리 에러:', e);
+          }
+        };
+
+        ws.onclose = () => {
+          this.isConnected = false;
+          this.emit('disconnect', { reason: 'WS_CLOSED' });
+          if (!this.isManualDisconnect) {
+            this._scheduleReconnect();
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.error('[TransportClient] WS 에러:', err.message || err);
+          if (this.listenerCount('error') > 0) {
+            this.emit('error', err);
+          }
+        };
 
       } else {
         // mqtt 라이브러리가 없는 환경: 경량 시뮬레이터 자동 폴백
@@ -250,6 +298,20 @@ export class AitipTransportClient extends EventEmitter {
       return Promise.resolve(true);
     }
 
+    // A. Native WebSocket 트랜스포트
+    if (typeof globalThis.WebSocket !== 'undefined' && this.client instanceof globalThis.WebSocket) {
+      if (this.client.readyState === globalThis.WebSocket.OPEN) {
+        this.client.send(JSON.stringify({
+          type: 'PUBLISH',
+          topic,
+          payload: data
+        }));
+        return Promise.resolve(true);
+      }
+      return Promise.reject(new Error('WebSocket not open'));
+    }
+
+    // B. MQTT.js 트랜스포트
     return new Promise((resolve, reject) => {
       this.client.publish(topic, jsonStr, { qos: 1, retain: false }, (err) => {
         if (err) {
@@ -272,10 +334,15 @@ export class AitipTransportClient extends EventEmitter {
    * 단말기 연결 해제
    */
   disconnect() {
+    this.isManualDisconnect = true;
     if (this.keepAliveInterval) clearInterval(this.keepAliveInterval);
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.client) {
-      this.client.end(true);
+      if (typeof globalThis.WebSocket !== 'undefined' && this.client instanceof globalThis.WebSocket) {
+        this.client.close();
+      } else if (typeof this.client.end === 'function') {
+        this.client.end(true);
+      }
       this.client = null;
     }
     this.isConnected = false;

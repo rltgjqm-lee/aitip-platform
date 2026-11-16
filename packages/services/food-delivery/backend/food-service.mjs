@@ -41,7 +41,7 @@ function generateTypeID(prefix) {
 
 // 초기 정규 시드 데이터 (바른치킨 서초본점)
 function getInitialSeedData() {
-  const storeId = 'str_01h7x8q4barunchicken001';
+  const storeId = 'STR-11-650-01-56162-0001';
   
   const categories = [
     { id: 'cat_01h7x8main', name: '메인 치킨 (대표메뉴)', layout_type: 'CARD_DETAILED', display_order: 1 },
@@ -454,7 +454,7 @@ function getInitialSeedData() {
       'view-reviews',
       'view-settlement'
     ],
-    terminal_id: 'dev_01m6z4term8923',
+    terminal_id: 'DEV-CTI-882910',
     terminal_status: 'ONLINE',
     blocks: createDefaultStoreProfile(storeId, '바른치킨 서초본점')
   };
@@ -1114,21 +1114,28 @@ class FoodDeliveryService {
   }
 
   // 3. 신규 메뉴 등록
-  createMenuItem({ category_id, name, description, price, option_group_ids }) {
-    if (!name || !price || isNaN(price) || price < 0) {
+  createMenuItem({ category_id, subcategory, channel, name, description, price, discounted_price, image_url, schedule, option_group_ids }) {
+    if (!name || price === undefined || price === null || isNaN(price) || Number(price) < 0) {
       throw new Error('메뉴명과 올바른 가격을 입력해야 합니다.');
     }
 
     const catExists = this.data.categories.some(c => c.id === category_id);
     const assignedCatId = catExists ? category_id : this.data.categories[0].id;
+    const parsedDiscount = (discounted_price !== undefined && discounted_price !== null && discounted_price !== '' && !isNaN(discounted_price) && Number(discounted_price) >= 0)
+      ? Number(discounted_price)
+      : null;
 
     const newProduct = {
       product_id: generateTypeID('prd'),
       category_id: assignedCatId,
+      subcategory: (subcategory || '').trim() || undefined,
+      channel: channel || 'ALL',
       name: name.trim(),
       description: (description || '').trim(),
       price: Number(price),
-      discounted_price: null,
+      discounted_price: parsedDiscount,
+      image_url: (image_url || '').trim() || undefined,
+      schedule: schedule || undefined,
       status: 'AVAILABLE',
       option_group_ids: Array.isArray(option_group_ids) ? option_group_ids : ['optgrp_01h7x8part'],
       created_at: new Date().toISOString()
@@ -1137,6 +1144,121 @@ class FoodDeliveryService {
     this.data.products.push(newProduct);
     this.saveData();
     return newProduct;
+  }
+
+  // 3-0. 스마트 카탈로그 일괄 등록 (텍스트/CSV/전단 파싱 결과)
+  createMenuItemsBulk(items = []) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('일괄 등록할 메뉴 항목이 없습니다.');
+    }
+
+    const createdCategories = [];
+    const createdProducts = [];
+
+    for (const raw of items) {
+      const name = String(raw?.name || '').trim();
+      const price = Number(raw?.price);
+      if (!name || isNaN(price) || price < 0) continue;
+
+      const catName = String(raw?.category_name || '').trim();
+      let targetCat = null;
+      if (catName) {
+        targetCat = this.data.categories.find(c => c.name.trim().toLowerCase() === catName.toLowerCase());
+        if (!targetCat) {
+          targetCat = {
+            id: generateTypeID('cat'),
+            name: catName,
+            description: '일괄 등록으로 생성된 대분류',
+            sort_order: this.data.categories.length + 1
+          };
+          this.data.categories.push(targetCat);
+          createdCategories.push(targetCat);
+        }
+      } else {
+        targetCat = this.data.categories[0];
+      }
+
+      const d = raw?.discounted_price;
+      const discountedPrice = (d !== undefined && d !== null && d !== '' && !isNaN(d) && Number(d) >= 0)
+        ? Number(d)
+        : null;
+
+      const newProduct = {
+        product_id: generateTypeID('prd'),
+        category_id: targetCat.id,
+        channel: 'ALL',
+        name,
+        description: String(raw?.description || '').trim(),
+        price,
+        discounted_price: discountedPrice,
+        status: 'AVAILABLE',
+        option_group_ids: ['optgrp_01h7x8part'],
+        created_at: new Date().toISOString()
+      };
+      this.data.products.push(newProduct);
+      createdProducts.push(newProduct);
+    }
+
+    if (createdProducts.length === 0) {
+      throw new Error('유효한 메뉴 항목이 없어 등록되지 않았습니다.');
+    }
+
+    this.saveData();
+    return {
+      created_count: createdProducts.length,
+      created_categories: createdCategories,
+      products: createdProducts
+    };
+  }
+
+  // 3-1. 메뉴 전체 정보 수정
+  updateMenuItem(productId, payload = {}) {
+    const product = this.data.products.find(p => p.product_id === productId);
+    if (!product) {
+      throw new Error(`메뉴를 찾을 수 없습니다. (ID: ${productId})`);
+    }
+    if (payload.name !== undefined) {
+      const trimmed = String(payload.name).trim();
+      if (!trimmed) throw new Error('메뉴명은 비워둘 수 없습니다.');
+      product.name = trimmed;
+    }
+    if (payload.category_id !== undefined && this.data.categories.some(c => c.id === payload.category_id)) {
+      product.category_id = payload.category_id;
+    }
+    if (payload.subcategory !== undefined) product.subcategory = payload.subcategory;
+    if (payload.channel !== undefined) product.channel = payload.channel;
+    if (payload.price !== undefined) {
+      if (isNaN(payload.price) || Number(payload.price) < 0) throw new Error('유효하지 않은 가격입니다.');
+      product.price = Number(payload.price);
+    }
+    if (payload.discounted_price !== undefined) {
+      const d = payload.discounted_price;
+      product.discounted_price = (d !== null && d !== '' && !isNaN(d) && Number(d) >= 0) ? Number(d) : null;
+    }
+    if (payload.description !== undefined) product.description = String(payload.description).trim();
+    if (payload.image_url !== undefined && String(payload.image_url).trim()) {
+      product.image_url = String(payload.image_url).trim();
+    }
+    if (payload.schedule !== undefined) product.schedule = payload.schedule;
+    if (payload.status !== undefined) {
+      const validStatuses = ['AVAILABLE', 'SOLDOUT', 'HIDDEN'];
+      if (!validStatuses.includes(payload.status)) throw new Error(`허용되지 않은 메뉴 상태값입니다: ${payload.status}`);
+      product.status = payload.status;
+    }
+    product.updated_at = new Date().toISOString();
+    this.saveData();
+    return product;
+  }
+
+  // 3-2. 메뉴 삭제
+  deleteMenuItem(productId) {
+    const idx = this.data.products.findIndex(p => p.product_id === productId);
+    if (idx === -1) {
+      throw new Error(`삭제할 메뉴를 찾을 수 없습니다. (ID: ${productId})`);
+    }
+    const [removed] = this.data.products.splice(idx, 1);
+    this.saveData();
+    return removed;
   }
 
   // 4. 메뉴 가격 실시간 수정
@@ -1193,6 +1315,18 @@ class FoodDeliveryService {
     const fulfillmentType = validFulfillmentTypes.includes(orderData.fulfillment_type)
       ? orderData.fulfillment_type
       : 'DELIVERY';
+
+    // 가맹점 실시간 영업·배달·포장 접수 스위치 대전제 검증
+    const store = this.data.store || {};
+    if (store.is_open === false) {
+      throw new Error('현재 매장이 영업 준비중(임시 휴무) 상태입니다.');
+    }
+    if (fulfillmentType === 'DELIVERY' && store.is_delivery_open === false) {
+      throw new Error('현재 배달 주문 접수가 일시 중지되었습니다.');
+    }
+    if (fulfillmentType === 'TAKEOUT' && store.is_pickup_open === false) {
+      throw new Error('현재 포장(픽업) 주문 접수가 일시 중지되었습니다.');
+    }
 
     const orderId = generateTypeID('ord');
     const seqNum = (this.data.live_orders?.length || 0) + 30;
@@ -1408,6 +1542,19 @@ class FoodDeliveryService {
     order.kitchen_ticket_printed = true;
     order.accepted_at = new Date().toISOString();
 
+    this.saveData();
+    return order;
+  }
+
+  // 7-0. 주문 완료 처리 (포장 조리완료 / 배달 완료)
+  completeOrder(orderId) {
+    const order = this.data.live_orders.find(o => o.order_id === orderId);
+    if (!order) {
+      throw new Error(`주문을 찾을 수 없습니다. (ID: ${orderId})`);
+    }
+    order.status = 'COMPLETED';
+    order.ready_at = order.ready_at || new Date().toISOString();
+    order.completed_at = new Date().toISOString();
     this.saveData();
     return order;
   }

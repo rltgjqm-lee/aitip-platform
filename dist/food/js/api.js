@@ -87,14 +87,37 @@ export const merchantApi = {
     });
   },
 
-  // 2. 3단 메뉴 카탈로그 조회 및 등록
+  // 2. 3단 메뉴 카탈로그 조회 및 등록/수정/삭제/이미지 업로드
   getMenuCatalog() {
     return request('/menu');
+  },
+  uploadMenuImage(imagePayload) {
+    return request('/upload-image', {
+      method: 'POST',
+      body: JSON.stringify(imagePayload),
+    });
   },
   createMenuItem(menuData) {
     return request('/menu', {
       method: 'POST',
       body: JSON.stringify(menuData),
+    });
+  },
+  bulkCreateMenuItems(items) {
+    return request('/menu/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    });
+  },
+  updateMenuItem(productId, menuData) {
+    return request(`/menu/${productId}`, {
+      method: 'PUT',
+      body: JSON.stringify(menuData),
+    });
+  },
+  deleteMenuItem(productId) {
+    return request(`/menu/${productId}`, {
+      method: 'DELETE',
     });
   },
   createCategory(categoryData) {
@@ -131,11 +154,27 @@ export const merchantApi = {
     return request('/orders/live');
   },
 
+  // 5-1. 신규 주문 생성 (전화 주문 CTI 및 카운터 포스 수기 등록)
+  createOrder(orderData) {
+    return request('/orders', {
+      method: 'POST',
+      body: JSON.stringify(orderData),
+    });
+  },
+
   // 6. 실시간 주문 접수 (조리시간 선택, 주방인쇄)
   acceptOrder(orderId, prepTimeMinutes = 25) {
     return request(`/orders/${orderId}/accept`, {
       method: 'POST',
       body: JSON.stringify({ prep_time_minutes: prepTimeMinutes }),
+    });
+  },
+
+  // 6-0. 주문 완료 처리 (포장 조리완료 / 배달 완료)
+  completeOrder(orderId) {
+    return request(`/orders/${orderId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({}),
     });
   },
 

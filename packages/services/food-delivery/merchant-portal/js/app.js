@@ -7,7 +7,7 @@
  */
 import { merchantApi } from './api.js';
 import { setupReceiptEvents } from './modules/receipt.js';
-import { renderKdsOrders, playOrderChime, initKdsFilterListeners } from './modules/kds.js';
+import { renderKdsOrders, playOrderChime, initKdsFilterListeners, renderOrderHistory } from './modules/kds.js';
 import {
   renderMenuGroupBlocks,
   handleSaveEditMenu,
@@ -18,10 +18,12 @@ import {
   handleCreateMenu,
   renderOptionGroups,
   handleCreateOptionGroup,
-  renderPwaSimulator
+  renderPwaSimulator,
+  setupBulkImportModal
 } from './modules/menu.js';
 import {
   renderStoreMeta,
+  initQuickStatusSwitches,
   renderStoreInfoForm,
   startQuickPause,
   stopQuickPause,
@@ -36,7 +38,7 @@ import {
   renderTipRulesTable
 } from './modules/delivery.js';
 import { renderReviews, initReviewFilterListeners } from './modules/reviews.js';
-import { setupSettlementTabs, renderSettlementCalendar } from './modules/settlement.js';
+import { setupSettlementTabs, renderSettlementCalendar, renderSettlementDetails } from './modules/settlement.js';
 import { renderCoupons } from './modules/coupons.js';
 import { renderDineInWorkspace } from './modules/dinein.js';
 import { renderStoreBlockEditor } from './modules/store-blocks.js';
@@ -89,13 +91,80 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupReceiptEvents();
   initReviewFilterListeners(state);
   initKdsFilterListeners(state);
+  initQuickStatusSwitches(state);
   await refreshAllData();
   initKdsLiveSync();
 });
 
-// KDS 실시간 주문 자동 폴링 및 브라우저 간 동기화 (BroadcastChannel + 5초 주기 Live Polling)
+// KDS 실시간 주문 및 CTI 전화 인입 동기화 (DOC-17: WebSocket/MQTT + BroadcastChannel + 폴링 폴백)
 function initKdsLiveSync() {
-  // 1) BroadcastChannel 즉시 수신 (동일 기기/브라우저 PWA 주문 1ms 즉시 연동)
+  // 1) DOC-17: 실시간 MQTT / WebSocket 중추망 0.01초 직결 수신
+  try {
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProto}//${location.host}/ws/realtime`;
+    const socket = new WebSocket(wsUrl);
+    let pingTimer = null;
+
+    socket.onopen = () => {
+      console.log('[KDS:Realtime] 실시간 중추망 WebSocket 연결 성공');
+      // A. 상점 신규 주문 토픽 구독
+      const storeId = state.store?.store_id || 'STR-11-650-01-56162-0001';
+      socket.send(JSON.stringify({
+        type: 'SUBSCRIBE',
+        topic: `aitip/stores/${storeId}/orders`
+      }));
+      // B. 단말기 CTI 전화 인입 토픽 구독
+      socket.send(JSON.stringify({
+        type: 'SUBSCRIBE',
+        topic: 'aitip/devices/+/telephony'
+      }));
+      // C. Cloudflare 100초 Idle Timeout 방지용 30초 하트비트
+      if (pingTimer) clearInterval(pingTimer);
+      pingTimer = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'PING' }));
+        }
+      }, 30000);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'MESSAGE') {
+          // 1. 신규 주문 실시간 수신
+          if (msg.topic && msg.topic.includes('/orders')) {
+            const newOrder = msg.payload;
+            if (newOrder && newOrder.order_id) {
+              if (!Array.isArray(state.liveOrders)) state.liveOrders = [];
+              if (!state.liveOrders.some(o => o.order_id === newOrder.order_id)) {
+                console.log('[KDS:Realtime] 실시간 신규 주문 인입:', newOrder.short_display_id || newOrder.order_id);
+                state.liveOrders.unshift(newOrder);
+                renderKdsOrders(state);
+                playOrderChime();
+              }
+            }
+          }
+          // 2. CTI 전화 인입 실시간 수신
+          if (msg.topic && msg.topic.includes('/telephony')) {
+            console.log('[KDS:Realtime] 실시간 전화 인입 감지:', msg.payload);
+            handleCidInboundEvent(msg.payload);
+          }
+        }
+      } catch (e) {
+        console.warn('[KDS:Realtime] 메시지 수신 처리 오류:', e);
+      }
+    };
+
+    socket.onclose = () => {
+      if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+      console.log('[KDS:Realtime] 소켓 종료 -> 5초 후 자동 재접속');
+      setTimeout(() => initKdsLiveSync(), 5000);
+    };
+  } catch (wsErr) {
+    console.warn('[KDS:Realtime] WebSocket 연결 실패:', wsErr);
+  }
+
+  // 2) BroadcastChannel 즉시 수신 (동일 기기/브라우저 PWA 주문 1ms 즉시 연동)
   try {
     if (typeof BroadcastChannel !== 'undefined') {
       const orderChannel = new BroadcastChannel('aitip_food_orders');
@@ -117,7 +186,7 @@ function initKdsLiveSync() {
     console.warn('[KDS] BroadcastChannel 초기화 실패:', bcErr);
   }
 
-  // 2) 5초 주기 백그라운드 폴링 (서버에 들어온 신규 주문 실시간 감지)
+  // 3) 5초 주기 백그라운드 폴링 (네트워크 단절 복구 안전망)
   setInterval(async () => {
     try {
       const latestOrders = await merchantApi.getLiveOrders();
@@ -139,6 +208,35 @@ function initKdsLiveSync() {
       // 조용히 무시 (네트워크 일시 지연 등)
     }
   }, 5000);
+}
+
+// CTI 발신번호 팝업 표출 처리기 (DOC-17 제5장 포스 CID 연동)
+function handleCidInboundEvent(eventData) {
+  const modal = document.getElementById('modal-cid-inbound');
+  if (!modal) return;
+
+  const phoneEl = document.getElementById('cid-modal-phone');
+  const timeEl = document.getElementById('cid-modal-time');
+  const customerEl = document.getElementById('cid-modal-customer');
+  const addressEl = document.getElementById('cid-modal-address');
+  const recentMenuEl = document.getElementById('cid-modal-recent-menu');
+
+  if (phoneEl) phoneEl.textContent = eventData.caller_phone || '010-5882-9258';
+  if (timeEl) {
+    const d = new Date(eventData.call_time || Date.now());
+    timeEl.textContent = `인입 시각: ${d.toLocaleTimeString('ko-KR')}`;
+  }
+  if (customerEl) customerEl.textContent = eventData.customer_name || '단골 손님 (홍길동)';
+  if (addressEl && eventData.address) addressEl.textContent = eventData.address;
+
+  if (recentMenuEl && Array.isArray(eventData.recent_orders) && eventData.recent_orders.length > 0) {
+    const firstOrder = eventData.recent_orders[0];
+    const itemsDesc = firstOrder.items ? firstOrder.items.map(it => it.name).join(', ') : '현미바삭치킨 1마리';
+    recentMenuEl.textContent = `${itemsDesc} (${(firstOrder.final_payment_amount || 25000).toLocaleString()}원)`;
+  }
+
+  modal.classList.add('show');
+  playOrderChime();
 }
 
 // 2. 전체 데이터 새로고침 및 모듈 렌더러 호출
@@ -223,6 +321,7 @@ function renderAllViews() {
   renderStoreMeta(state.store);
   renderDineInWorkspace(state);
   renderKdsOrders(state);
+  renderOrderHistory(state);
   renderMenuGroupBlocks(state);
   renderCategoryDropdowns(state);
   renderDeliverySettings(state);
@@ -231,6 +330,7 @@ function renderAllViews() {
   renderStoreHoursTable(state.storeHours);
   renderHolidaySettings(state.holidaySettings);
   renderSettlementCalendar(state.settlementOverview);
+  renderSettlementDetails(state.settlementOverview, state.liveOrders);
   renderOptionGroups(state);
   renderReviews(state);
   renderCoupons(state);
@@ -386,10 +486,16 @@ function setupGlobalControls() {
   if (openMenuModalBtn && menuModal) {
     openMenuModalBtn.addEventListener('click', () => {
       renderCategoryDropdowns(state);
+      const catSelect = document.getElementById('menu-input-category');
+      if (catSelect && state.selectedMenuCategoryId && state.selectedMenuCategoryId !== 'ALL') {
+        catSelect.value = state.selectedMenuCategoryId;
+        updateSubcategoryDropdown(catSelect.value, state);
+      }
       menuModal.classList.add('show');
     });
   }
 
+  setupBulkImportModal(state);
   if (openCatModalBtn && catModal) {
     openCatModalBtn.addEventListener('click', () => catModal.classList.add('show'));
   }
@@ -412,6 +518,49 @@ function setupGlobalControls() {
       if (e.target === overlay) overlay.classList.remove('show');
     });
   });
+
+  // CTI 모달에서 전화 주문 접수 원클릭 발주
+  const btnCidQuickOrder = document.getElementById('btn-cid-create-quick-order');
+  if (btnCidQuickOrder) {
+    btnCidQuickOrder.addEventListener('click', async () => {
+      const phone = document.getElementById('cid-modal-phone')?.textContent || '010-5882-9258';
+      document.getElementById('modal-cid-inbound')?.classList.remove('show');
+      try {
+        await merchantApi.createOrder({
+          fulfillment_type: 'DELIVERY',
+          customer_name: '전화주문고객 (홍길동)',
+          virtual_phone: '0504-8921-3921',
+          delivery_address: '서울특별시 서초구 서초대로 34길 18, 201호',
+          customer_memo: '전화 인입 주문 (바삭하게 조리 요망)',
+          payment_method: 'MEET_AND_PAY_CARD',
+          final_payment_amount: 24500,
+          items: [
+            {
+              product_id: 'prd_01m6wzpjfnfwh9j4zetc21ates',
+              name: '현미바삭치킨',
+              quantity: 1,
+              price: 18900,
+              total_price: 18900,
+              selected_options: [
+                { group_name: '부위 선택', option_name: '뼈 치킨 (기본)' },
+                { group_name: '맵기 강도', option_name: '순한맛 (기본 담백)' }
+              ]
+            },
+            {
+              product_id: 'prd_02kassaba_balls_side',
+              name: '카사바칩 & 크림치즈볼',
+              quantity: 1,
+              price: 5600,
+              total_price: 5600,
+              selected_options: []
+            }
+          ]
+        });
+      } catch (err) {
+        console.error('[CTI] 전화 주문 생성 실패:', err);
+      }
+    });
+  }
 
   // 메뉴 상세수정 모달 저장 / 삭제
   const btnSaveEdit = document.getElementById('btn-save-edit-menu');
@@ -450,27 +599,52 @@ function setupGlobalControls() {
     });
   }
 
-  // 사진 업로드 & 실시간 미리보기
+  // 사진 업로드 & 실시간 미리보기 (클릭 + 드래그앤드롭 + 5MB 검증)
   const dropZone = document.getElementById('image-drop-zone');
   const fileInput = document.getElementById('menu-file-input');
   const previewImg = document.getElementById('image-preview');
   const placeholder = document.getElementById('image-placeholder');
 
+  function handleMenuImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      alert('이미지 파일(JPG, PNG, WebP, GIF)만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('이미지 크기는 최대 5MB까지 업로드 가능합니다.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (re) => {
+      if (previewImg && placeholder) {
+        previewImg.src = re.target.result;
+        previewImg.dataset.pendingDataUrl = re.target.result;
+        previewImg.dataset.pendingFileName = file.name || 'menu.png';
+        previewImg.classList.add('show');
+        placeholder.style.display = 'none';
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   if (dropZone && fileInput) {
     dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '#0f766e';
+    });
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.style.borderColor = '';
+    });
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.style.borderColor = '';
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleMenuImageFile(file);
+    });
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (file && file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (re) => {
-          if (previewImg && placeholder) {
-            previewImg.src = re.target.result;
-            previewImg.classList.add('show');
-            placeholder.style.display = 'none';
-          }
-        };
-        reader.readAsDataURL(file);
-      }
+      if (file) handleMenuImageFile(file);
     });
   }
 

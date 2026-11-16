@@ -106,7 +106,7 @@
         <div class="terminal-status-card">
           <div>
             <div style="font-weight: 700; color: #191f28; font-size: 12.5px;">스마트 단말기</div>
-            <div style="color: #8b95a1; font-size: 11px;">dev_01m6z4term8923</div>
+            <div style="color: #8b95a1; font-size: 11px;">DEV-CTI-882910</div>
           </div>
           <div class="terminal-indicator">
             <span class="terminal-dot"></span>
@@ -145,7 +145,7 @@
           <div class="toggle-group">
             <span>배달접수</span>
             <label class="switch">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="switch-delivery-open" checked>
               <span class="slider"></span>
             </label>
           </div>
@@ -153,7 +153,7 @@
           <div class="toggle-group">
             <span>포장(픽업)접수</span>
             <label class="switch">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="switch-pickup-open" checked>
               <span class="slider"></span>
             </label>
           </div>
@@ -256,8 +256,8 @@
 
           <div class="card">
             <div class="card-header">
-              <span class="card-title">오늘 완료된 주문 (총 12건 · 318,400원)</span>
-              <button class="btn btn-secondary btn-sm">엑셀 다운로드</button>
+              <span class="card-title" id="order-history-summary">전체 주문 내역 (0건)</span>
+              <button class="btn btn-secondary btn-sm" id="btn-export-history-csv">CSV 다운로드</button>
             </div>
             <div class="table-responsive">
               <table class="data-table">
@@ -272,25 +272,8 @@
                     <th style="text-align: center;">처리상태</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>A-24</strong></td>
-                    <td style="color: #64748b;">13:20</td>
-                    <td><span class="tag tag-pickup">픽업(포장)</span></td>
-                    <td>현미바삭치킨 1마리 (포장할인 -2,000원)</td>
-                    <td>신용카드</td>
-                    <td style="text-align: right; font-weight: 700;">16,900원</td>
-                    <td style="text-align: center;"><span class="tag tag-success">픽업완료</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>A-23</strong></td>
-                    <td style="color: #64748b;">12:45</td>
-                    <td><span class="tag tag-mint">배달</span></td>
-                    <td>대새레드치킨 1마리 외 1건</td>
-                    <td>간편결제</td>
-                    <td style="text-align: right; font-weight: 700;">27,900원</td>
-                    <td style="text-align: center;"><span class="tag tag-success">배달완료</span></td>
-                  </tr>
+                <tbody id="tbody-order-history">
+                  <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">주문 내역을 불러오는 중입니다...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -315,11 +298,20 @@
                 <svg style="width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 + 새 대분류(메뉴그룹) 추가
               </button>
+              <button class="btn btn-secondary" id="btn-open-bulk-import">
+                텍스트/CSV 일괄 등록
+              </button>
               <button class="btn btn-primary" id="btn-open-create-menu">
                 <svg style="width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 + 신규 메뉴 등록
               </button>
             </div>
+          </div>
+
+          <!-- 대분류(카테고리)별 필터 탭 바 & 메뉴 검색 -->
+          <div id="menu-category-filter-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; padding: 12px 16px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <div id="menu-category-tabs" style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;"></div>
+            <input type="search" class="form-control" id="menu-search-input" placeholder="메뉴명 검색..." style="width: 210px; height: 34px; font-size: 13px;">
           </div>
 
           <!-- 대분류(메뉴그룹)별 소속 메뉴 일체형 블록들이 동적으로 렌더링되는 컨테이너 -->
@@ -856,18 +848,18 @@
             <div class="form-grid-3">
               <div class="card" style="margin: 0; padding: 20px;">
                 <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">11월 누적 결제 매출</div>
-                <div style="font-size: 22px; font-weight: 800; color: #191f28; margin: 8px 0;">11,480,000원</div>
-                <div style="font-size: 12px; color: #64748b;">총 482건 주문 (배달 340건 / 포장 142건)</div>
+                <div id="settle-summary-gross" style="font-size: 22px; font-weight: 800; color: #191f28; margin: 8px 0;">0원</div>
+                <div id="settle-summary-count" style="font-size: 12px; color: #64748b;">총 0건 주문</div>
               </div>
               <div class="card" style="margin: 0; padding: 20px;">
                 <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">공제 수수료 합계 (결제망 2.5%)</div>
-                <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 8px 0;">-287,000원</div>
+                <div id="settle-summary-fee" style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 8px 0;">0원</div>
                 <div style="font-size: 12px; color: #64748b;">신용카드 · 간편결제망 수수료 공제</div>
               </div>
               <div class="card" style="margin: 0; padding: 20px;">
                 <div style="font-size: 12.5px; color: #64748b; font-weight: 600;">11월 실 통장 입금액 (완료+예정)</div>
-                <div style="font-size: 22px; font-weight: 800; color: #059669; margin: 8px 0;">11,193,000원</div>
-                <div style="font-size: 12px; color: #059669; font-weight: 700;">입금 완료: 3,420,000원 / 입금 예정: 7,773,000원</div>
+                <div id="settle-summary-net" style="font-size: 22px; font-weight: 800; color: #059669; margin: 8px 0;">0원</div>
+                <div id="settle-summary-breakdown" style="font-size: 12px; color: #059669; font-weight: 700;">입금 완료: 0원 / 입금 예정: 0원</div>
               </div>
             </div>
           </div>
@@ -888,7 +880,7 @@
                   <button class="btn btn-primary btn-sm" id="btn-search-settle-range">조회</button>
                 </div>
                 <div style="font-size: 12.5px; color: #4e5968;">
-                  조회 기간 실 입금액: <strong style="color: #059669; font-size: 14px;">415,800원</strong> (18건)
+                  조회 기간 실 입금액: <strong id="settle-range-summary" style="color: #059669; font-size: 14px;">0원 (0건)</strong>
                 </div>
               </div>
             </div>
@@ -1213,6 +1205,53 @@
   </div>
 
   <!-- ================================================================ -->
+  <!-- 모달 2-1. 텍스트/CSV 메뉴 일괄 등록 모달 (마트 할인전단 공용 파서)    -->
+  <!-- ================================================================ -->
+  <div class="modal-overlay" id="modal-bulk-import-menu">
+    <div class="modal-box" style="width: 720px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 class="modal-title">스마트 메뉴 / 전단 텍스트·CSV 일괄 등록</h3>
+        <button class="modal-close btn-close-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: #475569; margin: 0 0 12px;">
+          기존 포스·엑셀·메뉴판 텍스트를 복사해 붙여넣거나 CSV 파일을 불러오면 대분류·메뉴명·정상가·할인가를 자동 분류합니다.
+        </p>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+          <input type="file" id="bulk-csv-file" accept=".csv,.txt,.tsv" style="font-size: 12.5px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-bulk-sample">예시 불러오기</button>
+        </div>
+        <textarea class="form-control" id="bulk-raw-textarea" rows="6" placeholder="예시:&#10;[메인 치킨 (대표메뉴)] 마늘간장치킨 20,900원 바삭한 간장 풍미&#10;사이드 & 안주 | 어니언링 | 6500 | 5500 | 바삭한 양파링&#10;음료 & 주류 | 제로콜라 1.25L | 3000"></textarea>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0;">
+          <span id="bulk-preview-summary" style="font-size: 12.5px; color: #64748b;">텍스트 입력 후 [미리보기 분석]을 눌러주세요.</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-bulk-parse">미리보기 분석</button>
+        </div>
+        <div class="table-responsive" style="max-height: 240px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <table class="data-table" style="margin: 0; font-size: 12.5px;">
+            <thead>
+              <tr>
+                <th style="width: 36px; text-align: center;">선택</th>
+                <th>대분류</th>
+                <th>메뉴/품목명</th>
+                <th style="text-align: right;">정상가</th>
+                <th style="text-align: right;">할인가</th>
+                <th>설명 / 상태</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-bulk-preview">
+              <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 18px;">분석된 항목이 여기에 표시됩니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" class="btn btn-secondary btn-close-modal">취소</button>
+        <button type="button" class="btn btn-primary" id="btn-bulk-submit" disabled>선택 메뉴 일괄 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
   <!-- 모달 3. 메뉴 상세 정보 및 옵션 수정 모달 (SwadKart ItemModal / Enatega Food.jsx) -->
   <!-- ================================================================ -->
   <div class="modal-overlay" id="modal-edit-menu">
@@ -1378,24 +1417,24 @@
   <!-- ================================================================ -->
   <!-- 모달 5. TastyPrinter ESC/POS 80mm 전표 출력 모달 (주방전표 vs 영수증) -->
   <!-- ================================================================ -->
-  <div class="modal-overlay" id="modal-receipt-print">
+  <div class="modal-overlay" id="modal-print-receipt">
     <div class="modal-box" style="width: 440px; max-height: 90vh; overflow-y: auto;">
       <div class="modal-header">
-        <h3 class="modal-title">전표 및 영수증 출력 (80mm)</h3>
+        <h3 class="modal-title">주문 전표 및 영수증 인쇄 (ESC/POS 80mm)</h3>
         <button class="modal-close btn-close-modal">×</button>
       </div>
       <div class="modal-body" style="background: #f1f5f9; padding: 16px;">
         <div class="receipt-tabs">
-          <button class="receipt-tab-btn active" id="tab-print-kitchen">주방 조리 전표</button>
-          <button class="receipt-tab-btn" id="tab-print-counter">고객/카운터 영수증</button>
+          <button type="button" class="receipt-tab-btn active" id="tab-print-kitchen">주방 조리 전표</button>
+          <button type="button" class="receipt-tab-btn" id="tab-print-counter">고객/카운터 영수증</button>
         </div>
         <div class="receipt-paper" id="receipt-paper-box">
-          <!-- app.js에서 동적 렌더링 -->
+          <!-- receipt.js renderReceiptContent 동적 렌더링 -->
         </div>
       </div>
-      <div class="modal-footer" style="justify-content: space-between;">
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
         <button class="btn btn-secondary btn-close-modal">닫기</button>
-        <button class="btn btn-primary" id="btn-trigger-print">인쇄 (ESC/POS 80mm)</button>
+        <button class="btn btn-primary" id="btn-trigger-print">인쇄 실행 (Print)</button>
       </div>
     </div>
   </div>
@@ -1442,11 +1481,53 @@
     </div>
   </div>
 
+  <!-- ================================================================ -->
+  <!-- 모달 7. CTI 전화 인입 팝업 모달 (DOC-17 가상 CID / COM3 브리지)       -->
+  <!-- ================================================================ -->
+  <div class="modal-overlay" id="modal-cid-inbound">
+    <div class="modal-box" style="width: 520px; border-top: 4px solid var(--primary, #2563eb);">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>실시간 전화 주문 인입 (CTI)</span>
+            <span class="badge badge-success" style="font-size: 11px; padding: 2px 6px;">회선 1번 통화 연결</span>
+          </h3>
+          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">단말기 Si3050 DAA & 윈도우 포스(COM3) 연동 감지</div>
+        </div>
+        <button class="modal-close btn-close-modal">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: center;">
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">고객 발신 전화번호</div>
+          <div id="cid-modal-phone" style="font-size: 24px; font-weight: 700; color: #1e293b; letter-spacing: 1px;">010-5882-9258</div>
+          <div id="cid-modal-time" style="font-size: 12px; color: #94a3b8; margin-top: 4px;">인입 시각: 2026-11-15 13:50:00</div>
+        </div>
+
+        <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="font-weight: 600; color: #334155;" id="cid-modal-customer">단골 손님 (홍길동)</div>
+            <span class="badge badge-info" style="font-size: 11px;">누적 7회 주문</span>
+          </div>
+          <div style="font-size: 13px; color: #64748b; margin-bottom: 4px;">
+            <strong>배달 주소:</strong> <span id="cid-modal-address">서울특별시 서초구 서초대로 34길 18, 201호</span>
+          </div>
+          <div style="font-size: 13px; color: #64748b;">
+            <strong>최근 주문 메뉴:</strong> <span id="cid-modal-recent-menu">현미바삭치킨 1마리 (순한맛, 뼈 치킨) 외 1건</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button class="btn btn-secondary btn-close-modal">창 닫기</button>
+        <button class="btn btn-primary" id="btn-cid-create-quick-order">이 고객 전화 주문서 접수</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 오픈소스 SortableJS 로컬 벤더 스크립트 -->
   <script src="./js/vendor/sortable.min.js"></script>
 
   <!-- 표준 ESM 모듈 로드 -->
-  <script type="module" src="./js/app.js"></script>
+  <script type="module" src="./js/app.js?v=20261116_01"></script>
 
 </body>
 </html>

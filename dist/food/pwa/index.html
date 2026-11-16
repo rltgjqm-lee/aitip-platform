@@ -6,8 +6,8 @@
   <title>AITIP 주문 - 바른치킨 서초본점</title>
   <link rel="manifest" href="./manifest.json">
   <link rel="stylesheet" href="./css/pwa.css?v=20261112_03">
-  <!-- 대한민국 우편번호 / 도로명 주소 검색 공식 표준 스크립트 -->
-  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <!-- 대한민국 우편번호 / 도로명 주소 검색 카카오 공식 최신 CDN 스크립트 -->
+  <script src="https://t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </head>
 <body>
 
@@ -21,7 +21,10 @@
     <!-- 2. 매장 헤더 배너 -->
     <header class="pwa-store-header">
       <div class="pwa-header-top">
-        <span class="pwa-brand-pill">AITIP 고객 주문</span>
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+          <span class="pwa-brand-pill">AITIP 고객 주문</span>
+          <span class="pwa-parking-pill" id="pwa-points-pill" style="background: #eff6ff; color: #1d4ed8; font-weight: 800;">0 P</span>
+        </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <span class="pwa-parking-pill" id="pwa-parking-badge">무료 주차 가능</span>
           <button class="pwa-header-cart-btn" id="btn-header-cart" title="장바구니 확인">

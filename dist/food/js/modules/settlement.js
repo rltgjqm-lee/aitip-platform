@@ -147,3 +147,85 @@ export function renderSettlementCalendar(settlementOverview) {
     grid.appendChild(cell);
   }
 }
+
+/**
+ * 정산 요약 카드 3종 및 건별 정산 원장(2탭) 실데이터 렌더링
+ * @param {Object} settlementOverview
+ * @param {Array} liveOrders
+ */
+export function renderSettlementDetails(settlementOverview, liveOrders = []) {
+  const records = settlementOverview?.daily_records || [];
+  let totalGross = 0;
+  let totalFee = 0;
+  let totalNet = 0;
+  let completedNet = 0;
+  let pendingNet = 0;
+  let totalOrdersCount = 0;
+
+  for (const r of records) {
+    totalGross += Number(r.gross_sales || 0);
+    totalFee += Number(r.pg_fee || 0);
+    const net = Number(r.net_payout || 0);
+    totalNet += net;
+    totalOrdersCount += Number(r.order_count || 0);
+    if (r.payout_status === 'COMPLETED') completedNet += net;
+    else pendingNet += net;
+  }
+
+  const setText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+  setText('settle-summary-gross', `${totalGross.toLocaleString()}원`);
+  setText('settle-summary-count', `총 ${totalOrdersCount.toLocaleString()}건 주문 (실측 일별 원장 합계)`);
+  setText('settle-summary-fee', `-${totalFee.toLocaleString()}원`);
+  setText('settle-summary-net', `${totalNet.toLocaleString()}원`);
+  setText('settle-summary-breakdown', `입금 완료: ${completedNet.toLocaleString()}원 / 입금 예정: ${pendingNet.toLocaleString()}원`);
+
+  const tbody = document.getElementById('tbody-settle-orders');
+  const rangeSummary = document.getElementById('settle-range-summary');
+  if (!tbody) return;
+
+  const orders = Array.isArray(liveOrders) ? liveOrders : [];
+  let rangeNet = 0;
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 24px;">정산 대상 주문 내역이 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = orders.map(o => {
+      const payAmt = Number(o.final_payment_amount || 0);
+      const tip = Number(o.delivery_tip || 0);
+      const fee = Math.round(payAmt * 0.025);
+      const net = payAmt - fee;
+      rangeNet += net;
+      const dt = o.created_at ? new Date(o.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+      const statusTag = (o.status === 'COMPLETED' || o.status === 'DELIVERED')
+        ? '<span class="tag tag-success">정산대기(D+1)</span>'
+        : '<span class="tag">진행중</span>';
+      return `
+        <tr>
+          <td><strong>${o.short_display_id || o.order_id}</strong></td>
+          <td style="color: #64748b;">${dt}</td>
+          <td>${o.order_channel || 'PWA'}</td>
+          <td>${o.payment_method || 'CARD'}</td>
+          <td style="text-align: right;">${payAmt.toLocaleString()}원</td>
+          <td style="text-align: right;">${tip.toLocaleString()}원</td>
+          <td style="text-align: right; color: #ef4444;">-${fee.toLocaleString()}원</td>
+          <td style="text-align: right; font-weight: 800; color: #059669;">${net.toLocaleString()}원</td>
+          <td style="text-align: center;">D+1 영업일</td>
+          <td style="text-align: center;">${statusTag}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+  if (rangeSummary) {
+    rangeSummary.textContent = `${rangeNet.toLocaleString()}원 (${orders.length}건)`;
+  }
+
+  const btnSearch = document.getElementById('btn-search-settle-range');
+  if (btnSearch && !btnSearch.dataset.bound) {
+    btnSearch.dataset.bound = 'true';
+    btnSearch.addEventListener('click', () => {
+      renderSettlementDetails(settlementOverview, liveOrders);
+    });
+  }
+}

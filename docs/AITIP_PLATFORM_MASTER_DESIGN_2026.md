@@ -269,3 +269,62 @@ aitip-platform/
         ├── mart-portal/                    # 🏬 [파생 1: 하나로마트] 단위농협 전용 백오피스 (엑셀 시세 패치, 위탁/매대 관리)
         └── admin-dashboard/                # 🏛️ [파생 2: 공공/행정] 본사·지역배달대리점(지사)·시니어클럽·지자체 복지과 통합 관제
 ```
+
+
+---
+
+## 📌 6. 소상공인 요식업 본체 코어 100% 생산형 완성 및 스마트 단말기(KDS/CTI/ESC-POS 80mm) 연동 체계 (2026-11-14 승격)
+
+### 6.1 소상공인 요식업 본체 코어 100% 달성 명세
+1. **소비자 모바일 주문 PWA (`packages/services/food-delivery/customer-pwa`)**:
+   - `customer-api.js` 단일 서비스 레이어로 통신 일원화 (인라인 `fetch` 100% 차단).
+   - 서브웨이식 5단계 맞춤옵션 위저드, 0504 가상 안심번호(60분 수명주기), 1D 바코드(`* A-41 *`), 실시간 조리/배달 추적(Live Track) 완비.
+2. **점주 KDS & 단말기 영수증 연동 (`merchant-portal`)**:
+   - `merchantApi` 기반 실시간 주문 인입(WebSocket/MQTTS 시뮬레이션), 조리시간(15/20/25/30분) 지정 수락.
+   - TastyPrinter ESC/POS 80mm 감열지 주문 전표 모달(`modal-print-receipt` 및 `#receipt-paper-box`) 실물 규격 출력 완비.
+   - [주방 조리 전표]: 대형 전표번호(`A-41`), 접수일시, 조리시간, 배달지 주소, 안심번호, 세부 맞춤옵션, 조리요청사항 2배체 강조 출력.
+   - [고객/카운터 영수증]: 공급가액, 부가세 10%, 배달팁, 총 결제금액, 제로페이 0% 수수료 표기.
+3. **D1 일일 정산 원장 및 국세청 표준 CSV 세무 연동**:
+   - D+1 익일 점주 정산 입금 원장(`SET-11-650-01-56162-0001-261113`) 연동 및 국세청 홈택스 표준 부가세 신고서 CSV 다운로드 가동.
+
+### 6.2 스마트 CTI 단말기 기술 규격(v1.1.0) 및 MQTT 실시간 중추망 연동 규격 (2026-11-15 증보)
+1. **과거 기획(Aitip시스템매뉴얼) 폐기 및 신규 양산 표준(SSOT) 확립**:
+   - 온디바이스 Asterisk PBX 18, 외장 MicroSD, 라즈베리파이/바나나파이 외장 허브 방식 100% 공식 폐기.
+   - 단일 올인원 임베디드 보드 (Rockchip RK3566 / Allwinner H616 쿼드코어 SoC + 온보드 8GB eMMC 5.1 BGA 실장)로 양산 단일화.
+2. **공유기 무설정(Zero-Config) 아웃바운드 통신 (DOC-17 규격)**:
+   - 가맹점 공유기 인바운드 포트 개방 0% (포트포워딩/DDNS/DMZ 불필요).
+   - 주 통신: MQTTS (TCP 8883, TLS 1.3), 방화벽 차단 시 443 WSS(Secure WebSocket) 3초 자동 폴백.
+   - 30초 Smart Keep-Alive (PINGREQ)로 공유기 NAT 세션 타임아웃 영구 방어 (월 5MB 미만).
+3. **하드웨어 핵심 신뢰성 회로 연동 (`AITIP_Smart_CTI_Terminal_Joint_Hardware_Specification_v1.0.md` 제9장)**:
+   - **무전원 물리 바이패스**: Normally-Closed 기계식 DPDT 릴레이를 통해 단말기 전원 꺼짐/장애 시에도 매장 유선 전화 100% 직결 보장.
+   - **전원 강제 차단 방어**: 식당 마감 멀티탭 차단 시 온보드 EDLC 슈퍼커패시터(0.5~1.0초 전원 유지)로 릴레이 NC 복귀, MQTT Clean Disconnect, eMMC 캐시 플러시(`sync`) 완결.
+   - **RTC 코인 배터리 백업**: 장기 휴무 후 부팅 시 시간 초기화로 인한 TLS 1.3 인증서 유효기간 만료 에러 원천 차단.
+   - **CTI / 프린터 초고속 UART**: Si3050 DAA 링 감지 ➔ 클라우드 MQTT 50ms 이내 발행, 80mm 써멀 프린터 115200bps RTS/CTS 하드웨어 흐름제어 완비.
+
+### 6.3 양방향 실시간 WebSocket/MQTT 동기화 및 Cloudflare 에지 운영 기준 (2026-11-16 증보)
+1. **양방향 토픽 및 하트비트 규격 (`mqtt-bridge.mjs` / `dev-server.mjs`)**:
+   - 신규 주문 수신(PWA ➔ KDS): `aitip/stores/{storeId}/orders`
+   - 주문 상태 실시간 추적(KDS ➔ PWA Live Track): `aitip/orders/{orderId}/status` (`/accept`, `/rider-status`, `/delivery-method`, `/dine-in-status` 처리 시 자동 발행)
+   - **30초 Keep-Alive 필수 규격**: Cloudflare 프록시 및 터널은 양방향 100초 무통신 시 WebSocket을 강제 종료하므로, 모든 웹 클라이언트(`merchant-portal/js/app.js`, `customer-pwa/js/pwa-app.js`)는 30초마다 `{ type: 'PING' }`을 송신하고 브릿지는 `{ type: 'PONG' }`으로 응답한다.
+2. **Cloudflare 에지 배포 및 비용 최적화 아키텍처**:
+   - **개발/실물 테스트**: `cloudflared` Quick Tunnel(`trycloudflare.com`) 사용 (무료, 동시 요청 200건 제한, SSE 미지원, URL 임시 발급).
+   - **상용 Workers/Durable Objects 이식 기준**: SQLite 기반 Durable Objects는 Workers Free 플랜(10만 요청/일, 13,000 GB-s/일) 및 Paid 플랜(\$5/월 기본)을 지원하며, 상시 소켓 연결에 따른 GB-s 소모를 막기 위해 **WebSocket Hibernation API** 적용을 필수 표준으로 삼는다.
+   - *(현행 프로토타입 상태)*: `wrangler.json`은 정적 `dist` 배포만 설정되어 있으며, D1/Durable Objects 바인딩 및 멀티매장 `orders.store_id` 영속 저장은 상용 이식 단계에서 연결한다.
+3. **ESC/POS 80mm 웹 인쇄 격리 규격 (`merchant.css`)**:
+   - `@media print`에서 `.portal-container`는 `display: none !important;`로 레이아웃 공간까지 완전히 제거하여 빈 페이지(2~5쪽) 생성을 차단하고, 활성 모달 선택자는 `.modal-overlay.show`로 일치시켜 80mm 단일 페이지(`#receipt-paper-box`)만 출력한다.
+
+### 6.4 Zero-PII 경계선, 조직·3대 제휴 체계 및 본사·가맹점 역할 분리 (2026-11-16 증보)
+1. **Zero-PII(개인정보 서버 미저장) 아키텍처 경계선**:
+   - **클라이언트(PWA IndexedDB)**: `aitip_customer_zero_pii` 저장소에 익명 고객 식별자(`cust_...`) 및 로컬 배달지·선호 정보를 보관한다. 서버 DB에 고객 이름·전화번호·주소 원문을 영구 저장하지 않는다.
+   - **일회성 전달 및 자동 파기**: 주문(`POST /api/food/orders`) 시에만 배달 주소와 0504 가상 안심번호를 가맹점(KDS)·라이더에게 일회성으로 전달하고, 배달 완료 후 설정된 파기 주기(기본 24시간) 경과 시 비식별 파기한다.
+   - **서버 원장(Ledger)**: 포인트 잔액·적립/회수 원장, PG 결제·환불 이력, 블랙리스트는 위변조 방지를 위해 반드시 서버에 저장하되 `customer_uid(cust_...)`와 `order_id(ord_...)` 키만 사용한다. (기기 변경·어뷰징 방지는 단방향 해시 인증 기반 1인 1 UID로 보완한다.)
+2. **내부 조직망 및 외부 3대 제휴 표준 체계**:
+   - **내부/직할 영업망**: `본사(HQ)` ➔ `본사 직영(HQ_DIRECT, 수수료 0%)` / `광역 총판(Distributor)` ➔ `지역 대리점(Agency)` ➔ `임직원(Staff)`
+   - **외부 3대 제휴 축 (Alliance)**:
+     - **영업 제휴 (`SALES_ALLY`)**: 프랜차이즈 본사·상인회·지자체·복지기관 등 가맹점/B2B 수요 유입 채널 (추천 코드 기반 CPA/매출 쉐어 정산)
+     - **서비스 제휴 (`SERVICE_ALLY`)**: 배달대행사·지역화폐·카드포인트·생활서비스 등 고객/매장 부가 서비스 연동 (거래 건당 이용료·대사 정산)
+     - **기술 제휴 (`TECH_ALLY`)**: POS사·VAN사·스마트단말기 제조사·인증/보안/지도 API 등 기술·인프라 파트너 (API 키/웹훅·서킷브레이커·펌웨어/단말 인증)
+   - 모든 총판·대리점·제휴사 등록 시 사업자·정산 계좌·세무 유형(10% 세금계산서 vs 3.3% 원천징수)과 함께 **개인정보 처리위탁 동의서, Zero-PII 무단수집 금지 서약서, 영업비밀 유지 서약서(NDA), 표준 위수탁 계약서**를 필수로 검증한다.
+3. **본사 vs 가맹점주 역할 분리 (권역 및 배달비)**:
+   - **가맹점주 전담 (`merchant-portal/js/modules/delivery.js`)**: 개별 매장의 배달 가능 행정동, 배달 반경, 주문 금액 구간별 배달팁 규칙.
+   - **본사 관리자 전담 (`platform-admin/js/modules/service-zones.js`)**: 시·군·구 단위 서비스 오픈/준비중 개시 여부, 기상악화·장애 시 권역별 긴급 배달 차단(포장만 허용), 5대 업종(`FOOD`, `MART`, `BEAUTY`, `HOSPITAL`, `STAY`) 멀티모듈 스위치.

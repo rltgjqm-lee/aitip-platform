@@ -19,6 +19,50 @@ export function renderStoreMeta(store) {
   if (bizMetaElem) {
     bizMetaElem.innerHTML = `사업자번호: ${store.biz_number}<br>대표자: ${store.owner_name}`;
   }
+
+  const isOpen = store.is_open !== false;
+  const isDeliveryOpen = store.is_delivery_open !== false;
+  const isPickupOpen = store.is_pickup_open !== false;
+
+  const swStore = document.getElementById('switch-store-open');
+  const lblStore = document.getElementById('label-store-status');
+  if (swStore) swStore.checked = isOpen;
+  if (lblStore) {
+    lblStore.textContent = isOpen ? '영업중' : '영업종료';
+    lblStore.style.color = isOpen ? '#1b8a5a' : '#e11d48';
+  }
+  const swDeliv = document.getElementById('switch-delivery-open');
+  if (swDeliv) swDeliv.checked = isDeliveryOpen;
+  const swPickup = document.getElementById('switch-pickup-open');
+  if (swPickup) swPickup.checked = isPickupOpen;
+}
+
+export function initQuickStatusSwitches(state) {
+  const bindSwitch = (id, key, onUiUpdate) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', async () => {
+      const nextVal = el.checked;
+      try {
+        const res = await merchantApi.updateStoreInfo({ [key]: nextVal });
+        if (res && res.store) state.store = res.store;
+        if (onUiUpdate) onUiUpdate(nextVal);
+      } catch (err) {
+        el.checked = !nextVal;
+        alert('영업 상태 변경 실패: ' + err.message);
+      }
+    });
+  };
+
+  bindSwitch('switch-store-open', 'is_open', (isOpen) => {
+    const lbl = document.getElementById('label-store-status');
+    if (lbl) {
+      lbl.textContent = isOpen ? '영업중' : '영업종료';
+      lbl.style.color = isOpen ? '#1b8a5a' : '#e11d48';
+    }
+  });
+  bindSwitch('switch-delivery-open', 'is_delivery_open');
+  bindSwitch('switch-pickup-open', 'is_pickup_open');
 }
 
 /**
@@ -51,6 +95,14 @@ export function renderStoreInfoForm(store) {
     const el = document.getElementById('op-type-hybrid');
     if (el) el.checked = true;
   }
+
+  // 4번 탭: 매장 픽업(포장) 설정 바인딩
+  const pickup = store.pickup_settings || {};
+  const swPickupEnable = document.getElementById('switch-pickup-enable');
+  if (swPickupEnable) swPickupEnable.checked = pickup.enabled !== false;
+  if (pickup.discount_amount !== undefined) setVal('input-pickup-discount', pickup.discount_amount);
+  if (pickup.prep_time_minutes !== undefined) setVal('input-pickup-time', pickup.prep_time_minutes);
+  if (pickup.pickup_memo !== undefined) setVal('input-pickup-memo', pickup.pickup_memo);
 }
 
 /**
@@ -349,7 +401,13 @@ export async function handleSaveStoreInfo(state, onSavedCallbacks = {}) {
     phone: getVal('form-phone'),
     address: getVal('form-address'),
     operating_hours: getVal('form-hours'),
-    origin_info: getVal('form-origin-info')
+    origin_info: getVal('form-origin-info'),
+    pickup_settings: {
+      enabled: document.getElementById('switch-pickup-enable')?.checked !== false,
+      discount_amount: Number(getVal('input-pickup-discount') || 0),
+      prep_time_minutes: Number(getVal('input-pickup-time') || 15),
+      pickup_memo: getVal('input-pickup-memo') || ''
+    }
   };
 
   const collectedHours = collectStoreHours();
@@ -358,7 +416,7 @@ export async function handleSaveStoreInfo(state, onSavedCallbacks = {}) {
   const storeOpType = opTypeRadio ? opTypeRadio.value : 'HYBRID';
 
   try {
-    const [resStore, resHours, resRules] = await Promise.all([
+    const [resStore, resType, resHours, resRules] = await Promise.all([
       merchantApi.updateStoreInfo(updates),
       merchantApi.updateStoreType(storeOpType).catch(err => {
         console.warn('매장 운영형태 저장 실패:', err);
@@ -378,6 +436,9 @@ export async function handleSaveStoreInfo(state, onSavedCallbacks = {}) {
     ]);
 
     state.store = resStore.store;
+    if (resType && resType.store_operation_type) {
+      state.store.store_operation_type = resType.store_operation_type;
+    }
     if (resHours && resHours.hours) {
       state.storeHours = resHours.hours;
     }

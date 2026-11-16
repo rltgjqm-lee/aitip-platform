@@ -17,12 +17,15 @@
  * ============================================================================
  */
 
-const API_BASE = '/api/food';
-
+import { customerApi } from './customer-api.js';
 import { generateCode128Svg } from './vendor/barcode-generator.js';
 import { defaultStore, defaultCategories, defaultOptionGroups, defaultProducts, defaultReviews } from './default-data.js';
+import { getOrCreateCustomerUid } from './zero-pii-idb.js';
 
 const state = {
+  customerUid: null,
+  pointBalance: 0,
+  platformFeed: { banners: [], maintenance_mode: false, maintenance_notice: '' },
   store: null,
   categories: [],
   products: [],
@@ -59,11 +62,42 @@ const state = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  state.customerUid = await getOrCreateCustomerUid();
   parseUrlParams();
   setupNavEvents();
   setupModalEvents();
-  await loadStoreData();
+  await Promise.all([loadStoreData(), loadPublicFeed()]);
 });
+
+async function loadPublicFeed() {
+  try {
+    const feed = await customerApi.getPublicFeed(state.customerUid);
+    if (feed) {
+      state.pointBalance = Number(feed.point_balance || 0);
+      state.platformFeed = feed;
+      renderZeroPiiHeaderFeed();
+    }
+  } catch (_) {}
+}
+
+function renderZeroPiiHeaderFeed() {
+  const pointsPill = document.getElementById('pwa-points-pill');
+  if (pointsPill) {
+    const shortUid = state.customerUid ? state.customerUid.slice(-6) : '';
+    pointsPill.textContent = `${Number(state.pointBalance || 0).toLocaleString()} P`;
+    pointsPill.title = `Zero-PII 고객 UID: ${state.customerUid || '-'} (ID: ${shortUid})`;
+  }
+  const noticeBar = document.getElementById('pwa-notice-bar');
+  if (noticeBar) {
+    if (state.platformFeed?.maintenance_mode) {
+      noticeBar.textContent = state.platformFeed.maintenance_notice || '시스템 점검 중입니다.';
+      noticeBar.style.display = 'block';
+    } else if (Array.isArray(state.platformFeed?.banners) && state.platformFeed.banners.length > 0 && !state.store?.blocks?.notice) {
+      noticeBar.textContent = state.platformFeed.banners[0].title;
+      noticeBar.style.display = 'block';
+    }
+  }
+}
 
 // URL 테이블 파라미터 감지 (?table=3)
 function parseUrlParams() {
@@ -78,28 +112,15 @@ function parseUrlParams() {
 // 백엔드 데이터 비동기 일괄 로드 (서버리스 API 및 안전망 시드 2중 보호)
 async function loadStoreData() {
   try {
-    const [storeRes, menuRes, reviewsRes] = await Promise.all([
-      fetch(`${API_BASE}/store`).then(r => {
-        if (!r.ok || r.headers.get('content-type')?.includes('text/html')) throw new Error('Not JSON');
-        return r.json();
-      }),
-      fetch(`${API_BASE}/menu`).then(r => {
-        if (!r.ok || r.headers.get('content-type')?.includes('text/html')) throw new Error('Not JSON');
-        return r.json();
-      }),
-      fetch(`${API_BASE}/reviews`).then(r => {
-        if (!r.ok || r.headers.get('content-type')?.includes('text/html')) throw new Error('Not JSON');
-        return r.json();
-      }).catch(() => [])
-    ]);
+    const { store, menu, reviews } = await customerApi.loadStoreBootstrap();
 
-    state.store = storeRes;
-    if (menuRes) {
-      state.categories = menuRes.categories || [];
-      state.products = menuRes.products || [];
-      state.option_groups = menuRes.option_groups || [];
+    state.store = store;
+    if (menu) {
+      state.categories = menu.categories || [];
+      state.products = menu.products || [];
+      state.option_groups = menu.option_groups || [];
     }
-    state.reviews = Array.isArray(reviewsRes) ? reviewsRes : [];
+    state.reviews = Array.isArray(reviews) ? reviews : [];
   } catch (err) {
     console.warn('[PWA] 백엔드 응답 지연/오프라인 감지 -> 번들 기본 시드 데이터로 즉시 전환합니다.', err);
     state.store = defaultStore;
@@ -1471,9 +1492,13 @@ function openAddressSearchModal() {
   modal.classList.add('active');
   layer.innerHTML = '';
 
-  // Daum Postcode 객체 사용 가능 시 카카오 공식 임베드 렌더링
-  if (typeof daum !== 'undefined' && daum.Postcode) {
-    new daum.Postcode({
+  // Kakao/Daum Postcode 객체 사용 가능 시 카카오 공식 임베드 렌더링
+  const PostcodeConstructor = (typeof kakao !== 'undefined' && kakao.Postcode)
+    ? kakao.Postcode
+    : (typeof daum !== 'undefined' && daum.Postcode ? daum.Postcode : null);
+
+  if (PostcodeConstructor) {
+    new PostcodeConstructor({
       oncomplete: function(data) {
         let fullRoadAddr = data.roadAddress; // 도로명 주소
         let extraRoadAddr = ''; // 건물명 등 참고항목
@@ -1609,20 +1634,26 @@ async function handleFinalOrderSubmit() {
       orderPayload.delivery_tip = 3000;
     }
 
+    if (state.customerUid) {
+      orderPayload.customer_uid = state.customerUid;
+    }
+
     let createdOrder = null;
     try {
-      const response = await fetch(`${API_BASE}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload)
-      });
-      if (response.ok && !response.headers.get('content-type')?.includes('text/html')) {
-        const result = await response.json();
-        if (result.success && result.order) {
-          createdOrder = result.order;
+      const result = await customerApi.createOrder(orderPayload);
+      if (result && result.success && result.order) {
+        createdOrder = result.order;
+        if (Number(result.earned_points || 0) > 0) {
+          state.pointBalance += Number(result.earned_points);
+          renderZeroPiiHeaderFeed();
         }
       }
     } catch (apiErr) {
+      const msg = apiErr?.message || '';
+      if (msg.includes('영업') || msg.includes('중지') || msg.includes('HTTP 400')) {
+        alert(msg || '현재 매장에서 주문을 접수할 수 없습니다.');
+        return;
+      }
       console.warn('[PWA] API 통신 실패 -> 로컬 브라우저 세션 주문으로 즉시 전환:', apiErr);
     }
 
@@ -1751,7 +1782,7 @@ function showSuccessReceiptModal(order) {
       </div>
     </div>
 
-    <div style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-bottom: 12px;">
+    <div id="pwa-track-status-banner" style="font-size: 11.5px; color: var(--text-muted); text-align: center; margin-bottom: 12px; font-weight: 600;">
       점주님이 주문을 수락하면 조리 예상 시간이 실시간으로 안내됩니다.
     </div>
 
@@ -1762,34 +1793,108 @@ function showSuccessReceiptModal(order) {
         <button id="btn-refresh-track" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: 700;">새로고침</button>
       </div>
       <div id="pwa-track-timeline-box" style="font-size: 11.5px; color: #334155;">
-        <div style="display: flex; justify-content: space-between; position: relative; margin: 12px 0 6px;">
-          <div style="text-align: center; flex: 1; font-weight: 800; color: #0f766e;">1. 주문접수<br><span style="font-size: 10px; color: #16a34a;">완료</span></div>
-          <div style="text-align: center; flex: 1; color: #64748b;">2. 매장조리<br><span style="font-size: 10px;">대기</span></div>
-          <div style="text-align: center; flex: 1; color: #64748b;">3. 준비완료<br><span style="font-size: 10px;">대기</span></div>
-          <div style="text-align: center; flex: 1; color: #64748b;">4. 배달/전달<br><span style="font-size: 10px;">대기</span></div>
-        </div>
+        <!-- renderLiveTrackTimeline()에서 동적 렌더링 -->
       </div>
     </div>
   `;
 
-  // 실시간 트래커 새로고침 이벤트 바인딩
+  // 실시간 타임라인 UI 렌더러
+  function renderLiveTrackTimeline(trackData) {
+    const box = body.querySelector('#pwa-track-timeline-box');
+    const banner = body.querySelector('#pwa-track-status-banner');
+    if (!box) return;
+
+    const status = trackData?.status || 'PENDING';
+    const riderStatus = trackData?.rider_dispatch_status || '';
+    const remMin = trackData?.remaining_minutes ?? trackData?.prep_time_minutes ?? 25;
+
+    const isAccepted = ['ACCEPTED', 'COOKING', 'READY', 'DISPATCHED', 'DELIVERED'].includes(status);
+    const isReady = ['READY', 'DISPATCHED', 'DELIVERED'].includes(status);
+    const isDispatched = ['DISPATCHED', 'DELIVERED'].includes(status) || ['PICKED_UP', 'DELIVERING', 'SELF_DELIVERING', 'DELIVERED'].includes(riderStatus);
+    const isDelivered = status === 'DELIVERED' || riderStatus === 'DELIVERED';
+
+    if (banner) {
+      if (isDelivered) {
+        banner.style.color = '#0f766e';
+        banner.textContent = '배달 및 전달이 완료되었습니다. 이용해 주셔서 감사합니다!';
+      } else if (isDispatched) {
+        banner.style.color = '#0f766e';
+        banner.textContent = '기사님이 음식을 픽업하여 안전하게 배달 중입니다!';
+      } else if (isReady) {
+        banner.style.color = '#0f766e';
+        banner.textContent = '조리가 완료되어 픽업/배달 출발을 준비 중입니다!';
+      } else if (isAccepted) {
+        banner.style.color = '#0f766e';
+        banner.textContent = `점주님이 주문을 수락하여 조리를 시작했습니다! (남은 예상: ${remMin}분)`;
+      }
+    }
+
+    const s1 = `<div style="text-align: center; flex: 1; font-weight: 800; color: #0f766e;">1. 주문접수<br><span style="font-size: 10px; color: #16a34a;">완료</span></div>`;
+    const s2 = isAccepted
+      ? `<div style="text-align: center; flex: 1; font-weight: 800; color: #0f766e;">2. 매장조리<br><span style="font-size: 10px; color: #16a34a;">${isReady ? '완료' : `조리중 (${remMin}분)`}</span></div>`
+      : `<div style="text-align: center; flex: 1; color: #64748b;">2. 매장조리<br><span style="font-size: 10px;">대기</span></div>`;
+    const s3 = isReady
+      ? `<div style="text-align: center; flex: 1; font-weight: 800; color: #0f766e;">3. 준비완료<br><span style="font-size: 10px; color: #16a34a;">완료</span></div>`
+      : `<div style="text-align: center; flex: 1; color: #64748b;">3. 준비완료<br><span style="font-size: 10px;">대기</span></div>`;
+    const s4 = isDispatched
+      ? `<div style="text-align: center; flex: 1; font-weight: 800; color: #0f766e;">4. 배달/전달<br><span style="font-size: 10px; color: #16a34a;">${isDelivered ? '전달완료' : '배달중'}</span></div>`
+      : `<div style="text-align: center; flex: 1; color: #64748b;">4. 배달/전달<br><span style="font-size: 10px;">대기</span></div>`;
+
+    box.innerHTML = `<div style="display: flex; justify-content: space-between; position: relative; margin: 12px 0 6px;">${s1}${s2}${s3}${s4}</div>`;
+  }
+
+  // 최초 타임라인 렌더링
+  renderLiveTrackTimeline(order);
+
+  // 실시간 WebSocket 상태 구독 (점주 수락 즉시 0.01초 UI 자동 갱신)
+  let trackWs = null;
+  let trackPingTimer = null;
+  try {
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    trackWs = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
+    trackWs.onopen = () => {
+      trackWs.send(JSON.stringify({
+        type: 'SUBSCRIBE',
+        topic: `aitip/orders/${order.order_id}/status`
+      }));
+      if (trackPingTimer) clearInterval(trackPingTimer);
+      trackPingTimer = setInterval(() => {
+        if (trackWs && trackWs.readyState === WebSocket.OPEN) {
+          trackWs.send(JSON.stringify({ type: 'PING' }));
+        }
+      }, 30000);
+    };
+    trackWs.onclose = () => {
+      if (trackPingTimer) { clearInterval(trackPingTimer); trackPingTimer = null; }
+    };
+    trackWs.onmessage = (evt) => {
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg.type === 'MESSAGE' && msg.payload && msg.payload.order_id === order.order_id) {
+          renderLiveTrackTimeline(msg.payload);
+          showToast('주문 진행 상태가 실시간으로 업데이트되었습니다.');
+        }
+      } catch (e) {}
+    };
+  } catch (wsErr) {}
+
+  // 모달 닫기 시 소켓 정리
+  const closeOverlayAndCleanup = () => {
+    if (trackPingTimer) { clearInterval(trackPingTimer); trackPingTimer = null; }
+    if (trackWs && trackWs.readyState <= 1) {
+      trackWs.close();
+    }
+  };
+  document.getElementById('btn-close-success')?.addEventListener('click', closeOverlayAndCleanup, { once: true });
+  document.getElementById('btn-success-done')?.addEventListener('click', closeOverlayAndCleanup, { once: true });
+
+  // 실시간 트래커 수동 새로고침 이벤트 바인딩
   body.querySelector('#btn-refresh-track')?.addEventListener('click', async () => {
     try {
-      const res = await fetch(`${API_BASE}/orders/${order.order_id}/track`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.track) {
-          const t = json.track;
-          const statusMap = {
-            PENDING: '주문 접수 대기 중',
-            ACCEPTED: `조리 중 (남은 예상: ${t.remaining_minutes}분)`,
-            COOKING: `조리 중 (남은 예상: ${t.remaining_minutes}분)`,
-            READY: '조리 완료 (배달 출발 / 픽업 대기)',
-            DISPATCHED: '라이더 배달 중 (도착 예정)',
-            DELIVERED: '배달 / 전달 완료'
-          };
-          alert(`[주문 상태: ${statusMap[t.status] || t.status}]\n주문번호: ${t.short_display_id}\n남은시간: ${t.remaining_minutes}분`);
-        }
+      const json = await customerApi.trackOrder(order.order_id);
+      if (json && json.success && json.track) {
+        renderLiveTrackTimeline(json.track);
+        showToast('최신 주문 상태를 불러왔습니다.');
       }
     } catch (e) {
       console.warn('추적 새로고침 오류:', e);

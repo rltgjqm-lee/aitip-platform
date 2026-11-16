@@ -1,5 +1,5 @@
 export const defaultStore = {
-  "store_id": "str_01h7x8q4barunchicken001",
+  "store_id": "STR-11-650-01-56162-0001",
   "store_name": "바른치킨 서초본점",
   "biz_number": "214-88-59124",
   "owner_name": "홍길동",
@@ -34,7 +34,7 @@ export const defaultStore = {
     "group-marketing",
     "group-settlement"
   ],
-  "terminal_id": "dev_01m6z4term8923",
+  "terminal_id": "DEV-CTI-882910",
   "terminal_status": "ONLINE",
   "delivery_regions": [
     "서초1동",

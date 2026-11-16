@@ -1,6 +1,6 @@
 {
   "store": {
-    "store_id": "str_01h7x8q4barunchicken001",
+    "store_id": "STR-11-650-01-56162-0001",
     "store_name": "바른치킨 서초본점",
     "biz_number": "214-88-59124",
     "owner_name": "홍길동",
@@ -35,7 +35,7 @@
       "group-marketing",
       "group-settlement"
     ],
-    "terminal_id": "dev_01m6z4term8923",
+    "terminal_id": "DEV-CTI-882910",
     "terminal_status": "ONLINE",
     "delivery_regions": [
       "서초1동",
@@ -657,6 +657,64 @@
     }
   ],
   "live_orders": [
+    {
+      "order_id": "ord_01m7canmkpsmebqap6mbsmebqa",
+      "short_display_id": "A-41",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-4113-8943",
+      "virtual_phone_id": "vnm_01m7canmm7zjjqnsrttbzjjqns",
+      "virtual_phone_expires_at": "2026-11-14T07:07:16.103Z",
+      "road_address": "서울특별시 서초구 서초대로 42길 11",
+      "detail_address": "302호",
+      "postal_code": "06647",
+      "delivery_address": "서울특별시 서초구 서초대로 42길 11 302호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요 (아기가 자고 있어요)",
+      "items": [
+        {
+          "item_id": "itm_01m7canmm5yjz2pcfaewyjz2pc",
+          "product_id": "prd_01h7x8brownrice",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_bone",
+              "option_name": "뼈 치킨 (기본)",
+              "price": 0
+            },
+            {
+              "group_id": "optgrp_01h7x8spicy",
+              "group_name": "맛/맵기 강도",
+              "option_id": "opt_spicy_mild",
+              "option_name": "순한맛 (기본 담백)",
+              "price": 0
+            }
+          ],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": 25,
+      "rider_dispatch_status": "DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-14T06:07:16.105Z",
+      "accepted_at": "2026-11-14T06:09:05.409Z"
+    },
     {
       "order_id": "ord_01m772a8tm9x2rfs73159x2rfs",
       "short_display_id": "A-40",
@@ -1372,6 +1430,15 @@
     }
   ],
   "virtual_numbers": [
+    {
+      "id": "vnm_01m7canmm7zjjqnsrttbzjjqns",
+      "virtual_phone": "0504-4113-8943",
+      "order_id": "ord_01m7canmkpsmebqap6mbsmebqa",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-14T06:07:16.103Z",
+      "expires_at": "2026-11-14T07:07:16.103Z"
+    },
     {
       "id": "vnm_01m772a8tmb3p4zj3fg8b3p4zj",
       "virtual_phone": "0504-3187-2887",

@@ -14,15 +14,38 @@ import { merchantApi } from '../api.js';
 import { openReceiptModal } from './receipt.js';
 
 let currentKdsFilter = 'ALL';
+let sharedAudioCtx = null;
+
+function getOrCreateAudioCtx() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!sharedAudioCtx) {
+    sharedAudioCtx = new AudioCtx();
+  }
+  if (sharedAudioCtx.state === 'suspended') {
+    sharedAudioCtx.resume().catch(() => {});
+  }
+  return sharedAudioCtx;
+}
+
+// 브라우저 오디오 자동재생 정책(Autoplay Policy) 해제: 최초 사용자 클릭 시 잠금 해제
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    getOrCreateAudioCtx();
+    window.removeEventListener('pointerdown', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+  window.addEventListener('pointerdown', unlockAudio, { once: true });
+  window.addEventListener('keydown', unlockAudio, { once: true });
+}
 
 export function playOrderChime() {
   const check = document.getElementById('check-kds-sound');
   if (check && !check.checked) return;
 
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    const ctx = getOrCreateAudioCtx();
+    if (!ctx) return;
 
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
@@ -187,13 +210,13 @@ export function renderKdsOrders(state) {
         </div>
         
         <div class="kds-items-box">
-          ${order.items.map(it => `
+          ${(order.items || []).map(it => `
             <div class="kds-item-title">
-              <span>${it.name} × ${it.quantity}</span>
-              <span>${it.total_price.toLocaleString()}원</span>
+              <span>${it.name} × ${it.quantity || 1}</span>
+              <span>${Number(it.total_price || 0).toLocaleString()}원</span>
             </div>
             <div class="kds-item-options">
-              ${(it.selected_options || []).map(opt => `• ${opt.group_name}: ${opt.option_name} (+${opt.price.toLocaleString()}원)`).join('<br>')}
+              ${(it.selected_options || []).map(opt => `• ${opt.group_name || '옵션'}: ${opt.option_name || ''} (+${Number(opt.price || 0).toLocaleString()}원)`).join('<br>')}
             </div>
           `).join('')}
         </div>
@@ -201,9 +224,9 @@ export function renderKdsOrders(state) {
         <div class="kds-meta-row" style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #e5e8eb;">
           <div>
             <span class="label" style="font-weight: 700;">총 결제금액</span>
-            <div style="font-size: 11.5px; color: #059669; font-weight: 600;">실 공헌이익: ${estProfit.toLocaleString()}원</div>
+            <div style="font-size: 11.5px; color: #059669; font-weight: 600;">실 공헌이익: ${Number(estProfit || 0).toLocaleString()}원</div>
           </div>
-          <span class="val" style="font-size: 16px; font-weight: 800; color: #191f28;">${order.final_payment_amount.toLocaleString()}원</span>
+          <span class="val" style="font-size: 16px; font-weight: 800; color: #191f28;">${Number(order.final_payment_amount || 0).toLocaleString()}원</span>
         </div>
       </div>
       <div class="kds-card-footer">
@@ -447,4 +470,75 @@ export function initKdsFilterListeners(state) {
       setKdsFilter(filter, state);
     });
   });
+}
+
+export function renderOrderHistory(state) {
+  const tbody = document.getElementById('tbody-order-history');
+  const summaryEl = document.getElementById('order-history-summary');
+  const exportBtn = document.getElementById('btn-export-history-csv');
+  if (!tbody) return;
+
+  const orders = Array.isArray(state.liveOrders) ? state.liveOrders : [];
+  const totalAmount = orders.reduce((sum, o) => sum + Number(o.final_payment_amount || 0), 0);
+  if (summaryEl) {
+    summaryEl.textContent = `전체 주문 내역 (총 ${orders.length}건 · ${totalAmount.toLocaleString()}원)`;
+  }
+
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">접수된 주문 내역이 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = orders.map(o => {
+      const timeStr = o.created_at ? new Date(o.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-';
+      const typeTag = o.fulfillment_type === 'TAKEOUT'
+        ? '<span class="tag tag-pickup">픽업(포장)</span>'
+        : (o.fulfillment_type === 'DINE_IN' ? '<span class="tag">매장식사</span>' : '<span class="tag tag-mint">배달</span>');
+      const itemsSummary = Array.isArray(o.items) && o.items.length > 0
+        ? (o.items.length > 1 ? `${o.items[0].name} 외 ${o.items.length - 1}건` : `${o.items[0].name} × ${o.items[0].quantity || 1}`)
+        : '-';
+      const payLabel = o.payment_method === 'CARD' ? '신용카드' : (o.payment_method === 'AITIP_ZERO_PAY' ? '제로페이' : (o.payment_method || '간편결제'));
+      const statusBadge = (o.status === 'COMPLETED' || o.status === 'DELIVERED')
+        ? '<span class="tag tag-success">완료</span>'
+        : (o.status === 'ACCEPTED' ? '<span class="tag tag-mint">조리/진행중</span>' : '<span class="tag">접수대기</span>');
+      return `
+        <tr>
+          <td><strong>${o.short_display_id || o.order_id}</strong></td>
+          <td style="color: #64748b;">${timeStr}</td>
+          <td>${typeTag}</td>
+          <td>${itemsSummary}</td>
+          <td>${payLabel}</td>
+          <td style="text-align: right; font-weight: 700;">${Number(o.final_payment_amount || 0).toLocaleString()}원</td>
+          <td style="text-align: center;">${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  if (exportBtn && !exportBtn.dataset.bound) {
+    exportBtn.dataset.bound = 'true';
+    exportBtn.addEventListener('click', () => {
+      const list = Array.isArray(state.liveOrders) ? state.liveOrders : [];
+      const rows = [['주문번호', '주문ID', '유형', '주문일시', '결제수단', '결제금액', '상태']];
+      list.forEach(o => {
+        rows.push([
+          o.short_display_id || '',
+          o.order_id || '',
+          o.fulfillment_type || '',
+          o.created_at || '',
+          o.payment_method || '',
+          String(o.final_payment_amount || 0),
+          o.status || ''
+        ]);
+      });
+      const csv = '\uFEFF' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aitip_order_history_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
 }

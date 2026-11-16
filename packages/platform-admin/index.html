@@ -16,10 +16,10 @@
       </div>
 
       <nav class="sidebar-nav" id="sidebar-nav">
-        <!-- 대항목 1: 전사 통합 관제 -->
-        <div class="nav-group open" data-group="control">
+        <!-- 1. 실시간 관제 & CS (운영실) -->
+        <div class="nav-group open" data-group="operations">
           <button class="nav-group-header" type="button" aria-expanded="true">
-            <span>전사 통합 관제</span>
+            <span>1. 실시간 관제 & CS</span>
             <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="nav-group-items">
@@ -28,99 +28,139 @@
                 <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 <span class="nav-label">통합 경영 대시보드</span>
               </div>
-              <span class="nav-pill-badge">실시간</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- 대항목 2: 영업 유통 & 가맹점 -->
-        <div class="nav-group open" data-group="distribution">
-          <button class="nav-group-header" type="button" aria-expanded="true">
-            <span>영업 유통 & 가맹점</span>
-            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-          <div class="nav-group-items">
-            <a href="#distribution" class="nav-item" data-view="view-distribution">
-              <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-                <span class="nav-label">영업 유통망 관리</span>
-              </div>
-              <span class="nav-pill-badge">17개 총판</span>
-            </a>
-
-            <a href="#merchants" class="nav-item" data-view="view-merchants">
-              <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                <span class="nav-label">가맹점 온보딩 심사</span>
-              </div>
-              <span class="nav-pill-badge">6건 대기</span>
-            </a>
-          </div>
-        </div>
-
-        <!-- 대항목 3: 인프라 & 실시간 현장 -->
-        <div class="nav-group open" data-group="infra">
-          <button class="nav-group-header" type="button" aria-expanded="true">
-            <span>인프라 & 실시간 현장</span>
-            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-          <div class="nav-group-items">
-            <a href="#hardware" class="nav-item" data-view="view-hardware">
-              <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
-                <span class="nav-label">스마트 단말기 관제 (MDM)</span>
-              </div>
-              <span class="nav-pill-badge">97.7%</span>
             </a>
 
             <a href="#orders" class="nav-item" data-view="view-orders">
               <div class="nav-item-left">
                 <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                <span class="nav-label">실시간 주문 & 배송 관제</span>
+                <span class="nav-label">실시간 주문 스트림</span>
               </div>
             </a>
 
-            <a href="#telephony" class="nav-item" data-view="view-telephony">
+            <a href="#riders" class="nav-item" data-view="view-riders">
               <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                <span class="nav-label">통신사 CTI & 0504 허브</span>
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2"></path></svg>
+                <span class="nav-label">전국 배송망 관제</span>
               </div>
             </a>
 
-            <a href="#disputes" class="nav-item" data-view="view-disputes">
+            <a href="#cs-refunds" class="nav-item" data-view="view-cs-refunds">
               <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                <span class="nav-label">CS & 분쟁 조정 센터</span>
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <span class="nav-label">주문 분쟁·환불 & UID 관제</span>
               </div>
             </a>
           </div>
         </div>
 
-        <!-- 대항목 4: 재무 · 세무 · 연동 -->
-        <div class="nav-group open" data-group="finance">
+        <!-- 2. 가맹점 · 영업망 · 자산 (사업/영업) -->
+        <div class="nav-group open" data-group="merchants">
           <button class="nav-group-header" type="button" aria-expanded="true">
-            <span>재무 · 세무 · 연동</span>
+            <span>2. 가맹점 · 영업망 · 자산</span>
             <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="nav-group-items">
-            <a href="#settlement" class="nav-item" data-view="view-settlement">
+            <a href="#merchants" class="nav-item" data-view="view-merchants">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                <span class="nav-label">가맹점 & 마트 통합 관리</span>
+              </div>
+            </a>
+
+            <a href="#onboarding" class="nav-item" data-view="view-onboarding">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                <span class="nav-label">신규 입점 온보딩 심사</span>
+              </div>
+            </a>
+
+            <a href="#distribution" class="nav-item" data-view="view-distribution">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                <span class="nav-label">영업망 (직영·총판·대리점)</span>
+              </div>
+            </a>
+
+            <a href="#hardware" class="nav-item" data-view="view-hardware">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+                <span class="nav-label">단말기 자산 & MDM</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 3. 프로모션 & 포인트 (마케팅) -->
+        <div class="nav-group open" data-group="marketing">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>3. 프로모션 & 포인트</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#promotions" class="nav-item" data-view="view-promotions">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                <span class="nav-label">배너·공지 & 플랫폼 쿠폰</span>
+              </div>
+            </a>
+
+            <a href="#points" class="nav-item" data-view="view-points">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M8 10h8"></path></svg>
+                <span class="nav-label">포인트 원장 & 어뷰징 관제</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 4. 정산 & 세무 (재무) -->
+        <div class="nav-group open" data-group="finance">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>4. 정산 & 세무</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#settlement-merchants" class="nav-item" data-view="view-settlement-merchants">
               <div class="nav-item-left">
                 <svg class="nav-item-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                <span class="nav-label">다중 자산 정산 & 세무</span>
+                <span class="nav-label">결제 대사 & 정산 관제</span>
               </div>
             </a>
 
-            <a href="#integrations" class="nav-item" data-view="view-integrations">
+            <a href="#settlement-taxes" class="nav-item" data-view="view-settlement-taxes">
               <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                <span class="nav-label">외부 연동 게이트웨이 허브</span>
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line><line x1="7" y1="15" x2="7.01" y2="15"></line><line x1="12" y1="15" x2="17" y2="15"></line></svg>
+                <span class="nav-label">유통망 세무 정산 센터</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <!-- 5. 플랫폼 설정 & 보안 (슈퍼관리자 전용) -->
+        <div class="nav-group open" data-group="system">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>5. 플랫폼 설정 & 보안</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#zones" class="nav-item" data-view="view-zones">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                <span class="nav-label">서비스 오픈 지역 · 5대 업종</span>
               </div>
             </a>
 
-            <a href="#security" class="nav-item" data-view="view-security">
+            <a href="#accounts" class="nav-item" data-view="view-accounts">
               <div class="nav-item-left">
-                <svg class="nav-item-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                <span class="nav-label">시스템 보안 & 감사 로그</span>
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                <span class="nav-label">임직원 RBAC & 감사 로그</span>
+              </div>
+            </a>
+
+            <a href="#policies" class="nav-item" data-view="view-policies">
+              <div class="nav-item-left">
+                <svg class="nav-item-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span class="nav-label">시스템 정책 & API 연동</span>
               </div>
             </a>
           </div>
@@ -129,21 +169,56 @@
 
       <div class="sidebar-footer">
         <div class="operator-info">
-          <span class="operator-name">최고운영책임자 (HQ)</span>
-          <span class="operator-role">Super Admin · 2FA 인증됨</span>
+          <span class="operator-name" id="operator-name">최고운영책임자 (HQ)</span>
+          <span class="operator-role" id="operator-role">Super Admin · 2FA 인증됨</span>
         </div>
-        <button class="header-btn" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-default); padding: 4px 8px; font-size: 11px;">로그아웃</button>
+        <button class="header-btn" id="btn-operator-logout" style="background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-default); padding: 4px 8px; font-size: 11px;">로그아웃</button>
       </div>
     </aside>
 
     <!-- 2. Main Content Viewport (60% Clean Slate White) -->
     <main class="admin-main">
+      <!-- 테넌트 빙의(Impersonation) 알림 배너 (Retool/Odoo 스타일) -->
+      <div id="tenant-impersonate-banner" class="impersonate-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11.5px; font-weight: 800; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 2px 6px; border-radius: 4px;">[알림]</span>
+          <span>현재 <b id="impersonate-tenant-name">[강남제일정보시스템 대리점]</b> 권한으로 빙의(Impersonation) 관제 중입니다. (해당 조직의 권한 및 데이터만 필터링됩니다)</span>
+        </div>
+        <button type="button" id="btn-revert-tenant" class="header-btn" style="background: #ffffff; color: #b45309; border: 1px solid #fde68a; font-weight: 800; padding: 4px 10px; font-size: 11.5px;">
+          본사(HQ) 관점으로 복귀
+        </button>
+      </div>
+
       <header class="admin-header">
         <div class="header-left">
           <h1 class="view-page-title" id="page-title">통합 경영 대시보드</h1>
           <span class="system-status-indicator">
             <span class="status-dot"></span>전국 통신망 정상 (MQTT 8883)
           </span>
+
+          <!-- 상단 테넌트(조직/대리점) 컨텍스트 스위처 -->
+          <div class="tenant-switcher-wrapper" style="margin-left: 12px;">
+            <select id="tenant-switcher" class="erp-select" style="font-weight: 800; background: #f0fdf4; border-color: #bbf7d0; color: #166534; font-size: 12px; padding: 5px 10px;">
+              <option value="hq" data-role="HQ_SUPER" selected>관점: 본사 최고운영자 (전국 전체)</option>
+              <optgroup label="본사 임직원 역할 (HQ Staff RBAC)">
+                <option value="hq_cs" data-role="HQ_CS">└ [역할] 본사 CS 담당자 (관제·환불 전용)</option>
+                <option value="hq_finance" data-role="HQ_FINANCE">└ [역할] 본사 재무·정산 담당자 (정산·세무 전용)</option>
+              </optgroup>
+              <optgroup label="광역 총판 (Master Distributor)">
+                <option value="dst_01jcbk9v502x8m4v0k5a1b2c01" data-role="DISTRIBUTOR">└ [빙의] 서울특별시 광역총판</option>
+                <option value="HQ_DIRECT" data-role="DISTRIBUTOR">└ [빙의] 본사 직영 (HQ Direct)</option>
+              </optgroup>
+              <optgroup label="지역 대리점 (Local Agency)">
+                <option value="agn_01jcbk9v502x8m4v0k5a1b2c01" data-role="AGENCY">└ [빙의] 강남제일정보시스템 (서초·강남)</option>
+                <option value="agn_01jcbk9v502x8m4v0k5a1b2c02" data-role="AGENCY">└ [빙의] (주)서초네트웍스 (서초)</option>
+              </optgroup>
+              <optgroup label="외부 3대 제휴사 (Alliance)">
+                <option value="ally_sales" data-role="SALES_ALLY">└ [제휴] 영업 제휴사 (SALES_ALLY)</option>
+                <option value="ally_service" data-role="SERVICE_ALLY">└ [제휴] 서비스 제휴사 (SERVICE_ALLY)</option>
+                <option value="ally_tech" data-role="TECH_ALLY">└ [제휴] 기술 제휴사 (TECH_ALLY)</option>
+              </optgroup>
+            </select>
+          </div>
         </div>
 
         <div class="header-right">
@@ -159,7 +234,74 @@
       <div class="admin-content" id="admin-content-container">
         <!-- admin-app.js에서 동적 렌더링 -->
       </div>
+        <!-- admin-app.js에서 동적 렌더링 -->
+      </div>
     </main>
+  </div>
+
+  <!-- 4. Enterprise Slide Detail Drawer (Offcanvas Drawer) -->
+  <aside class="detail-drawer" id="detail-drawer">
+    <div class="drawer-header">
+      <div>
+        <span class="brand-badge" id="drawer-badge">TRANSACTION DETAIL</span>
+        <h3 id="drawer-title" style="font-size: 16px; font-weight: 800; margin-top: 4px;">거래 및 정산 상세 원장</h3>
+      </div>
+      <button type="button" class="drawer-close-btn" id="btn-close-drawer">&times;</button>
+    </div>
+    <div class="drawer-body" id="drawer-body">
+      <!-- 동적 주입 -->
+    </div>
+  </aside>
+  <div class="drawer-backdrop" id="drawer-backdrop" style="display: none;"></div>
+
+  <!-- 3. Enterprise Login Modal Overlay (Enatega Login.jsx + RBAC Presets) -->
+  <div class="login-modal-overlay" id="login-modal-overlay" style="display: none;">
+    <div class="login-modal-card">
+      <div class="login-modal-header">
+        <span class="brand-badge" style="margin-bottom: 8px;">AITIP ENTERPRISE</span>
+        <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary);">관리자 통합 보안 인증</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">접근 권한에 따라 계정을 선택하거나 로그인 정보를 입력하십시오.</p>
+      </div>
+
+      <!-- 빠른 권한 선택 프리셋 탭 -->
+      <div class="login-preset-grid">
+        <button type="button" class="preset-btn active" data-role="SUPER_ADMIN" data-id="admin_hq" data-name="최고운영책임자" data-role-label="HQ Super Admin">
+          <span class="preset-role">본사 최고운영자</span>
+          <span class="preset-desc">전국 17개 총판 총괄</span>
+        </button>
+        <button type="button" class="preset-btn" data-role="MASTER_DISTRIBUTOR" data-id="dst_seoul" data-name="서울 총판장" data-role-label="서울 광역 총판">
+          <span class="preset-role">광역 총판</span>
+          <span class="preset-desc">dst_seoul (서울권역)</span>
+        </button>
+        <button type="button" class="preset-btn" data-role="LOCAL_AGENCY" data-id="agn_gangnam" data-name="강남 대리점장" data-role-label="강남 지역 대리점">
+          <span class="preset-role">지역 대리점</span>
+          <span class="preset-desc">agn_gangnam (226개소)</span>
+        </button>
+        <button type="button" class="preset-btn" data-role="FIELD_SALES" data-id="fsr_01" data-name="현장영업 매니저" data-role-label="현장 영업사원">
+          <span class="preset-role">영업 사원</span>
+          <span class="preset-desc">fsr_01 (가맹점 유치)</span>
+        </button>
+      </div>
+
+      <form id="form-admin-login" class="login-form">
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">관리자 계정 식별자 (TypeID / ID)</label>
+          <input type="text" id="login-input-id" class="login-input" value="admin_hq" required style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 6px; font-size: 14px; font-family: monospace;">
+        </div>
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">비밀번호</label>
+          <input type="password" id="login-input-pw" class="login-input" value="••••••••••••" required style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 6px; font-size: 14px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px;">2FA OTP 보안 핀코드 (6자리)</label>
+          <input type="text" id="login-input-otp" class="login-input" value="898901" maxlength="6" style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: 6px; font-size: 14px; letter-spacing: 4px; font-weight: 800; font-family: monospace;">
+        </div>
+
+        <button type="submit" class="header-btn header-btn-primary" id="btn-login-submit" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 800; border-radius: 8px;">
+          보안 세션 로그인 및 콘솔 진입
+        </button>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="./js/admin-app.js"></script>
