@@ -18,7 +18,7 @@ import { renderPaymentsControlView } from './modules/payments-control.js';
 import { renderTaxSettlement } from './modules/settlement-taxes.js';
 import { renderPartnerIntegrationsView } from './modules/partner-integrations.js';
 import { renderIamAuditView } from './modules/iam-audit.js';
-import { renderCsRefundsView } from './modules/cs-refunds.js';
+import { renderCsRefundsView, setCsSearchQuery } from './modules/cs-refunds.js';
 import { renderPointsLedgerView } from './modules/points-ledger.js';
 import { renderPromotionsView } from './modules/promotions.js';
 import { renderServiceZonesView } from './modules/service-zones.js';
@@ -103,14 +103,14 @@ function syncSidebarActive(viewKey) {
   if (titleEl) {
     const titleMap = {
       'view-dashboard': '통합 경영 대시보드',
-      'view-merchants': '소상공인 외식 가맹점 관리',
+      'view-merchants': '가맹점 통합 관리',
       'view-onboarding': '신규 입점 온보딩 심사',
       'view-marts': '단위농협 하나로마트 관리',
       'view-hardware': '스마트 단말기 자산 & MDM',
       'view-riders': '전국 배송망 쿼드러플 관제',
       'view-orders': '실시간 주문 스트림 관제',
       'view-cs-refunds': '주문 분쟁·환불 & 고객 UID 관제 (Zero-PII)',
-      'view-zones': '서비스 오픈 지역 & 5대 업종 관리',
+      'view-zones': '플랫폼 오픈 · 긴급제어',
       'view-promotions': '배너·공지 & 플랫폼 쿠폰',
       'view-points': '포인트 원장 & 어뷰징 관제 (Zero-PII)',
       'view-distribution': '영업망 & 파트너 통합 관리',
@@ -253,6 +253,30 @@ function setupNavigation() {
 
 // 글로벌 이벤트
 function setupGlobalEvents() {
+  const globalSearchInput = document.getElementById('global-admin-search');
+  const globalSearchBtn = document.getElementById('btn-global-admin-search');
+  const runGlobalSearch = () => {
+    const q = globalSearchInput?.value?.trim();
+    if (!q) return;
+    const isOrderOrCustomer = q.startsWith('ord_') || q.startsWith('cust_') || /^[A-Z]-\d+$/i.test(q);
+    if (isOrderOrCustomer) {
+      setCsSearchQuery(q);
+      state.currentView = 'view-cs-refunds';
+    } else {
+      state.currentView = 'view-merchants';
+    }
+    syncSidebarActive(state.currentView);
+    syncTopTargetButton(state.currentView);
+    loadCurrentView(true);
+  };
+  globalSearchBtn?.addEventListener('click', runGlobalSearch);
+  globalSearchInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      runGlobalSearch();
+    }
+  });
+
   const btnRefresh = document.getElementById('btn-global-refresh');
   if (btnRefresh) {
     btnRefresh.addEventListener('click', () => {

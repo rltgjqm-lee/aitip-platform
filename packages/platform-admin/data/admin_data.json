@@ -133,6 +133,28 @@
   },
   "pointLedger": [
     {
+      "tx_id": "ptx_1794880215599",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "delta": 194,
+      "balance_after": 334,
+      "type": "EARN_ORDER",
+      "bearer": "PLATFORM",
+      "memo": "주문(A-54) 1% 자동 적립",
+      "created_at": "2026-11-17T01:50:15.599Z"
+    },
+    {
+      "tx_id": "ptx_use_1794880215585",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "order_id": "pending",
+      "delta": -100,
+      "balance_after": 140,
+      "type": "USE_ORDER",
+      "bearer": "PLATFORM",
+      "memo": "주문 포인트 사용 차감",
+      "created_at": "2026-11-17T01:50:15.585Z"
+    },
+    {
       "tx_id": "ptx_20261116_01",
       "customer_uid": "cust_01jcb_pwa_88412",
       "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
@@ -413,6 +435,139 @@
         "signed_at": "2026-11-16T06:58:32.854Z"
       },
       "status": "ACTIVE"
+    }
+  ],
+  "platformCoupons": [
+    {
+      "id": "pc_req_1794875213099",
+      "issuer_type": "ALLIANCE",
+      "alliance_name": "강남제일정보시스템",
+      "name": "테스트 권역 1000원 행사",
+      "discount_amount": 1000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 20,
+        "alliance": 80,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_platform_01",
+      "issuer_type": "PLATFORM",
+      "alliance_name": "본사(플랫폼)",
+      "name": "상생 플랫폼 첫주문 2,000원 할인",
+      "discount_amount": 2000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 100,
+        "alliance": 0,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_alliance_01",
+      "issuer_type": "ALLIANCE",
+      "alliance_name": "NH농협 제로페이",
+      "name": "제로페이 결제 시 1,500원 공동 할인",
+      "discount_amount": 1500,
+      "min_order_amount": 12000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 50,
+        "alliance": 50,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    }
+  ],
+  "promoRequests": [
+    {
+      "id": "pr_req_1794875213053",
+      "requester_role": "HQ_SUPER",
+      "requester_name": "강남제일정보시스템",
+      "title": "테스트 권역 1000원 행사",
+      "discount_amount": 1000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 20,
+        "alliance": 80,
+        "merchant": 0
+      },
+      "status": "APPROVED",
+      "created_at": "2026-11-17 00:26"
+    },
+    {
+      "id": "pr_req_01",
+      "requester_role": "SALES_ALLY",
+      "requester_name": "서초소상공인연합회",
+      "title": "서초 상권 주말 2,000원 상생 쿠폰",
+      "discount_amount": 2000,
+      "min_order_amount": 18000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 30,
+        "alliance": 70,
+        "merchant": 0
+      },
+      "status": "REQUESTED",
+      "created_at": "2026-11-17 08:30"
+    }
+  ],
+  "merchantPromoOptOuts": {
+    "STR-11-650-01-56162-0001": []
+  },
+  "auditLogs": [
+    {
+      "id": "aud_1794881532394",
+      "actor_role": "HQ_SUPER",
+      "tenant_id": "hq",
+      "action": "PAYOUT_DECIDE",
+      "target": "바른치킨 서초본점",
+      "detail": "정산 지급 APPROVED (635,800원)",
+      "created_at": "2026-11-17T02:12:12.425Z"
+    },
+    {
+      "id": "aud_init_01",
+      "actor_role": "HQ_SUPER",
+      "tenant_id": "hq",
+      "action": "SYSTEM_BOOT",
+      "target": "PLATFORM_ADMIN",
+      "detail": "슈퍼관리자 감사 원장 초기화 완료",
+      "created_at": "2026-11-17T02:12:12.296Z"
+    }
+  ],
+  "payoutRequests": [
+    {
+      "id": "pay_req_01",
+      "payee_type": "STORE",
+      "payee_id": "STR-11-650-01-56162-0001",
+      "payee_name": "바른치킨 서초본점",
+      "gross_amount": 634300,
+      "platform_promo_reimburse": 750,
+      "alliance_promo_reimburse": 750,
+      "net_payout": 635800,
+      "bank_info": "신한은행 110-***-****",
+      "status": "APPROVED",
+      "requested_at": "2026-11-17 09:00",
+      "decided_at": "2026-11-17T02:12:12.394Z"
+    },
+    {
+      "id": "pay_req_02",
+      "payee_type": "AGENCY",
+      "payee_id": "agn_01jcbk9v502x8m4v0k5a1b2c01",
+      "payee_name": "강남제일정보시스템",
+      "gross_amount": 420000,
+      "platform_promo_reimburse": 0,
+      "alliance_promo_reimburse": 0,
+      "net_payout": 406140,
+      "bank_info": "국민은행 010-***-**** (3.3% 공제)",
+      "status": "PENDING",
+      "requested_at": "2026-11-17 09:05"
     }
   ]
 }

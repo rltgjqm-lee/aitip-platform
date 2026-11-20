@@ -67,9 +67,70 @@ export function renderCoupons(state) {
         state.coupons.push(res.coupon);
         renderCoupons(state);
         alert(`'${name.trim()}' 쿠폰이 성공적으로 발행되었습니다.`);
-      } catch (err) {
+    } catch (err) {
         alert('쿠폰 발행 실패: ' + err.message);
       }
     });
+  }
+
+  renderJointPromoOptInSection(state, tbody);
+}
+
+async function renderJointPromoOptInSection(state, tbody) {
+  const card = tbody.closest('.card') || tbody.closest('section');
+  if (!card) return;
+  let box = document.getElementById('joint-promo-optin-box');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'joint-promo-optin-box';
+    box.style.cssText = 'margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0;';
+    card.appendChild(box);
+  }
+  const storeId = state.store?.store_id || 'STR-11-650-01-56162-0001';
+  try {
+    const res = await merchantApi.getJointPromotions(storeId);
+    const list = res.promotions || [];
+    box.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div>
+          <strong style="font-size: 14px; color: #0f172a;">본사 · 제휴사 공동 프로모션 참여 동의 (Opt-in)</strong>
+          <div style="font-size: 12px; color: #64748b;">본사/제휴사 부담 행사는 점주 동의 시에만 매장에 노출되며, 가맹점 정산금에서 차감되지 않습니다.</div>
+        </div>
+      </div>
+      <table class="data-table" style="width: 100%; font-size: 12.5px;">
+        <thead>
+          <tr>
+            <th>주체</th>
+            <th>행사 쿠폰명</th>
+            <th>할인액</th>
+            <th>비용 분담</th>
+            <th style="text-align: center;">참여 상태</th>
+            <th style="text-align: center;">동의 전환</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${list.length === 0 ? '<tr><td colspan="6" style="text-align: center; color: #8b95a1; padding: 14px;">진행 중인 본사·제휴 공동 행사가 없습니다.</td></tr>' : list.map(p => `
+            <tr>
+              <td><span class="tag">${p.alliance_name || p.issuer_type}</span></td>
+              <td><strong>${p.name}</strong></td>
+              <td style="color: #2ac1bc; font-weight: 700;">${Number(p.discount_amount || 0).toLocaleString()}원</td>
+              <td>본사 ${p.cost_split?.platform ?? 100}% / 제휴 ${p.cost_split?.alliance ?? 0}% / 가맹 ${p.cost_split?.merchant ?? 0}%</td>
+              <td style="text-align: center;"><span class="tag ${p.opted_in ? 'tag-success' : ''}">${p.opted_in ? '참여중' : '미참여'}</span></td>
+              <td style="text-align: center;">
+                <button type="button" class="btn btn-secondary btn-sm btn-toggle-joint-optin" data-couponid="${p.id}">${p.opted_in ? '참여 해제' : '참여 동의'}</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    box.querySelectorAll('.btn-toggle-joint-optin').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await merchantApi.toggleJointPromoOptIn(storeId, btn.dataset.couponid);
+        await renderJointPromoOptInSection(state, tbody);
+      });
+    });
+  } catch (_) {
+    box.innerHTML = '';
   }
 }

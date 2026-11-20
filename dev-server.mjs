@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { foodService } from './packages/services/food-delivery/backend/food-service.mjs';
+import { martService } from './packages/services/mart-logistics/backend/mart-service.mjs';
 import { mqttBridge } from './packages/core/realtime/mqtt-bridge.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -219,7 +220,12 @@ function ensureAdminState() {
         maintenance_mode: false,
         maintenance_notice: '시스템 정기 점검 중입니다. 잠시 후 다시 이용해 주세요.',
         pii_retention_hours_after_delivery: 24,
+        alimtalk_ars_order_body: '[AITIP] #{store_name}입니다. 아래 버튼을 눌러 바로 메뉴를 보고 주문하실 수 있습니다.',
+        alimtalk_ars_order_btn_label: '주문하기',
+        alimtalk_ars_order_btn_url: 'https://aitip-platform.pages.dev/food/pwa/?storeId=#{store_id}',
         alimtalk_order_accept: '[AITIP] #{store_name}에서 주문을 접수했습니다. (예상 #{prep_min}분)',
+        alimtalk_order_accept_btn_label: '실시간 주문 확인',
+        alimtalk_order_accept_btn_url: 'https://aitip-platform.pages.dev/food/pwa/?trackOrderId=#{order_id}',
         alimtalk_delivery_done: '[AITIP] 배달이 완료되었습니다. 안심번호는 1시간 후 자동 파기됩니다.'
       },
       distributors: [
@@ -312,15 +318,99 @@ function ensureAdminState() {
           commission_rate: 0.1,
           status: 'ACTIVE'
         }
+      ],
+      platformCoupons: [
+        {
+          id: 'pc_platform_01',
+          issuer_type: 'PLATFORM',
+          alliance_name: '본사(플랫폼)',
+          name: '상생 플랫폼 첫주문 2,000원 할인',
+          discount_amount: 2000,
+          min_order_amount: 15000,
+          valid_until: '2026-12-31',
+          cost_split: { platform: 100, alliance: 0, merchant: 0 },
+          status: 'ACTIVE'
+        },
+        {
+          id: 'pc_alliance_01',
+          issuer_type: 'ALLIANCE',
+          alliance_name: 'NH농협 제로페이',
+          name: '제로페이 결제 시 1,500원 공동 할인',
+          discount_amount: 1500,
+          min_order_amount: 12000,
+          valid_until: '2026-12-31',
+          cost_split: { platform: 50, alliance: 50, merchant: 0 },
+          status: 'ACTIVE'
+        }
+      ],
+      promoRequests: [
+        {
+          id: 'pr_req_01',
+          requester_role: 'SALES_ALLY',
+          requester_name: '서초소상공인연합회',
+          title: '서초 상권 주말 2,000원 상생 쿠폰',
+          discount_amount: 2000,
+          min_order_amount: 18000,
+          valid_until: '2026-12-31',
+          cost_split: { platform: 30, alliance: 70, merchant: 0 },
+          status: 'REQUESTED',
+          created_at: '2026-11-17 08:30'
+        }
+      ],
+      merchantPromoOptOuts: {},
+      auditLogs: [
+        {
+          id: 'aud_init_01',
+          actor_role: 'HQ_SUPER',
+          tenant_id: 'hq',
+          action: 'SYSTEM_BOOT',
+          target: 'PLATFORM_ADMIN',
+          detail: '슈퍼관리자 감사 원장 초기화 완료',
+          created_at: new Date().toISOString()
+        }
+      ],
+      payoutRequests: [
+        {
+          id: 'pay_req_01',
+          payee_type: 'STORE',
+          payee_id: 'STR-11-650-01-56162-0001',
+          payee_name: '바른치킨 서초본점',
+          gross_amount: 634300,
+          platform_promo_reimburse: 750,
+          alliance_promo_reimburse: 750,
+          net_payout: 635800,
+          bank_info: '신한은행 110-***-****',
+          status: 'PENDING',
+          requested_at: '2026-11-17 09:00'
+        },
+        {
+          id: 'pay_req_02',
+          payee_type: 'AGENCY',
+          payee_id: 'agn_01jcbk9v502x8m4v0k5a1b2c01',
+          payee_name: '강남제일정보시스템',
+          gross_amount: 420000,
+          platform_promo_reimburse: 0,
+          alliance_promo_reimburse: 0,
+          net_payout: 406140,
+          bank_info: '국민은행 010-***-**** (3.3% 공제)',
+          status: 'PENDING',
+          requested_at: '2026-11-17 09:05'
+        }
       ]
     };
     if (loaded && typeof loaded === 'object') {
       globalThis.__aitipAdminState = {
         ...defaults,
         ...loaded,
+        systemPolicies: { ...defaults.systemPolicies, ...(loaded.systemPolicies || {}) },
         distributors: Array.isArray(loaded.distributors) && loaded.distributors.length ? loaded.distributors : defaults.distributors,
         agencies: Array.isArray(loaded.agencies) && loaded.agencies.length ? loaded.agencies : defaults.agencies,
         partners: Array.isArray(loaded.partners) && loaded.partners.length ? loaded.partners : defaults.partners,
+        platformCoupons: Array.isArray(loaded.platformCoupons) && loaded.platformCoupons.length ? loaded.platformCoupons : defaults.platformCoupons,
+        promoRequests: Array.isArray(loaded.promoRequests) && loaded.promoRequests.length ? loaded.promoRequests : defaults.promoRequests,
+        auditLogs: Array.isArray(loaded.auditLogs) && loaded.auditLogs.length ? loaded.auditLogs : defaults.auditLogs,
+        payoutRequests: Array.isArray(loaded.payoutRequests) && loaded.payoutRequests.length ? loaded.payoutRequests : defaults.payoutRequests,
+        merchantPromoOptOuts: loaded.merchantPromoOptOuts && typeof loaded.merchantPromoOptOuts === 'object' ? loaded.merchantPromoOptOuts : {},
         blacklistedUids: new Set(Array.isArray(loaded.blacklistedUids) ? loaded.blacklistedUids : Array.from(defaults.blacklistedUids))
       };
     } else {
@@ -705,11 +795,20 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (pathname === '/api/admin/promotions' && method === 'GET') {
-        const coupons = typeof foodService.getCoupons === 'function' ? foodService.getCoupons() : [];
+        const merchantCoupons = (typeof foodService.getCoupons === 'function' ? foodService.getCoupons() : []).map(c => ({
+          ...c,
+          issuer_type: 'MERCHANT',
+          store_name: foodService.getStoreInfo()?.store_name || '바른치킨 서초본점',
+          cost_split: { platform: 0, alliance: 0, merchant: 100 }
+        }));
         return sendJson(res, 200, {
           success: true,
-          banners: adminState.banners,
-          coupons
+          banners: (adminState.banners || []).map(b => ({ issuer_type: 'PLATFORM', ...b })),
+          platform_coupons: adminState.platformCoupons || [],
+          merchant_coupons: merchantCoupons,
+          promo_requests: adminState.promoRequests || [],
+          alliances: adminState.partners || [],
+          coupons: [...(adminState.platformCoupons || []), ...merchantCoupons]
         });
       }
 
@@ -723,6 +822,8 @@ const server = http.createServer(async (req, res) => {
         if (body?.kind === 'BANNER_CREATE') {
           const newB = {
             id: `bnr_${Date.now()}`,
+            issuer_type: body.issuer_type || 'PLATFORM',
+            alliance_name: body.alliance_name || '',
             title: body.title || '신규 프로모션 배너',
             target_app: body.target_app || 'CUSTOMER_PWA',
             placement: body.placement || 'HOME_TOP',
@@ -732,14 +833,70 @@ const server = http.createServer(async (req, res) => {
           adminState.banners.unshift(newB);
           return sendJson(res, 200, { success: true, banner: newB });
         }
-        if (body?.kind === 'COUPON_CREATE' && typeof foodService.createCoupon === 'function') {
-          const c = foodService.createCoupon({
+        if (body?.kind === 'COUPON_CREATE') {
+          const issuerType = body.issuer_type === 'ALLIANCE' ? 'ALLIANCE' : 'PLATFORM';
+          const pShare = Number(body.platform_share ?? (issuerType === 'PLATFORM' ? 100 : 50));
+          const aShare = Number(body.alliance_share ?? (issuerType === 'PLATFORM' ? 0 : 50));
+          const mShare = Number(body.merchant_share ?? 0);
+          const c = {
+            id: `pc_${Date.now()}`,
+            issuer_type: issuerType,
+            alliance_name: issuerType === 'ALLIANCE' ? (body.alliance_name || '제휴사') : '본사(플랫폼)',
             name: body.name || '플랫폼 감사 쿠폰',
             discount_amount: Number(body.discount_amount || 2000),
             min_order_amount: Number(body.min_order_amount || 15000),
-            valid_until: body.valid_until || '2026-12-31'
-          });
+            valid_until: body.valid_until || '2026-12-31',
+            cost_split: { platform: pShare, alliance: aShare, merchant: mShare },
+            status: 'ACTIVE'
+          };
+          adminState.platformCoupons.unshift(c);
           return sendJson(res, 200, { success: true, coupon: c });
+        }
+        if (body?.kind === 'COUPON_TOGGLE' && body.id) {
+          const c = (adminState.platformCoupons || []).find(x => x.id === body.id);
+          if (!c) return sendJson(res, 404, { error: '쿠폰을 찾을 수 없습니다.' });
+          c.status = c.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+          return sendJson(res, 200, { success: true, coupon: c });
+        }
+        if (body?.kind === 'PROMO_REQUEST_CREATE') {
+          const reqItem = {
+            id: `pr_req_${Date.now()}`,
+            requester_role: adminRole,
+            requester_name: body.requester_name || '지역 영업조직',
+            title: body.title || '지역 상생 프로모션',
+            discount_amount: Number(body.discount_amount || 2000),
+            min_order_amount: Number(body.min_order_amount || 15000),
+            valid_until: body.valid_until || '2026-12-31',
+            cost_split: {
+              platform: Number(body.platform_share || 0),
+              alliance: Number(body.alliance_share || 100),
+              merchant: Number(body.merchant_share || 0)
+            },
+            status: 'REQUESTED',
+            created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+          };
+          adminState.promoRequests.unshift(reqItem);
+          return sendJson(res, 201, { success: true, request: reqItem });
+        }
+        if (body?.kind === 'PROMO_REQUEST_DECIDE' && body.id) {
+          const r = (adminState.promoRequests || []).find(x => x.id === body.id);
+          if (!r) return sendJson(res, 404, { error: '승인 요청을 찾을 수 없습니다.' });
+          const decision = body.decision === 'REJECTED' ? 'REJECTED' : 'APPROVED';
+          r.status = decision;
+          if (decision === 'APPROVED') {
+            adminState.platformCoupons.unshift({
+              id: `pc_req_${Date.now()}`,
+              issuer_type: 'ALLIANCE',
+              alliance_name: r.requester_name,
+              name: r.title,
+              discount_amount: r.discount_amount,
+              min_order_amount: r.min_order_amount,
+              valid_until: r.valid_until,
+              cost_split: r.cost_split,
+              status: 'ACTIVE'
+            });
+          }
+          return sendJson(res, 200, { success: true, request: r });
         }
         return sendJson(res, 400, { error: '지원하지 않는 프로모션 요청입니다.' });
       }
@@ -791,7 +948,68 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/admin/policies' && method === 'POST') {
         const body = await parseJsonBody(req);
         adminState.systemPolicies = { ...adminState.systemPolicies, ...body };
+        adminState.auditLogs.unshift({
+          id: `aud_${Date.now()}`,
+          actor_role: adminRole,
+          tenant_id: tenantId,
+          action: 'POLICY_UPDATE',
+          target: 'SYSTEM_POLICIES',
+          detail: `점검모드=${Boolean(adminState.systemPolicies.maintenance_mode)}, 파기=${adminState.systemPolicies.pii_retention_hours_after_delivery}h`,
+          created_at: new Date().toISOString()
+        });
         return sendJson(res, 200, { success: true, policies: adminState.systemPolicies });
+      }
+
+      if (pathname === '/api/admin/audit-logs' && method === 'GET') {
+        return sendJson(res, 200, { success: true, logs: adminState.auditLogs || [] });
+      }
+
+      if (pathname === '/api/admin/reviews/blind-queue' && method === 'GET') {
+        const reviews = typeof foodService.getReviews === 'function' ? foodService.getReviews() : [];
+        return sendJson(res, 200, { success: true, reviews });
+      }
+
+      if (pathname === '/api/admin/reviews/decide' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const reviews = typeof foodService.getReviews === 'function' ? foodService.getReviews() : [];
+        const target = reviews.find(r => r.review_id === body?.review_id || r.id === body?.review_id);
+        if (!target) return sendJson(res, 404, { error: '리뷰를 찾을 수 없습니다.' });
+        const decision = body?.decision === 'APPROVED' ? 'BLINDED' : 'ACTIVE';
+        target.status = decision;
+        target.blind_status = decision;
+        foodService.saveData();
+        adminState.auditLogs.unshift({
+          id: `aud_${Date.now()}`,
+          actor_role: adminRole,
+          tenant_id: tenantId,
+          action: 'REVIEW_BLIND_DECIDE',
+          target: body?.review_id,
+          detail: `리뷰 블라인드 결정: ${decision}`,
+          created_at: new Date().toISOString()
+        });
+        return sendJson(res, 200, { success: true, review: target });
+      }
+
+      if (pathname === '/api/admin/payouts' && method === 'GET') {
+        return sendJson(res, 200, { success: true, payouts: adminState.payoutRequests || [] });
+      }
+
+      if (pathname === '/api/admin/payouts/decide' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const target = (adminState.payoutRequests || []).find(p => p.id === body?.id);
+        if (!target) return sendJson(res, 404, { error: '지급 요청을 찾을 수 없습니다.' });
+        target.status = body?.decision === 'HELD' ? 'HELD' : 'APPROVED';
+        target.decided_at = new Date().toISOString();
+        adminState.auditLogs.unshift({
+          id: `aud_${Date.now()}`,
+          actor_role: adminRole,
+          tenant_id: tenantId,
+          action: 'PAYOUT_DECIDE',
+          target: target.payee_name,
+          detail: `정산 지급 ${target.status} (${Number(target.net_payout || 0).toLocaleString()}원)`,
+          created_at: new Date().toISOString()
+        });
+        return sendJson(res, 200, { success: true, payout: target });
       }
 
       if (pathname === '/api/admin/distributors' && method === 'GET') {
@@ -891,8 +1109,17 @@ const server = http.createServer(async (req, res) => {
 
       if (pathname === '/api/admin/payments/transactions' && method === 'GET') {
         const live = foodService.getLiveOrders() || [];
+        const promoSummary = live.reduce((acc, o) => {
+          const ap = o.applied_promotions || {};
+          acc.platform_discount += Number(ap.platform_discount || 0);
+          acc.alliance_discount += Number(ap.alliance_discount || 0);
+          acc.merchant_discount += Number(ap.merchant_discount || 0);
+          acc.point_used += Number(ap.point_used || 0);
+          return acc;
+        }, { platform_discount: 0, alliance_discount: 0, merchant_discount: 0, point_used: 0 });
         return sendJson(res, 200, {
           success: true,
+          promo_summary: promoSummary,
           transactions: live.slice(0, 15).map(o => {
             const amt = Number(o.final_payment_amount || 0);
             return {
@@ -1244,11 +1471,47 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, foodService.getLiveOrders());
       }
 
-      // 5-0) 소비자 PWA 공개 피드 (배너·공지·점검모드·Zero-PII 포인트 잔액): GET /api/food/public-feed
+      // 5-0-0) 가맹점 공동 프로모션 참여 동의(Opt-in/Opt-out) API
+      if (pathname === '/api/food/promotions/joint' && method === 'GET') {
+        const adminState = ensureAdminState();
+        const storeId = url.searchParams.get('store_id') || foodService.getStoreInfo()?.store_id || 'STR-11-650-01-56162-0001';
+        const optOuts = new Set(adminState.merchantPromoOptOuts?.[storeId] || []);
+        const list = (adminState.platformCoupons || [])
+          .filter(c => c.status === 'ACTIVE')
+          .map(c => ({ ...c, opted_in: !optOuts.has(c.id) }));
+        return sendJson(res, 200, { success: true, store_id: storeId, promotions: list });
+      }
+
+      if (pathname === '/api/food/promotions/opt-in' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const adminState = ensureAdminState();
+        const storeId = body?.store_id || foodService.getStoreInfo()?.store_id || 'STR-11-650-01-56162-0001';
+        const couponId = body?.coupon_id;
+        if (!couponId) return sendJson(res, 400, { error: 'coupon_id가 필요합니다.' });
+        const list = adminState.merchantPromoOptOuts[storeId] || [];
+        const idx = list.indexOf(couponId);
+        let optedIn;
+        if (idx >= 0) {
+          list.splice(idx, 1);
+          optedIn = true;
+        } else {
+          list.push(couponId);
+          optedIn = false;
+        }
+        adminState.merchantPromoOptOuts[storeId] = list;
+        saveAdminState();
+        return sendJson(res, 200, { success: true, store_id: storeId, coupon_id: couponId, opted_in: optedIn });
+      }
+
+      // 5-0) 소비자 PWA 공개 피드 (배너·공지·점검모드·Zero-PII 포인트 잔액·적용가능 쿠폰): GET /api/food/public-feed
       if (pathname === '/api/food/public-feed' && method === 'GET') {
         const custUid = url.searchParams.get('customer_uid') || '';
+        const storeId = url.searchParams.get('store_id') || foodService.getStoreInfo()?.store_id || 'STR-11-650-01-56162-0001';
         const adminState = ensureAdminState();
         const activeBanners = (adminState?.banners || []).filter(b => b.active);
+        const optOuts = new Set(adminState?.merchantPromoOptOuts?.[storeId] || []);
+        const platformCoupons = (adminState?.platformCoupons || []).filter(c => c.status === 'ACTIVE' && !optOuts.has(c.id));
+        const merchantCoupons = typeof foodService.getCoupons === 'function' ? foodService.getCoupons() : [];
         const pointBalance = custUid && adminState?.pointLedger
           ? adminState.pointLedger
               .filter(tx => tx.customer_uid === custUid)
@@ -1259,6 +1522,8 @@ const server = http.createServer(async (req, res) => {
           customer_uid: custUid,
           point_balance: Math.max(0, pointBalance),
           banners: activeBanners,
+          platform_coupons: platformCoupons,
+          merchant_coupons: merchantCoupons,
           maintenance_mode: Boolean(adminState?.systemPolicies?.maintenance_mode),
           maintenance_notice: adminState?.systemPolicies?.maintenance_notice || ''
         });
@@ -1267,17 +1532,82 @@ const server = http.createServer(async (req, res) => {
       // 5-1) 신규 주문 생성 (PWA / 모바일 웹): POST /api/food/orders
       if (pathname === '/api/food/orders' && method === 'POST') {
         const body = await parseJsonBody(req);
-        const adminState = globalThis.__aitipAdminState;
+        const adminState = ensureAdminState();
         if (adminState?.systemPolicies?.maintenance_mode) {
           return sendJson(res, 503, { error: adminState.systemPolicies.maintenance_notice || '시스템 점검 중입니다.' });
         }
         if (body?.customer_uid && adminState?.blacklistedUids?.has(body.customer_uid)) {
           return sendJson(res, 403, { error: '이용이 제한된 고객 식별자(UID)입니다.' });
         }
+
+        // 4자 프로모션 중복 규칙 검증 및 부담 주체 스냅샷 (플랫폼/제휴 1개 + 가맹점 1개 + 포인트)
+        const ap = body?.applied_promotions || {};
+        const itemsSubtotal = Array.isArray(body?.items)
+          ? body.items.reduce((s, it) => s + (Number(it.total_price) || (Number(it.price || 0) * (Number(it.quantity) || 1))), 0)
+          : 0;
+        let platformDiscount = 0;
+        let allianceDiscount = 0;
+        let merchantDiscount = 0;
+        let pointUsed = 0;
+
+        if (ap.platform_coupon_id) {
+          const pc = (adminState.platformCoupons || []).find(c => c.id === ap.platform_coupon_id && c.status === 'ACTIVE');
+          if (pc && itemsSubtotal >= Number(pc.min_order_amount || 0)) {
+            const amt = Number(pc.discount_amount || 0);
+            const pRatio = Number(pc.cost_split?.platform ?? 100) / 100;
+            const aRatio = Number(pc.cost_split?.alliance ?? 0) / 100;
+            const mRatio = Number(pc.cost_split?.merchant ?? 0) / 100;
+            platformDiscount += Math.round(amt * pRatio);
+            allianceDiscount += Math.round(amt * aRatio);
+            merchantDiscount += Math.round(amt * mRatio);
+          }
+        }
+        if (ap.merchant_coupon_id && typeof foodService.getCoupons === 'function') {
+          const mc = foodService.getCoupons().find(c => (c.id === ap.merchant_coupon_id || c.coupon_id === ap.merchant_coupon_id));
+          if (mc && itemsSubtotal >= Number(mc.min_order_amount || 0)) {
+            merchantDiscount += Number(mc.discount_amount || 0);
+          }
+        }
+        if (Number(ap.point_used || 0) > 0 && body?.customer_uid) {
+          const currBal = (adminState.pointLedger || [])
+            .filter(t => t.customer_uid === body.customer_uid)
+            .reduce((s, t) => s + Number(t.delta || 0), 0);
+          pointUsed = Math.min(Math.max(0, currBal), Math.floor(Number(ap.point_used)));
+          if (pointUsed > 0) {
+            adminState.pointLedger.unshift({
+              tx_id: `ptx_use_${Date.now()}`,
+              customer_uid: body.customer_uid,
+              order_id: 'pending',
+              delta: -pointUsed,
+              balance_after: currBal - pointUsed,
+              type: 'USE_ORDER',
+              bearer: 'PLATFORM',
+              memo: '주문 포인트 사용 차감',
+              created_at: new Date().toISOString()
+            });
+          }
+        }
+
+        const totalDiscount = platformDiscount + allianceDiscount + merchantDiscount + pointUsed;
+        if (totalDiscount > 0) {
+          body.discount_amount = totalDiscount;
+        }
+
         const newOrder = foodService.createOrder(body);
+        newOrder.applied_promotions = {
+          platform_coupon_id: ap.platform_coupon_id || null,
+          merchant_coupon_id: ap.merchant_coupon_id || null,
+          platform_discount: platformDiscount,
+          alliance_discount: allianceDiscount,
+          merchant_discount: merchantDiscount,
+          point_used: pointUsed,
+          total_discount: totalDiscount
+        };
         if (body?.customer_uid) {
           newOrder.customer_uid = body.customer_uid;
         }
+        foodService.saveData();
+
         // 실결제 비례 포인트 자동 적립 (Zero-PII 원장)
         const earnRate = Number(adminState?.pointPolicy?.earn_rate_pct || 0);
         const earned = body?.customer_uid && earnRate > 0
@@ -1298,6 +1628,8 @@ const server = http.createServer(async (req, res) => {
             memo: `주문(${newOrder.short_display_id}) ${earnRate}% 자동 적립`,
             created_at: new Date().toISOString()
           });
+          saveAdminState();
+        } else if (pointUsed > 0) {
           saveAdminState();
         }
 
@@ -1791,11 +2123,189 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // --------------------------------------------------------------------------
+  // 2-0. 하나로마트 위탁(대행) 운영 백엔드 API (/api/mart/*)
+  // --------------------------------------------------------------------------
+  if (pathname.startsWith('/api/mart/')) {
+    try {
+      if (pathname === '/api/mart/profile' && method === 'GET') {
+        return sendJson(res, 200, { success: true, mart: martService.getMartProfile() });
+      }
+      if (pathname === '/api/mart/profile' && method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const mart = martService.updateMartProfile(body || {});
+        return sendJson(res, 200, { success: true, mart });
+      }
+      if (pathname === '/api/mart/staff' && method === 'GET') {
+        return sendJson(res, 200, { success: true, staff: martService.getStaff() });
+      }
+      if (pathname === '/api/mart/staff' && (method === 'POST' || method === 'PATCH')) {
+        const body = await parseJsonBody(req);
+        const staff = martService.saveStaff(body || {});
+        return sendJson(res, method === 'POST' ? 201 : 200, { success: true, staff });
+      }
+      if (pathname === '/api/mart/staff' && method === 'DELETE') {
+        const body = await parseJsonBody(req);
+        const removed = martService.deleteStaff(body?.staff_id);
+        return sendJson(res, 200, { success: true, removed });
+      }
+      if (pathname === '/api/mart/catalog' && method === 'GET') {
+        return sendJson(res, 200, { success: true, ...martService.getCatalog() });
+      }
+      if (pathname === '/api/mart/products' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const item = martService.addProduct(body);
+        return sendJson(res, 201, { success: true, product: item });
+      }
+      if (pathname === '/api/mart/products' && method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const item = martService.updateProduct(body || {});
+        return sendJson(res, 200, { success: true, product: item });
+      }
+      if (pathname === '/api/mart/products/bulk-grid' && method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const result = martService.bulkUpdateProducts(body?.updates || []);
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/import/preview' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = martService.previewFlyerImport(body?.raw_text || '');
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/import' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = martService.bulkImport(body?.mode || 'FLYER', body?.raw_text || '');
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/promotions' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const promotion = martService.createPromotion(body);
+        return sendJson(res, 201, { success: true, promotion });
+      }
+      if (pathname === '/api/mart/promotions' && method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const promotion = martService.updatePromotion(body || {});
+        return sendJson(res, 200, { success: true, promotion });
+      }
+      if (pathname === '/api/mart/promotions' && method === 'DELETE') {
+        const body = await parseJsonBody(req);
+        const result = martService.deletePromotion(body?.id);
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/promo-types' && method === 'GET') {
+        return sendJson(res, 200, { success: true, promo_types: martService.getPromoTypes() });
+      }
+      if (pathname === '/api/mart/promo-types' && (method === 'POST' || method === 'PATCH')) {
+        const body = await parseJsonBody(req);
+        const result = martService.savePromoType(body || {});
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/promo-types' && method === 'DELETE') {
+        const body = await parseJsonBody(req);
+        const result = martService.deletePromoType(body?.code);
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/orders' && method === 'GET') {
+        return sendJson(res, 200, { success: true, orders: martService.getOrders() });
+      }
+      if (pathname === '/api/mart/orders' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const order = martService.createOrder(body);
+        return sendJson(res, 201, { success: true, order });
+      }
+      if (pathname === '/api/mart/orders/status' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const order = martService.updateOrderStatus(body?.order_id, body?.status);
+        return sendJson(res, 200, { success: true, order });
+      }
+      if (pathname === '/api/mart/picking' && method === 'GET') {
+        const deliveryDate = url.searchParams.get('delivery_date') || '';
+        return sendJson(res, 200, { success: true, ...martService.getPickingSummary(deliveryDate) });
+      }
+      if (pathname === '/api/mart/orders/adjust' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = martService.adjustOrderItem(body || {});
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/boxing' && method === 'GET') {
+        const deliveryDate = url.searchParams.get('delivery_date') || '';
+        return sendJson(res, 200, { success: true, ...martService.getBoxingManifest(deliveryDate) });
+      }
+      if (pathname === '/api/mart/settlements' && method === 'GET') {
+        return sendJson(res, 200, { success: true, ...martService.getSettlementSummary() });
+      }
+      if (pathname === '/api/mart/pwa/config' && method === 'GET') {
+        return sendJson(res, 200, { success: true, ...martService.getPwaConfig() });
+      }
+      if (pathname === '/api/mart/pwa/control' && method === 'PATCH') {
+        const body = await parseJsonBody(req);
+        const config = martService.updatePwaControl(body || {});
+        return sendJson(res, 200, { success: true, config });
+      }
+      if (pathname === '/api/mart/marts' && method === 'GET') {
+        return sendJson(res, 200, { success: true, marts: martService.getMarts() });
+      }
+      if (pathname === '/api/mart/group-buys' && method === 'GET') {
+        return sendJson(res, 200, { success: true, group_buys: martService.getGroupBuys() });
+      }
+      if (pathname === '/api/mart/group-buys' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const campaign = martService.createGroupBuy(body || {});
+        return sendJson(res, 201, { success: true, campaign });
+      }
+      if (pathname === '/api/mart/products/approve' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const item = martService.decideMartProductApproval(body || {});
+        return sendJson(res, 200, { success: true, item });
+      }
+      if (pathname === '/api/admin/mart/group-buys/decide' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const campaign = martService.decideGroupBuy(body || {});
+        return sendJson(res, 200, { success: true, campaign });
+      }
+      if (pathname === '/api/admin/mart/co-sell-products' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const item = martService.createCoSellProduct(body || {});
+        return sendJson(res, 201, { success: true, item });
+      }
+      if (pathname === '/api/mart/group-buys/join' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const campaign = martService.joinGroupBuy(body || {});
+        return sendJson(res, 200, { success: true, campaign });
+      }
+      if (pathname === '/api/mart/media/upload' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const media = martService.saveMediaWebp(body || {});
+        return sendJson(res, 201, { success: true, ...media });
+      }
+      return sendJson(res, 404, { error: 'Not Found' });
+    } catch (err) {
+      return sendJson(res, 400, { error: err.message });
+    }
+  }
+
   // 3-1. 고객 전용 모바일 PWA 정적 파일 서빙 (/food/pwa/*)
   if (pathname.startsWith('/food/pwa')) {
     let subpath = pathname.replace(/^\/food\/pwa\/?/, '');
     if (!subpath || subpath === '') subpath = 'index.html';
     const filePath = path.join(__dirname, 'packages', 'services', 'food-delivery', 'customer-pwa', subpath);
+    serveStatic(filePath, res);
+    return;
+  }
+
+  // 3-0-1. 마트 상품 WebP 미디어 정적 서빙 (/mart/media/* -> R2 호환 로컬 버킷)
+  if (pathname.startsWith('/mart/media/')) {
+    const subpath = pathname.replace(/^\/mart\/media\/?/, '');
+    const filePath = path.join(__dirname, 'packages', 'services', 'mart-logistics', 'backend', 'media', subpath);
+    serveStatic(filePath, res);
+    return;
+  }
+
+  // 3-0. 마트 전용 소비자·기관 모바일 PWA 정적 파일 서빙 (/mart/pwa/*)
+  if (pathname.startsWith('/mart/pwa')) {
+    let subpath = pathname.replace(/^\/mart\/pwa\/?/, '');
+    if (!subpath || subpath === '') subpath = 'index.html';
+    const filePath = path.join(__dirname, 'packages', 'services', 'mart-logistics', 'mart-pwa', subpath);
     serveStatic(filePath, res);
     return;
   }

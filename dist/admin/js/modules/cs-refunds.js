@@ -9,29 +9,80 @@ import { adminApi } from '../admin-api.js';
 let searchQuery = '';
 let orderPage = 1;
 const orderLimit = 5;
+let csSubTab = 'REFUNDS'; // 'REFUNDS' | 'REVIEWS'
+
+export function setCsSearchQuery(q) {
+  searchQuery = String(q || '').trim();
+  orderPage = 1;
+  csSubTab = 'REFUNDS';
+}
 
 export async function renderCsRefundsView(container) {
   if (!container) return;
-  const res = await adminApi.getCsDisputes({ q: searchQuery, page: orderPage, limit: orderLimit });
+  const [res, revRes] = await Promise.all([
+    adminApi.getCsDisputes({ q: searchQuery, page: orderPage, limit: orderLimit }),
+    adminApi.getReviewBlindQueue().catch(() => ({ reviews: [] }))
+  ]);
   const disputes = res.disputes || [];
   const blacklisted = new Set(res.blacklisted_uids || []);
   const recentOrders = res.recent_orders || [];
+  const reviews = revRes.reviews || [];
+  const blindPendingCnt = reviews.filter(r => r.status === 'BLIND_REQUESTED' || r.blind_status === 'BLIND_REQUESTED').length;
   const ordersTotal = Number(res.orders_total || recentOrders.length || 0);
   const totalPages = Math.max(1, Math.ceil(ordersTotal / orderLimit));
 
   container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 16px;">
-      <div class="panel-card" style="padding: 16px 20px; background: #f8fafc; border: 1px solid var(--border-default);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <div style="font-size: 14px; font-weight: 900; color: var(--text-primary);">Zero-PII 주문 분쟁·환불 & 고객 UID 관제</div>
-            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-              서버에 고객 개인정보(전화번호·주소·이름)를 저장하지 않으며, 검색 기반(Search-First)으로 주문 UID(ord_) 및 익명 고객 UID(cust_)를 조회해 처리합니다.
-            </div>
+      <div class="panel-card" style="padding: 14px 20px; background: #f8fafc; border: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="font-size: 14px; font-weight: 900; color: var(--text-primary);">Zero-PII 주문 분쟁·환불 & 리뷰 블라인드 관제</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            개인정보 미저장 원칙(ord_ · cust_ 검색 기반) 및 가맹점 리뷰 블라인드 요청 심사
           </div>
-          <span class="badge-status success" style="font-size: 11px;">Zero-PII · Search-First</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="header-btn cs-tab-btn ${csSubTab === 'REFUNDS' ? 'header-btn-primary' : ''}" data-tab="REFUNDS" style="font-size: 12px;">PG 환불 & UID 블랙리스트</button>
+          <button type="button" class="header-btn cs-tab-btn ${csSubTab === 'REVIEWS' ? 'header-btn-primary' : ''}" data-tab="REVIEWS" style="font-size: 12px;">리뷰 블라인드 심사 (${reviews.length} · 대기 ${blindPendingCnt})</button>
         </div>
       </div>
+
+      ${csSubTab === 'REVIEWS' ? `
+        <div class="panel-card" style="padding: 16px;">
+          <div style="font-size: 13.5px; font-weight: 800; margin-bottom: 10px;">가맹점 악성 리뷰 블라인드 요청 심사 큐</div>
+          <table class="admin-table" style="font-size: 12.5px;">
+            <thead>
+              <tr style="background: #f8fafc;">
+                <th>리뷰 ID</th>
+                <th>별점</th>
+                <th>고객 작성 내용</th>
+                <th>사유</th>
+                <th style="text-align: center;">상태</th>
+                <th style="text-align: center;">심사 제어</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${reviews.length === 0 ? '<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--text-muted);">등록된 리뷰가 없습니다.</td></tr>' : reviews.map(r => {
+                const st = r.blind_status || r.status || 'ACTIVE';
+                return `
+                  <tr>
+                    <td><code>${r.review_id || r.id || '-'}</code></td>
+                    <td><b>★ ${r.rating || 5}</b></td>
+                    <td>${r.content || r.comment || '-'}</td>
+                    <td>${r.blind_reason || '-'}</td>
+                    <td style="text-align: center;"><span class="badge-status ${st === 'BLINDED' ? 'danger' : st === 'BLIND_REQUESTED' ? 'warning' : 'success'}">${st}</span></td>
+                    <td style="text-align: center; white-space: nowrap;">
+                      <button type="button" class="header-btn btn-decide-review" data-id="${r.review_id || r.id}" data-decision="APPROVED" style="padding: 4px 8px; font-size: 11px; margin-right: 4px;">블라인드 승인</button>
+                      <button type="button" class="header-btn btn-decide-review" data-id="${r.review_id || r.id}" data-decision="REJECTED" style="padding: 4px 8px; font-size: 11px;">유지(반려)</button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : ''}
+
+      <div style="display: ${csSubTab === 'REFUNDS' ? 'contents' : 'none'};">
 
       <div id="cs-action-error" style="display: none; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 8px; font-size: 12.5px; font-weight: 700;"></div>
 
@@ -151,7 +202,22 @@ export async function renderCsRefundsView(container) {
         </div>
       </div>
     </div>
+    </div>
   `;
+
+  container.querySelectorAll('.cs-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      csSubTab = btn.dataset.tab;
+      renderCsRefundsView(container);
+    });
+  });
+
+  container.querySelectorAll('.btn-decide-review').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await adminApi.decideReviewBlind(btn.dataset.id, btn.dataset.decision);
+      await renderCsRefundsView(container);
+    });
+  });
 
   const showErr = (msg) => {
     const el = container.querySelector('#cs-action-error');

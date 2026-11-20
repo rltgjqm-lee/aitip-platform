@@ -6,8 +6,17 @@
 
 import { adminApi } from '../admin-api.js';
 
-export function renderIamAuditView(container) {
-  const auditLogs = [
+export async function renderIamAuditView(container) {
+  const res = await adminApi.getAuditLogs().catch(() => ({ logs: [] }));
+  const serverLogs = Array.isArray(res?.logs) ? res.logs : [];
+  const auditLogs = serverLogs.length > 0 ? serverLogs.map(l => ({
+    timestamp: l.created_at ? new Date(l.created_at).toLocaleString('ko-KR') : '-',
+    operator: `${l.actor_role || 'HQ_SUPER'} (${l.tenant_id || 'hq'})`,
+    ip: '127.0.0.1',
+    action: l.action,
+    target: l.target,
+    reason: l.detail || '-'
+  })) : [
     { id: 'aud_01jcbk9v4e01', timestamp: '2026-11-13 11:42:10', operator: '최태호 (강남대리점장)', action: 'UNMASK_PERSONAL_INFO', target: '라이더 김도현 (010-3841-**** -> 실번호 열람)', reason: '오토바이 배송 중 고객 주소 불일치 유선 통화 지원', ip: '121.134.82.11' },
     { id: 'aud_01jcbk9v4e02', timestamp: '2026-11-13 10:15:33', operator: '김영식 (서울총판장)', action: 'UPDATE_COMMISSION_TARIFF', target: '바른치킨 서초본점 (가맹점 수수료 3.3% -> 3.0% 감면 프로모션)', reason: '강남구 우수 상생가맹점 1호 협약 체결 승인', ip: '211.234.112.50' },
     { id: 'aud_01jcbk9v4e03', timestamp: '2026-11-13 09:20:01', operator: '시스템 운영자 (HQ)', action: 'REBOOT_TERMINAL_MDM', target: '단말기 S/N [POS-2026-0941] (바른치킨 서초본점)', reason: '04시 일일 대사 마감 후 앱 캐시 플러시 재부팅', ip: '10.0.1.5' },

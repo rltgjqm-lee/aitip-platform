@@ -25,6 +25,8 @@ import { getOrCreateCustomerUid } from './zero-pii-idb.js';
 const state = {
   customerUid: null,
   pointBalance: 0,
+  platformCoupons: [],
+  merchantCoupons: [],
   platformFeed: { banners: [], maintenance_mode: false, maintenance_notice: '' },
   store: null,
   categories: [],
@@ -74,6 +76,8 @@ async function loadPublicFeed() {
     const feed = await customerApi.getPublicFeed(state.customerUid);
     if (feed) {
       state.pointBalance = Number(feed.point_balance || 0);
+      state.platformCoupons = Array.isArray(feed.platform_coupons) ? feed.platform_coupons : [];
+      state.merchantCoupons = Array.isArray(feed.merchant_coupons) ? feed.merchant_coupons : [];
       state.platformFeed = feed;
       renderZeroPiiHeaderFeed();
     }
@@ -1473,6 +1477,49 @@ function openCheckoutModal() {
     dynamicFields.querySelector('#pwa-order-road-address')?.addEventListener('click', openAddressSearchModal);
   }
 
+  // 4자 프로모션 쿠폰 중복 선택 (본사·제휴 1개 + 가맹점 1개 + 포인트)
+  let promoBox = document.getElementById('pwa-promo-selector');
+  if (!promoBox) {
+    promoBox = document.createElement('div');
+    promoBox.id = 'pwa-promo-selector';
+    promoBox.style.cssText = 'margin: 12px 0; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; flex-direction: column; gap: 8px;';
+    dynamicFields.insertAdjacentElement('afterend', promoBox);
+  }
+  const eligiblePlatform = (state.platformCoupons || []).filter(c => itemsTotal >= Number(c.min_order_amount || 0));
+  const eligibleMerchant = (state.merchantCoupons || []).filter(c => itemsTotal >= Number(c.min_order_amount || 0));
+  promoBox.innerHTML = `
+    <div style="font-size: 12px; font-weight: 800; color: #0f172a;">할인 쿠폰 & 포인트 적용 (본사·제휴 1장 + 매장 1장 중복 가능)</div>
+    <select id="pwa-select-platform-coupon" class="pwa-select" style="font-size: 12px;">
+      <option value="" data-amt="0">본사·제휴 쿠폰 선택 안 함 (${eligiblePlatform.length}장 사용 가능)</option>
+      ${eligiblePlatform.map(c => `<option value="${c.id}" data-amt="${c.discount_amount}">${c.name} (-${Number(c.discount_amount).toLocaleString()}원)</option>`).join('')}
+    </select>
+    <select id="pwa-select-merchant-coupon" class="pwa-select" style="font-size: 12px;">
+      <option value="" data-amt="0">가맹점 자체 쿠폰 선택 안 함 (${eligibleMerchant.length}장 사용 가능)</option>
+      ${eligibleMerchant.map(c => `<option value="${c.id || c.coupon_id}" data-amt="${c.discount_amount}">${c.name} (-${Number(c.discount_amount).toLocaleString()}원)</option>`).join('')}
+    </select>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px;">
+      <span>보유 포인트: <b>${Number(state.pointBalance || 0).toLocaleString()} P</b></span>
+      <input id="pwa-input-point-use" type="number" min="0" max="${state.pointBalance || 0}" value="0" style="width: 110px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 6px; text-align: right;" placeholder="사용 P" />
+    </div>
+    <div id="pwa-discount-preview" style="font-size: 11.5px; color: #059669; font-weight: 700; text-align: right;">총 할인: 0원</div>
+  `;
+
+  const updateCheckoutPayLabel = () => {
+    const pSel = document.getElementById('pwa-select-platform-coupon');
+    const mSel = document.getElementById('pwa-select-merchant-coupon');
+    const ptIn = document.getElementById('pwa-input-point-use');
+    const pAmt = Number(pSel?.options[pSel.selectedIndex]?.dataset?.amt || 0);
+    const mAmt = Number(mSel?.options[mSel.selectedIndex]?.dataset?.amt || 0);
+    const ptAmt = Math.min(Number(state.pointBalance || 0), Math.max(0, Math.floor(Number(ptIn?.value || 0))));
+    const totalDisc = Math.min(finalTotal, pAmt + mAmt + ptAmt);
+    const preview = document.getElementById('pwa-discount-preview');
+    if (preview) preview.textContent = `총 할인: -${totalDisc.toLocaleString()}원`;
+    finalPayBtn.textContent = `${Math.max(0, finalTotal - totalDisc).toLocaleString()}원 주문 및 결제하기`;
+  };
+  promoBox.querySelector('#pwa-select-platform-coupon')?.addEventListener('change', updateCheckoutPayLabel);
+  promoBox.querySelector('#pwa-select-merchant-coupon')?.addEventListener('change', updateCheckoutPayLabel);
+  promoBox.querySelector('#pwa-input-point-use')?.addEventListener('input', updateCheckoutPayLabel);
+
   finalPayBtn.textContent = `${finalTotal.toLocaleString()}원 주문 및 결제하기`;
   document.getElementById('pwa-checkout-overlay').classList.add('active');
 }
@@ -1592,7 +1639,16 @@ async function handleFinalOrderSubmit() {
 
     const itemsTotal = state.cart.reduce((sum, it) => sum + ((it.total_price || it.base_price || 0) * (it.quantity || 1)), 0);
     const deliveryTip = state.activeMode === 'DELIVERY' ? 3000 : 0;
-    const finalAmount = itemsTotal + deliveryTip;
+    const pSel = document.getElementById('pwa-select-platform-coupon');
+    const mSel = document.getElementById('pwa-select-merchant-coupon');
+    const ptIn = document.getElementById('pwa-input-point-use');
+    const platformCouponId = pSel?.value || null;
+    const merchantCouponId = mSel?.value || null;
+    const pDisc = Number(pSel?.options[pSel.selectedIndex]?.dataset?.amt || 0);
+    const mDisc = Number(mSel?.options[mSel.selectedIndex]?.dataset?.amt || 0);
+    const pointUsed = Math.min(Number(state.pointBalance || 0), Math.max(0, Math.floor(Number(ptIn?.value || 0))));
+    const totalDiscount = Math.min(itemsTotal + deliveryTip, pDisc + mDisc + pointUsed);
+    const finalAmount = Math.max(0, itemsTotal + deliveryTip - totalDiscount);
 
     const orderPayload = {
       fulfillment_type: state.activeMode,
@@ -1612,6 +1668,12 @@ async function handleFinalOrderSubmit() {
       })),
       items_total: itemsTotal,
       delivery_tip: deliveryTip,
+      discount_amount: totalDiscount,
+      applied_promotions: {
+        platform_coupon_id: platformCouponId,
+        merchant_coupon_id: merchantCouponId,
+        point_used: pointUsed
+      },
       final_payment_amount: finalAmount
     };
 

@@ -1463,5 +1463,28 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify({ kind, id })
     });
+  },
+
+  // 19. 감사 로그, 리뷰 블라인드 심사, 정산 지급 승인 큐
+  getAuditLogs() {
+    return request('/audit-logs');
+  },
+  getReviewBlindQueue() {
+    return request('/reviews/blind-queue');
+  },
+  decideReviewBlind(review_id, decision) {
+    return request('/reviews/decide', {
+      method: 'POST',
+      body: JSON.stringify({ review_id, decision })
+    });
+  },
+  getPayouts() {
+    return request('/payouts');
+  },
+  decidePayout(id, decision) {
+    return request('/payouts/decide', {
+      method: 'POST',
+      body: JSON.stringify({ id, decision })
+    });
   }
 };

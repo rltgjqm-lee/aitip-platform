@@ -1,0 +1,20 @@
+# AITIP Platform - Cloudflare Workers / D1 / R2 Configuration Template
+# 배포 전 `wrangler d1 create aitip-mart-db` 실행 후 database_id를 실제 값으로 교체하세요.
+
+name = "aitip-mart-platform"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aitip-mart-db"
+database_id = "REPLACE_WITH_ACTUAL_D1_DATABASE_ID"
+migrations_dir = "packages/services/mart-logistics/migrations"
+
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "aitip-mart-media"
+
+[vars]
+ENVIRONMENT = "production"
+DEFAULT_MART_ID = "MRT-11-650-01-47121-0001"

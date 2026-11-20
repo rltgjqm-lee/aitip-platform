@@ -59,10 +59,68 @@ export async function renderPaymentsControlView(container) {
 
 // [탭 1] 거래 및 3자 대사 정산 원장
 async function renderTransactionalSubView(container) {
-  const data = await adminApi.getPaymentTransactions();
+  const [data, payoutRes] = await Promise.all([
+    adminApi.getPaymentTransactions(),
+    adminApi.getPayouts().catch(() => ({ payouts: [] }))
+  ]);
   const txList = data.transactions || [];
+  const ps = data.promo_summary || { platform_discount: 0, alliance_discount: 0, merchant_discount: 0, point_used: 0 };
+  const payouts = payoutRes.payouts || [];
 
   container.innerHTML = `
+    <!-- 4자 프로모션 정산 분담금 요약 -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border: 1px solid var(--border-default); border-radius: 8px;">
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">본사 쿠폰 보전액 (PLATFORM)</div>
+        <div style="font-size: 16px; font-weight: 900; color: #059669; margin-top: 2px;">${Number(ps.platform_discount || 0).toLocaleString()}원</div>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">제휴사 분담액 (ALLIANCE)</div>
+        <div style="font-size: 16px; font-weight: 900; color: #2563eb; margin-top: 2px;">${Number(ps.alliance_discount || 0).toLocaleString()}원</div>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">가맹점 자체 할인 (MERCHANT)</div>
+        <div style="font-size: 16px; font-weight: 900; color: #0f172a; margin-top: 2px;">${Number(ps.merchant_discount || 0).toLocaleString()}원</div>
+      </div>
+      <div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">고객 포인트 차감액</div>
+        <div style="font-size: 16px; font-weight: 900; color: #d97706; margin-top: 2px;">${Number(ps.point_used || 0).toLocaleString()} P</div>
+      </div>
+    </div>
+
+    <!-- 가맹점·대리점 정산 지급 승인 큐 (Payout Approval Queue) -->
+    <div style="margin-bottom: 18px; border: 1px solid var(--border-default); border-radius: 8px; padding: 14px; background: #ffffff;">
+      <div style="font-size: 13px; font-weight: 800; margin-bottom: 8px;">정산 지급 승인 큐 (${payouts.length}건)</div>
+      <table class="admin-table" style="font-size: 12px;">
+        <thead>
+          <tr style="background: #f8fafc;">
+            <th>수취인</th>
+            <th>구분</th>
+            <th>정산 계좌</th>
+            <th style="text-align: right;">프로모션 보전</th>
+            <th style="text-align: right;">실지급 예정액</th>
+            <th style="text-align: center;">상태</th>
+            <th style="text-align: center;">승인 제어</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${payouts.map(p => `
+            <tr>
+              <td style="font-weight: 700;">${p.payee_name}</td>
+              <td>${p.payee_type}</td>
+              <td>${p.bank_info}</td>
+              <td style="text-align: right;">+${Number((p.platform_promo_reimburse || 0) + (p.alliance_promo_reimburse || 0)).toLocaleString()}원</td>
+              <td style="text-align: right; font-weight: 800;">${Number(p.net_payout || 0).toLocaleString()}원</td>
+              <td style="text-align: center;"><span class="badge-status ${p.status === 'APPROVED' ? 'active' : p.status === 'HELD' ? 'danger' : 'warning'}">${p.status}</span></td>
+              <td style="text-align: center; white-space: nowrap;">
+                <button type="button" class="header-btn btn-decide-payout" data-id="${p.id}" data-decision="APPROVED" style="padding: 3px 8px; font-size: 11px; margin-right: 4px;">지급 확정</button>
+                <button type="button" class="header-btn btn-decide-payout" data-id="${p.id}" data-decision="HELD" style="padding: 3px 8px; font-size: 11px;">보류</button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
     <!-- 상단 대사 지표 스트립 -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
       <div style="background: var(--bg-hover); padding: 14px 16px; border-radius: 8px; border-left: 4px solid var(--brand-mint);">
@@ -147,6 +205,13 @@ async function renderTransactionalSubView(container) {
       </table>
     </div>
   `;
+
+  container.querySelectorAll('.btn-decide-payout').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await adminApi.decidePayout(btn.dataset.id, btn.dataset.decision);
+      await renderTransactionalSubView(container);
+    });
+  });
 
   // 전표 상세 클릭 이벤트 -> 우측 슬라이드 드로어 연동
   container.querySelectorAll('.btn-view-tx-detail, .tx-row').forEach(el => {

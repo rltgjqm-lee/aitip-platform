@@ -289,4 +289,16 @@ export const merchantApi = {
       body: JSON.stringify({ reason }),
     });
   },
+
+  // 10. 본사·제휴 공동 프로모션 참여 동의 (Opt-in/Opt-out)
+  getJointPromotions(storeId = '') {
+    const qs = storeId ? `?store_id=${encodeURIComponent(storeId)}` : '';
+    return request(`/promotions/joint${qs}`);
+  },
+  toggleJointPromoOptIn(storeId, couponId) {
+    return request('/promotions/opt-in', {
+      method: 'POST',
+      body: JSON.stringify({ store_id: storeId, coupon_id: couponId }),
+    });
+  },
 };

@@ -666,6 +666,58 @@
   ],
   "live_orders": [
     {
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "short_display_id": "A-54",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-0000-0000",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-6056-2500",
+      "virtual_phone_id": "vnm_01m7kk56haxa7vzmf8wkxa7vzm",
+      "virtual_phone_expires_at": "2026-11-17T02:50:15.594Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m7kk56ha5pskdkzrpm5pskdk",
+          "product_id": "prd_01",
+          "name": "후라이드치킨",
+          "quantity": 1,
+          "base_price": 20000,
+          "selected_options": [],
+          "total_price": 20000
+        }
+      ],
+      "items_total": 20000,
+      "delivery_tip": 3000,
+      "discount_amount": 3600,
+      "final_payment_amount": 19400,
+      "estimated_profit": 11600,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-17T01:50:15.594Z",
+      "applied_promotions": {
+        "platform_coupon_id": "pc_alliance_01",
+        "merchant_coupon_id": "cpn_01m71dwjqa81a2dq0hs081a2dq",
+        "platform_discount": 750,
+        "alliance_discount": 750,
+        "merchant_discount": 2000,
+        "point_used": 100,
+        "total_discount": 3600
+      },
+      "customer_uid": "cust_01jcb_pwa_88412"
+    },
+    {
       "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
       "short_display_id": "A-53",
       "status": "CANCELLED",
@@ -2097,6 +2149,15 @@
     }
   ],
   "virtual_numbers": [
+    {
+      "id": "vnm_01m7kk56haxa7vzmf8wkxa7vzm",
+      "virtual_phone": "0504-6056-2500",
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "real_customer_phone": "010-0000-0000",
+      "status": "BOUND",
+      "bound_at": "2026-11-17T01:50:15.594Z",
+      "expires_at": "2026-11-17T02:50:15.594Z"
+    },
     {
       "id": "vnm_01m7gw30a7wp5gssdebcwp5gss",
       "virtual_phone": "0504-5669-8471",
