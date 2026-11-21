@@ -2211,11 +2211,13 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/orders' && method === 'POST') {
         const body = await parseJsonBody(req);
         const order = martService.createOrder(body);
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/orders', { event: 'ORDER_CREATED', order });
         return sendJson(res, 201, { success: true, order });
       }
       if (pathname === '/api/mart/orders/status' && method === 'POST') {
         const body = await parseJsonBody(req);
         const order = martService.updateOrderStatus(body?.order_id, body?.status);
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/orders', { event: 'ORDER_STATUS', order });
         return sendJson(res, 200, { success: true, order });
       }
       if (pathname === '/api/mart/picking' && method === 'GET') {
@@ -2225,6 +2227,7 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/orders/adjust' && method === 'POST') {
         const body = await parseJsonBody(req);
         const result = martService.adjustOrderItem(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/orders', { event: 'ORDER_ADJUSTED', ...result });
         return sendJson(res, 200, { success: true, ...result });
       }
       if (pathname === '/api/mart/boxing' && method === 'GET') {
@@ -2240,6 +2243,7 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/pwa/control' && method === 'PATCH') {
         const body = await parseJsonBody(req);
         const config = martService.updatePwaControl(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/pwa-config', { event: 'PWA_CONFIG_UPDATED', config });
         return sendJson(res, 200, { success: true, config });
       }
       if (pathname === '/api/mart/marts' && method === 'GET') {
@@ -2251,21 +2255,25 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/group-buys' && method === 'POST') {
         const body = await parseJsonBody(req);
         const campaign = martService.createGroupBuy(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'GROUP_BUY_CREATED', campaign });
         return sendJson(res, 201, { success: true, campaign });
       }
       if (pathname === '/api/mart/products/approve' && method === 'POST') {
         const body = await parseJsonBody(req);
         const item = martService.decideMartProductApproval(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'PRODUCT_APPROVED', item });
         return sendJson(res, 200, { success: true, item });
       }
       if (pathname === '/api/admin/mart/group-buys/decide' && method === 'POST') {
         const body = await parseJsonBody(req);
         const campaign = martService.decideGroupBuy(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'GROUP_BUY_DECIDED', campaign });
         return sendJson(res, 200, { success: true, campaign });
       }
       if (pathname === '/api/admin/mart/co-sell-products' && method === 'POST') {
         const body = await parseJsonBody(req);
         const item = martService.createCoSellProduct(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'CO_SELL_PROPOSED', item });
         return sendJson(res, 201, { success: true, item });
       }
       if (pathname === '/api/mart/group-buys/join' && method === 'POST') {

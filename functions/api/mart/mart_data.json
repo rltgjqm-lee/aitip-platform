@@ -1,0 +1,761 @@
+{
+  "mart": {
+    "mart_id": "MRT-11-650-01-47121-0001",
+    "mart_name": "서초농협 하나로마트 양재점",
+    "mart_type": "NH_HANARO",
+    "operator_name": "서초구 시니어클럽 위탁운영팀",
+    "agency_fee_pct": 5,
+    "biz_number": "214-82-04712",
+    "phone": "02-578-9000",
+    "address": "서울특별시 서초구 양재대로 123",
+    "open_hours": "09:00 ~ 22:00",
+    "delivery_fee": 3000,
+    "free_delivery_threshold": 40000,
+    "min_order_amount": 15000,
+    "pickup_enabled": true,
+    "settlement_bank": "NH농협은행",
+    "settlement_account": "301-0123-4567-81",
+    "manager": {
+      "name": "김하나 점장",
+      "role_title": "위탁운영 총괄매니저",
+      "phone": "010-4100-9001",
+      "email": "manager@seocho-mart.kr",
+      "auth_role": "AGENCY_OPERATOR",
+      "manager_uid": "MRT-11-650-01-47121-0001-A01"
+    }
+  },
+  "products": [
+    {
+      "id": "mrt_prep_1794886036522_1",
+      "barcode": "2901000000001",
+      "name": "돼지고기 (불고기용)",
+      "category_type": "PREP_PROCESSED",
+      "tax_type": "EXEMPT",
+      "spec": "국내산 한돈, 앞다리살, 슬라이스(3mm), 1kg/팩 (진공)",
+      "uom": "팩",
+      "weight_grams": 1000,
+      "pack_qty": 1,
+      "size_grade": "중",
+      "prep_method": "손질·소분",
+      "inspection_note": "냉장(0~5℃) 유지, 소비기한 7일 이상",
+      "cost_price": 3500,
+      "regular_price": 4900,
+      "sale_price": 4900,
+      "storage_temp": "REFRIGERATED",
+      "status": "ACTIVE",
+      "discount_pct": 0,
+      "promo_start": "",
+      "promo_end": "",
+      "stock_qty": 50,
+      "safety_stock": 5,
+      "payment_scope": "ONLINE_APPLICABLE",
+      "online_publish_status": "PUBLISHED_FEED",
+      "fulfillment_source": "PREP_CENTER"
+    },
+    {
+      "id": "mrt_prep_1794886036522_0",
+      "barcode": "2901000000000",
+      "name": "양파 (깐양파)",
+      "category_type": "PREP_PROCESSED",
+      "tax_type": "EXEMPT",
+      "spec": "국내산, 전처리(탈피/꼭지제거), 중, 1kg/봉 (10봉/1망)",
+      "uom": "봉",
+      "weight_grams": 1000,
+      "pack_qty": 10,
+      "size_grade": "중",
+      "prep_method": "탈피/꼭지제거",
+      "inspection_note": "무름 및 곰팡이 없을 것",
+      "cost_price": 3500,
+      "regular_price": 4900,
+      "sale_price": 4900,
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mrt_sku_1794886036478_2",
+      "barcode": "2001000000002",
+      "name": "농심 스낵 4종 4개 구매 시",
+      "category_type": "B2B_INDUSTRIAL",
+      "tax_type": "TAXABLE",
+      "spec": "새우깡 90g / 양파링 84g",
+      "uom": "개",
+      "weight_grams": 90,
+      "pack_qty": 1,
+      "cost_price": 3586,
+      "regular_price": 4980,
+      "sale_price": 4980,
+      "promo_start": "",
+      "promo_end": "",
+      "limit_per_person": 0,
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE",
+      "discount_pct": 0,
+      "stock_qty": 50,
+      "safety_stock": 5,
+      "payment_scope": "POS_ONLY",
+      "channel_scope": "POS_ONLY",
+      "applied_promo_id": "",
+      "applied_promo_name": "",
+      "applied_promo_type": "",
+      "promo_required_qty": 1,
+      "promo_bundle_price": 0,
+      "promo_days_of_week": [],
+      "promo_max_discount_amount": 0,
+      "promo_limit_per_person": 0,
+      "promo_card_targets": [],
+      "online_publish_status": "PUBLISHED_FEED",
+      "fulfillment_source": "MART_FLOOR",
+      "category_l1": "04",
+      "category_l2": "0402",
+      "category_l3": "040201",
+      "category_path": "가공식품 > 과자 · 스낵 · 빵 > 스낵 · 봉지과자",
+      "media_id": "",
+      "image_url": "",
+      "pos_price": 0,
+      "pos_agency_tagged": false,
+      "reservation_price_policy": "FIXED_AT_ORDER"
+    },
+    {
+      "id": "mrt_sku_1794887519255_1",
+      "barcode": "2001000000001",
+      "name": "한돈 삼겹살",
+      "category_type": "FRESH",
+      "tax_type": "EXEMPT",
+      "spec": "100g당",
+      "uom": "개",
+      "weight_grams": 100,
+      "pack_qty": 1,
+      "cost_price": 1426,
+      "regular_price": 1980,
+      "sale_price": 1980,
+      "promo_start": "2026-11-17",
+      "promo_end": "2026-11-30",
+      "limit_per_person": 0,
+      "storage_temp": "REFRIGERATED",
+      "status": "ACTIVE",
+      "payment_scope": "POS_ONLY",
+      "aisle_zone": "MEAT",
+      "pick_order": 30,
+      "stock_qty": 50,
+      "safety_stock": 5
+    },
+    {
+      "id": "mrt_sku_1794887519253_0",
+      "barcode": "2001000000000",
+      "name": "거봉",
+      "category_type": "FRESH",
+      "tax_type": "EXEMPT",
+      "spec": "2kg/박스",
+      "uom": "박스",
+      "weight_grams": 2000,
+      "pack_qty": 1,
+      "cost_price": 12888,
+      "regular_price": 17900,
+      "sale_price": 15900,
+      "promo_start": "2026-11-17",
+      "promo_end": "2026-11-30",
+      "limit_per_person": 2,
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE",
+      "payment_scope": "POS_ONLY",
+      "aisle_zone": "CHILLED",
+      "pick_order": 40,
+      "stock_qty": 3,
+      "safety_stock": 5
+    },
+    {
+      "id": "mrt_pos_1794886036507_1",
+      "barcode": "8801043014816",
+      "name": "농심 신라면 멀티",
+      "category_type": "B2B_INDUSTRIAL",
+      "category_path": "가공식품>면류",
+      "tax_type": "TAXABLE",
+      "spec": "120G*5입",
+      "uom": "번들",
+      "weight_grams": 120,
+      "pack_qty": 5,
+      "cost_price": 3450,
+      "regular_price": 4480,
+      "sale_price": 4480,
+      "promo_start": "",
+      "promo_end": "",
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE",
+      "discount_pct": 0,
+      "stock_qty": 50,
+      "safety_stock": 5,
+      "payment_scope": "ONLINE_APPLICABLE",
+      "channel_scope": "ALL_CHANNELS",
+      "applied_promo_id": "",
+      "applied_promo_name": "",
+      "applied_promo_type": "",
+      "promo_required_qty": 1,
+      "promo_bundle_price": 0,
+      "promo_days_of_week": [],
+      "promo_max_discount_amount": 0,
+      "promo_limit_per_person": 0,
+      "promo_card_targets": [],
+      "online_publish_status": "PUBLISHED_FEED",
+      "fulfillment_source": "MART_FLOOR"
+    },
+    {
+      "id": "mrt_pos_1794886036507_2",
+      "barcode": "2000010000008",
+      "name": "국내산 세척당근(특)",
+      "category_type": "FRESH",
+      "category_path": "농산>채소류",
+      "tax_type": "EXEMPT",
+      "spec": "1KG",
+      "uom": "봉",
+      "weight_grams": 1000,
+      "pack_qty": 1,
+      "cost_price": 2400,
+      "regular_price": 3500,
+      "sale_price": 2980,
+      "promo_start": "2026-11-12",
+      "promo_end": "2026-11-18",
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mrt_sku_03",
+      "barcode": "2900000000001",
+      "name": "양파 (깐양파 · 전처리)",
+      "category_type": "PREP_PROCESSED",
+      "category_path": "대행전처리>채소손질",
+      "tax_type": "EXEMPT",
+      "spec": "국내산, 전처리(탈피/꼭지제거), 중, 1kg/봉 (10봉/1망)",
+      "uom": "봉",
+      "weight_grams": 1000,
+      "pack_qty": 10,
+      "size_grade": "중",
+      "prep_method": "탈피/꼭지제거",
+      "inspection_note": "무름 및 곰팡이 없을 것",
+      "cost_price": 2800,
+      "regular_price": 4200,
+      "sale_price": 4200,
+      "storage_temp": "AMBIENT",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mrt_sku_04",
+      "barcode": "2900000000002",
+      "name": "돼지고기 (불고기용 · 3mm)",
+      "category_type": "SUBSCRIPTION",
+      "category_path": "대행전처리>정육예약",
+      "tax_type": "EXEMPT",
+      "spec": "국내산 한돈, 앞다리살, 슬라이스(3mm), 1kg/팩 (진공)",
+      "uom": "팩",
+      "weight_grams": 1000,
+      "pack_qty": 1,
+      "size_grade": "상",
+      "prep_method": "3mm 슬라이스 진공포장",
+      "inspection_note": "냉장(0~5℃) 유지, 소비기한 7일 이상",
+      "cost_price": 11500,
+      "regular_price": 14900,
+      "sale_price": 14900,
+      "storage_temp": "REFRIGERATED",
+      "status": "ACTIVE"
+    }
+  ],
+  "promotions": [
+    {
+      "id": "mpr_1795153899094",
+      "name": "김장세일",
+      "promo_type": "DAY_OF_WEEK",
+      "calc_mode": "UNIT_DISCOUNT",
+      "payment_scope": "ONLINE_APPLICABLE",
+      "channel_scope": "ONLINE_ONLY",
+      "required_qty": 1,
+      "min_purchase_amount": 0,
+      "bundle_price": 0,
+      "discount_type": "FIXED_AMOUNT",
+      "discount_pct": 0,
+      "discount_amount": 1000,
+      "max_discount_amount": 0,
+      "days_of_week": [
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "card_targets": [],
+      "limit_per_person": 0,
+      "max_receipt_sections": 0,
+      "start_date": "2026-11-17",
+      "end_date": "2026-11-30",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_1794887519255_1",
+      "name": "한돈 삼겹살 (PRICE_DISCOUNT)",
+      "promo_type": "PRICE_DISCOUNT",
+      "payment_scope": "POS_ONLY",
+      "required_qty": 1,
+      "bundle_price": 0,
+      "discount_pct": 0,
+      "limit_per_person": 0,
+      "start_date": "2026-11-17",
+      "end_date": "2026-11-30",
+      "target_product_ids": [
+        "mrt_sku_1794887519255_1"
+      ],
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_1794887519254_0",
+      "name": "거봉 (PRICE_DISCOUNT)",
+      "promo_type": "PRICE_DISCOUNT",
+      "payment_scope": "ONLINE_APPLICABLE",
+      "required_qty": 1,
+      "bundle_price": 0,
+      "discount_pct": 0,
+      "limit_per_person": 2,
+      "start_date": "2026-11-17",
+      "end_date": "2026-11-30",
+      "target_product_ids": [
+        "mrt_sku_1794887519253_0"
+      ],
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_1794886036478_2",
+      "name": "농심 스낵 4종 4개 구매 시 (MIX_AND_MATCH)",
+      "promo_type": "MIX_AND_MATCH",
+      "required_qty": 4,
+      "bundle_price": 4980,
+      "discount_pct": 0,
+      "limit_per_person": 0,
+      "start_date": "2026-08-13",
+      "end_date": "2026-08-26",
+      "target_product_ids": [
+        "mrt_sku_1794886036478_2"
+      ],
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_1794886036477_1",
+      "name": "CJ 해찬들 태양초 골드고추장 (BOGO_1_PLUS_1)",
+      "promo_type": "BOGO_1_PLUS_1",
+      "required_qty": 2,
+      "bundle_price": 0,
+      "discount_pct": 0,
+      "limit_per_person": 0,
+      "start_date": "2026-08-13",
+      "end_date": "2026-08-26",
+      "target_product_ids": [
+        "mrt_sku_1794886036477_1"
+      ],
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_1794886036476_0",
+      "name": "거봉 (PRICE_DISCOUNT)",
+      "promo_type": "PRICE_DISCOUNT",
+      "required_qty": 1,
+      "bundle_price": 0,
+      "discount_pct": 0,
+      "limit_per_person": 2,
+      "start_date": "2026-08-13",
+      "end_date": "2026-08-26",
+      "target_product_ids": [
+        "mrt_sku_1794886036476_0"
+      ],
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_01",
+      "name": "[1+1] CJ 해찬들 태양초 골드고추장 (1kg)",
+      "promo_type": "BOGO_1_PLUS_1",
+      "required_qty": 2,
+      "bundle_price": 12900,
+      "discount_pct": 0,
+      "limit_per_person": 2,
+      "start_date": "2026-11-12",
+      "end_date": "2026-11-25",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "mpr_02",
+      "name": "[골라담기] 농심 스낵 4종 (새우깡/양파링/꿀꽈배기/자갈치)",
+      "promo_type": "MIX_AND_MATCH",
+      "required_qty": 4,
+      "bundle_price": 4980,
+      "discount_pct": 0,
+      "limit_per_person": 0,
+      "start_date": "2026-11-12",
+      "end_date": "2026-11-25",
+      "status": "ACTIVE"
+    }
+  ],
+  "orders": [
+    {
+      "order_id": "ORD-11-650-01-47121-0001-261118-0001",
+      "order_channel": "OFFLINE",
+      "offline_source": "PHONE",
+      "payment_method": "FACILITY_POSTPAY",
+      "memo": "",
+      "customer_type": "SENIOR_CENTER",
+      "facility_id": "FAC-11-650-01-87391-0001",
+      "buyer_name": "서초3동 경로당 (전화발주)",
+      "schedule_type": "ONETIME",
+      "delivery_date": "2026-11-18",
+      "items": [
+        {
+          "product_id": "mrt_sku_01",
+          "name": "농심 신라면 멀티",
+          "qty": 2,
+          "uom": "번들",
+          "unit_price": 3680,
+          "storage_temp": "AMBIENT"
+        },
+        {
+          "product_id": "mrt_sku_04",
+          "name": "돼지고기 (불고기용 · 3mm)",
+          "qty": 3,
+          "uom": "팩",
+          "unit_price": 14900,
+          "storage_temp": "REFRIGERATED"
+        }
+      ],
+      "total_amount": 52060,
+      "status": "DELIVERED",
+      "created_at": "2026-11-17T20:47:18.982Z"
+    },
+    {
+      "order_id": "ORD-11-650-01-47121-0001-261117-0001",
+      "customer_type": "SENIOR_CENTER",
+      "facility_id": "FAC-11-650-01-87391-0001",
+      "buyer_name": "서초 양재1동 경로당 (PWA 발주)",
+      "schedule_type": "ONETIME",
+      "delivery_date": "2026-11-17",
+      "items": [
+        {
+          "product_id": "mrt_prep_1794886036522_0",
+          "name": "양파 (깐양파)",
+          "qty": 1,
+          "uom": "봉",
+          "unit_price": 4900,
+          "storage_temp": "AMBIENT"
+        }
+      ],
+      "total_amount": 4900,
+      "status": "REQUESTED",
+      "created_at": "2026-11-17T20:10:54.613Z"
+    },
+    {
+      "order_id": "mord_1794886036536",
+      "customer_type": "SENIOR_CENTER",
+      "facility_id": "FAC-11-650-01-87391-0001",
+      "buyer_name": "기관 발주",
+      "schedule_type": "ONETIME",
+      "delivery_date": "2026-11-18",
+      "items": [
+        {
+          "sku_name": "양파 (깐양파)",
+          "qty": 5,
+          "unit": "봉",
+          "unit_price": 3500,
+          "actual_qty": 4,
+          "adjust_reason": "실중량 차이 정정"
+        }
+      ],
+      "total_amount": 14000,
+      "status": "REQUESTED",
+      "created_at": "2026-11-17T03:27:16.536Z",
+      "original_total_amount": 17500
+    },
+    {
+      "order_id": "mord_1794886002720",
+      "customer_type": "SENIOR_CENTER",
+      "facility_id": "FAC-11-650-01-87391-0001",
+      "buyer_name": "기관 발주",
+      "schedule_type": "ONETIME",
+      "delivery_date": "2026-11-18",
+      "items": [
+        {
+          "sku_name": "양파 (깐양파)",
+          "qty": 5,
+          "unit": "봉",
+          "unit_price": 3500
+        }
+      ],
+      "total_amount": 17500,
+      "status": "REQUESTED",
+      "created_at": "2026-11-17T03:26:42.721Z"
+    },
+    {
+      "order_id": "mord_20261117_01",
+      "customer_type": "SENIOR_CENTER",
+      "facility_id": "FAC-11-650-01-87391-0001",
+      "buyer_name": "서초 양재1동 경로당 (주간 급식)",
+      "schedule_type": "RECURRING_TUE_THU",
+      "delivery_date": "2026-11-17",
+      "items": [
+        {
+          "product_id": "mrt_sku_03",
+          "name": "양파 (깐양파 · 전처리)",
+          "qty": 15,
+          "uom": "봉",
+          "unit_price": 4200,
+          "storage_temp": "AMBIENT"
+        },
+        {
+          "product_id": "mrt_sku_04",
+          "name": "돼지고기 (불고기용 · 3mm)",
+          "qty": 10,
+          "uom": "팩",
+          "unit_price": 14900,
+          "storage_temp": "REFRIGERATED"
+        }
+      ],
+      "total_amount": 212000,
+      "status": "PICKING",
+      "created_at": "2026-11-17T03:24:13.212Z"
+    },
+    {
+      "order_id": "mord_20261117_02",
+      "customer_type": "ELDERLY_CARE",
+      "facility_id": "CUST-ZERO-PII-ELDER-01",
+      "buyer_name": "서초2동 독거어르신 돌봄 꾸러미 (바우처)",
+      "schedule_type": "WEEKLY_CARE",
+      "delivery_date": "2026-11-17",
+      "items": [
+        {
+          "product_id": "mrt_sku_02",
+          "name": "국내산 세척당근(특)",
+          "qty": 2,
+          "uom": "봉",
+          "unit_price": 2980,
+          "storage_temp": "AMBIENT"
+        },
+        {
+          "product_id": "mrt_sku_01",
+          "name": "농심 신라면 멀티",
+          "qty": 1,
+          "uom": "번들",
+          "unit_price": 3680,
+          "storage_temp": "AMBIENT"
+        }
+      ],
+      "total_amount": 9640,
+      "status": "REQUESTED",
+      "created_at": "2026-11-17T03:24:13.214Z"
+    }
+  ],
+  "adjustments": [
+    {
+      "adj_id": "adj_1794892647278",
+      "order_id": "mord_1794886036536",
+      "buyer_name": "기관 발주",
+      "product_name": "양파 (깐양파)",
+      "prev_qty": 5,
+      "actual_qty": 4,
+      "diff_amount": -3500,
+      "reason": "실중량 차이 정정",
+      "created_at": "2026-11-17T05:17:27.278Z"
+    }
+  ],
+  "pwa_config": {
+    "store_status": "OPEN",
+    "cutoff_time": "15:00",
+    "pos_only_policy": "BADGE_ONLY",
+    "notice_text": "금주 금요일까지 김장용 전처리 채소 예약 접수 중입니다.",
+    "blocks": [
+      {
+        "id": "FLYER_CAROUSEL",
+        "order": 1,
+        "enabled": true,
+        "title": "금주의 전단 특가 슬라이더"
+      },
+      {
+        "id": "STATUS_BANNER",
+        "order": 2,
+        "enabled": true,
+        "title": "영업 · 배송 마감 안내"
+      },
+      {
+        "id": "CATEGORY_GRID",
+        "order": 3,
+        "enabled": true,
+        "title": "퀵 카테고리 (2행×4열)"
+      },
+      {
+        "id": "PROMO_SHELF",
+        "order": 4,
+        "enabled": true,
+        "title": "1+1 · 골라담기 · 반짝세일",
+        "featured_product_ids": [
+          "mrt_pos_1794886036507_1",
+          "mrt_pos_1794886036507_2"
+        ]
+      },
+      {
+        "id": "CURATED_SHELF",
+        "order": 5,
+        "enabled": true,
+        "title": "오늘 입고된 추천 상품"
+      },
+      {
+        "id": "CO_SELL_AND_GROUP_BUY",
+        "order": 6,
+        "enabled": true,
+        "title": "전국 공동판매 & 우리동네 공동구매"
+      }
+    ]
+  },
+  "marts": [
+    {
+      "mart_id": "MRT-11-650-01-47121-0001",
+      "mart_name": "서초농협 하나로마트 양재점",
+      "mart_type": "NH_HANARO",
+      "region": "서울 서초구",
+      "operator_name": "서초구 시니어클럽 위탁운영팀",
+      "agency_fee_pct": 5,
+      "status": "ACTIVE"
+    },
+    {
+      "mart_id": "MRT-11-650-02-51002-0001",
+      "mart_name": "우리동네 신선 식자재마트",
+      "mart_type": "GENERAL_MART",
+      "region": "서울 서초구",
+      "operator_name": "직영·위탁 혼합",
+      "agency_fee_pct": 4.5,
+      "status": "ACTIVE"
+    },
+    {
+      "mart_id": "MRT-47-130-01-88201-0001",
+      "mart_name": "안동농협 산지직송 특산물센터",
+      "mart_type": "NH_HANARO",
+      "region": "경북 안동시",
+      "operator_name": "산지 공동판매 조합",
+      "agency_fee_pct": 3.5,
+      "status": "ACTIVE"
+    }
+  ],
+  "group_buys": [
+    {
+      "campaign_id": "mgb_202611_01",
+      "campaign_type": "B2B_INSTITUTIONAL",
+      "title": "[경로당·기관 공구] 국내산 깐양파 1kg × 10봉 (1망)",
+      "mart_id": "MRT-11-650-01-47121-0001",
+      "unit_price": 29800,
+      "regular_price": 42000,
+      "target_qty": 100,
+      "current_qty": 76,
+      "deadline_at": "2026-11-22",
+      "distribution_mode": "REGIONAL_DELIVERY",
+      "status": "OPEN"
+    },
+    {
+      "campaign_id": "mgb_202611_02",
+      "campaign_type": "B2C_RESIDENT",
+      "title": "[우리동네 공구] 산지직송 안동 사과 3kg (가정용)",
+      "mart_id": "MRT-47-130-01-88201-0001",
+      "unit_price": 15900,
+      "regular_price": 22900,
+      "target_qty": 50,
+      "current_qty": 42,
+      "deadline_at": "2026-11-20",
+      "distribution_mode": "HUB_PICKUP",
+      "status": "OPEN"
+    }
+  ],
+  "staff": [
+    {
+      "staff_id": "MRT-11-650-01-47121-0001-U001",
+      "name": "이순자",
+      "role": "PREP_WORKER",
+      "role_label": "전처리 작업자",
+      "phone": "010-5511-2001",
+      "work_shift": "07:00 ~ 13:00",
+      "status": "ACTIVE"
+    },
+    {
+      "staff_id": "MRT-11-650-01-47121-0001-U002",
+      "name": "박민수",
+      "role": "PICKER",
+      "role_label": "매장 피킹 · 박싱",
+      "phone": "010-5511-2002",
+      "work_shift": "09:00 ~ 18:00",
+      "status": "ACTIVE"
+    }
+  ],
+  "media_objects": [
+    {
+      "id": "med_001k7lldpohhkp3m98se28ts52",
+      "owner_type": "MART_PRODUCT",
+      "owner_id": "MRT-11-650-01-47121-0001",
+      "r2_object_key": "mart/MRT-11-650-01-47121-0001/med_001k7lldpohhkp3m98se28ts52.webp",
+      "original_file_name": "carrot.jpg",
+      "content_type": "image/webp",
+      "file_size_bytes": 44,
+      "cdn_url": "/mart/media/med_001k7lldpohhkp3m98se28ts52.webp",
+      "created_at": "2026-11-17T21:08:23.449Z"
+    }
+  ],
+  "promo_types": [
+    {
+      "code": "PRICE_DISCOUNT",
+      "label": "기간 특가",
+      "calc_mode": "UNIT_DISCOUNT",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "DAY_OF_WEEK",
+      "label": "요일별 특가",
+      "calc_mode": "UNIT_DISCOUNT",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "AMOUNT_THRESHOLD",
+      "label": "금액기준 할인",
+      "calc_mode": "THRESHOLD",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "QTY_THRESHOLD",
+      "label": "수량기준 할인",
+      "calc_mode": "THRESHOLD",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "QTY_DISCOUNT",
+      "label": "다다익선 %할인",
+      "calc_mode": "UNIT_DISCOUNT",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "BOGO_1_PLUS_1",
+      "label": "덤(1+1)",
+      "calc_mode": "BOGO_BUNDLE",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "BOGO_2_PLUS_1",
+      "label": "덤(2+1)",
+      "calc_mode": "BOGO_BUNDLE",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "MIX_AND_MATCH",
+      "label": "골라담기",
+      "calc_mode": "MIX_MATCH",
+      "is_active": true,
+      "is_system": true
+    },
+    {
+      "code": "CROSS_BUY",
+      "label": "함께구매",
+      "calc_mode": "MIX_MATCH",
+      "is_active": true,
+      "is_system": true
+    }
+  ]
+}

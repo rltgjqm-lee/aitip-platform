@@ -1,0 +1,573 @@
+{
+  "blacklistedUids": [
+    "cust_01jcb_abuse_991"
+  ],
+  "extraStores": [],
+  "onboardingApps": [
+    {
+      "id": "str_01jcbk9v4e2x8m4v0k5a1b2c4a",
+      "app_no": "APP-2026-00129",
+      "business_name": "성심당 서초점 (가칭)",
+      "biz_reg_no": "305-81-22990",
+      "food_license_no": "2026-3210045-00129",
+      "store_category": "56150",
+      "ksic_name": "제과점업 빵집 (56150)",
+      "rep_name": "임영진",
+      "phone": "02-588-1956",
+      "road_address": "서울특별시 서초구 서초대로 301",
+      "agency_id": "agn_01jcbk9v502x8m4v0k5a1b2c02",
+      "agency_name": "(주)서초네트웍스",
+      "pos_company": "오케이포스 (OKPOS)",
+      "min_order_amount": 15000,
+      "default_prep_minutes": 20,
+      "bank_name": "하나은행",
+      "bank_account": "***-****-195601",
+      "bank_holder": "주식회사 로쏘",
+      "applied_at": "2026-11-13 14:20",
+      "review_status": "DOC_REVIEW",
+      "review_label": "서류 심사중",
+      "documents": [
+        {
+          "id": "doc_biz",
+          "name": "사업자등록증 사본",
+          "status": "VERIFIED",
+          "file_name": "biz_cert_3058122990.pdf",
+          "desc": "국세청 정상 사업자 일치"
+        },
+        {
+          "id": "doc_license",
+          "name": "일반음식점 영업신고증",
+          "status": "REQUIRES_CHECK",
+          "file_name": "license_20263210045.pdf",
+          "desc": "영업신고증 상 대표자명 대조 확인 필요"
+        },
+        {
+          "id": "doc_bank",
+          "name": "정산 통장 사본",
+          "status": "VERIFIED",
+          "file_name": "bankbook_hana.pdf",
+          "desc": "예금주(주식회사 로쏘) 일치"
+        },
+        {
+          "id": "doc_photo",
+          "name": "매장 간판 및 전경 사진",
+          "status": "VERIFIED",
+          "file_name": "storefront_front.jpg",
+          "desc": "서초대로 301 현장 실측 일치"
+        },
+        {
+          "id": "doc_menu",
+          "name": "판매 메뉴 및 단가표",
+          "status": "VERIFIED",
+          "file_name": "menu_list_2026.xlsx",
+          "desc": "원산지 및 품목 단가 등록 완료"
+        }
+      ]
+    },
+    {
+      "id": "str_01jcbk9v4e2x8m4v0k5a1b2c4b",
+      "app_no": "APP-2026-00130",
+      "business_name": "봉피양 양재직영점",
+      "biz_reg_no": "211-86-99102",
+      "food_license_no": "2026-3210045-00130",
+      "store_category": "56111",
+      "ksic_name": "한식 일반 음식점업 (56111)",
+      "rep_name": "박상민",
+      "phone": "02-572-8840",
+      "road_address": "서울특별시 서초구 강남대로 212",
+      "agency_id": "agn_01jcbk9v502x8m4v0k5a1b2c01",
+      "agency_name": "강남제일정보시스템",
+      "pos_company": "유니온포스",
+      "min_order_amount": 18000,
+      "default_prep_minutes": 25,
+      "bank_name": "신한은행",
+      "bank_account": "***-****-884012",
+      "bank_holder": "(주)봉피양",
+      "applied_at": "2026-11-15 10:05",
+      "review_status": "READY_APPROVAL",
+      "review_label": "승인 대기",
+      "documents": [
+        {
+          "id": "doc_biz",
+          "name": "사업자등록증 사본",
+          "status": "VERIFIED",
+          "file_name": "biz_2118699102.pdf",
+          "desc": "정상 사업자"
+        },
+        {
+          "id": "doc_license",
+          "name": "일반음식점 영업신고증",
+          "status": "VERIFIED",
+          "file_name": "lic_00130.pdf",
+          "desc": "정상 확인"
+        },
+        {
+          "id": "doc_bank",
+          "name": "정산 통장 사본",
+          "status": "VERIFIED",
+          "file_name": "bank_shinhan.pdf",
+          "desc": "예금주 일치"
+        }
+      ]
+    }
+  ],
+  "csDisputes": [
+    {
+      "dispute_id": "dsp_20261116_01",
+      "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "reason_code": "DELIVERY_DELAY",
+      "reason_label": "배달 지연(45분 초과)",
+      "requested_amount": 3000,
+      "refunded_amount": 0,
+      "status": "OPEN",
+      "memo": "고객 PWA 문의함 접수 (PII 미저장, 안심번호 만료됨)",
+      "created_at": "2026-11-16T02:52:12.779Z"
+    }
+  ],
+  "pointPolicy": {
+    "earn_rate_pct": 1,
+    "min_use_points": 1000,
+    "expiry_days": 365,
+    "require_hash_auth": true
+  },
+  "pointLedger": [
+    {
+      "tx_id": "ptx_1794880215599",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "delta": 194,
+      "balance_after": 334,
+      "type": "EARN_ORDER",
+      "bearer": "PLATFORM",
+      "memo": "주문(A-54) 1% 자동 적립",
+      "created_at": "2026-11-17T01:50:15.599Z"
+    },
+    {
+      "tx_id": "ptx_use_1794880215585",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "order_id": "pending",
+      "delta": -100,
+      "balance_after": 140,
+      "type": "USE_ORDER",
+      "bearer": "PLATFORM",
+      "memo": "주문 포인트 사용 차감",
+      "created_at": "2026-11-17T01:50:15.585Z"
+    },
+    {
+      "tx_id": "ptx_20261116_01",
+      "customer_uid": "cust_01jcb_pwa_88412",
+      "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
+      "delta": 240,
+      "balance_after": 3240,
+      "type": "EARN_ORDER",
+      "bearer": "PLATFORM",
+      "memo": "실결제 1% 자동 적립",
+      "created_at": "2026-11-16T02:52:12.779Z"
+    },
+    {
+      "tx_id": "ptx_20261116_02",
+      "customer_uid": "cust_01jcb_abuse_991",
+      "order_id": "",
+      "delta": -3000,
+      "balance_after": 0,
+      "type": "REVOKE_ABUSE",
+      "bearer": "PLATFORM",
+      "memo": "단기간 다중 기기 초기화 의심 회수",
+      "created_at": "2026-11-16T02:52:12.779Z"
+    }
+  ],
+  "banners": [
+    {
+      "id": "bnr_01",
+      "title": "첫 주문 Zero-Pay 결제 시 2,000P 즉시 적립",
+      "target_app": "CUSTOMER_PWA",
+      "placement": "HOME_TOP",
+      "active": true,
+      "period": "2026-11-01 ~ 2026-11-30"
+    },
+    {
+      "id": "bnr_02",
+      "title": "[공지] 개인정보 서버 미저장(Zero-PII) 안심 주문 정책 안내",
+      "target_app": "CUSTOMER_PWA",
+      "placement": "NOTICE_BAR",
+      "active": true,
+      "period": "상시 노출"
+    }
+  ],
+  "serviceModules": [
+    {
+      "code": "FOOD",
+      "name": "음식 배달/포장",
+      "active": true,
+      "active_stores": 1,
+      "fee_pct": 1.5
+    },
+    {
+      "code": "MART",
+      "name": "단위농협 하나로마트",
+      "active": true,
+      "active_stores": 1,
+      "fee_pct": 1
+    },
+    {
+      "code": "BEAUTY",
+      "name": "뷰티/미용 예약",
+      "active": false,
+      "active_stores": 0,
+      "fee_pct": 2
+    },
+    {
+      "code": "HOSPITAL",
+      "name": "병원/약국 접수",
+      "active": false,
+      "active_stores": 0,
+      "fee_pct": 0
+    },
+    {
+      "code": "STAY",
+      "name": "숙박/로컬 스테이",
+      "active": false,
+      "active_stores": 0,
+      "fee_pct": 2.5
+    }
+  ],
+  "deliveryZones": [
+    {
+      "zone_id": "zn_seocho_01",
+      "sido": "서울특별시",
+      "sigungu": "서초구",
+      "dongs": "서초1~4동, 반포동",
+      "base_radius_km": 3.5,
+      "base_fee": 3000,
+      "active": true,
+      "emergency_delivery_halt": false
+    },
+    {
+      "zone_id": "zn_gangnam_01",
+      "sido": "서울특별시",
+      "sigungu": "강남구",
+      "dongs": "역삼1~2동, 논현동",
+      "base_radius_km": 3,
+      "base_fee": 3500,
+      "active": true
+    }
+  ],
+  "systemPolicies": {
+    "maintenance_mode": false,
+    "maintenance_notice": "시스템 정기 점검 중입니다. 잠시 후 다시 이용해 주세요.",
+    "pii_retention_hours_after_delivery": 24,
+    "alimtalk_order_accept": "[AITIP] #{store_name}에서 주문을 접수했습니다. (예상 #{prep_min}분)",
+    "alimtalk_delivery_done": "[AITIP] 배달이 완료되었습니다. 안심번호는 1시간 후 자동 파기됩니다."
+  },
+  "distributors": [
+    {
+      "id": "HQ_DIRECT",
+      "code": "HQ-00",
+      "name": "본사 직영 (HQ Direct)",
+      "sido_code": "00",
+      "sido_name": "전국 직할",
+      "rep_name": "본사 운영본부",
+      "phone": "1588-0000",
+      "commission_rate": 0,
+      "is_direct": true,
+      "status": "ACTIVE",
+      "agencies_count": 1,
+      "stores_count": 0,
+      "monthly_gmv": 0
+    },
+    {
+      "id": "dst_01jcbk9v502x8m4v0k5a1b2c01",
+      "code": "DST-11",
+      "name": "서울특별시 광역총판",
+      "sido_code": "11",
+      "sido_name": "서울특별시",
+      "rep_name": "김서울",
+      "phone": "02-500-1100",
+      "commission_rate": 0.3,
+      "is_direct": false,
+      "status": "ACTIVE",
+      "agencies_count": 2,
+      "stores_count": 1,
+      "monthly_gmv": 634300
+    }
+  ],
+  "agencies": [
+    {
+      "id": "HQ_DIRECT_AGENCY",
+      "code": "AGN-00-00",
+      "distributor_id": "HQ_DIRECT",
+      "distributor_name": "본사 직영 (HQ Direct)",
+      "name": "본사 직영 관리팀",
+      "region": "전국 직영점",
+      "rep_name": "직영총괄",
+      "phone": "1588-0001",
+      "commission_rate": 0,
+      "is_direct": true,
+      "status": "ACTIVE",
+      "stores_count": 0,
+      "monthly_gmv": 0
+    },
+    {
+      "id": "agn_01jcbk9v502x8m4v0k5a1b2c01",
+      "code": "AGN-11-01",
+      "distributor_id": "dst_01jcbk9v502x8m4v0k5a1b2c01",
+      "distributor_name": "서울특별시 광역총판",
+      "name": "강남제일정보시스템",
+      "region": "서울 서초구·강남구",
+      "rep_name": "이강남",
+      "phone": "02-588-1001",
+      "commission_rate": 0.5,
+      "is_direct": false,
+      "status": "ACTIVE",
+      "stores_count": 1,
+      "monthly_gmv": 634300
+    },
+    {
+      "id": "agn_01jcbk9v502x8m4v0k5a1b2c02",
+      "code": "AGN-11-02",
+      "distributor_id": "dst_01jcbk9v502x8m4v0k5a1b2c01",
+      "distributor_name": "서울특별시 광역총판",
+      "name": "(주)서초네트웍스",
+      "region": "서울 서초구",
+      "rep_name": "박서초",
+      "phone": "02-588-2002",
+      "commission_rate": 0.5,
+      "is_direct": false,
+      "status": "ACTIVE",
+      "stores_count": 0,
+      "monthly_gmv": 0
+    },
+    {
+      "id": "agn_1794798709303",
+      "code": "AGN-04",
+      "distributor_id": "HQ_DIRECT",
+      "distributor_name": "본사 직영 (HQ Direct)",
+      "name": "송파직영팀",
+      "region": "서울 송파구",
+      "rep_name": "김송파",
+      "phone": "02-400-1234",
+      "commission_rate": 0,
+      "is_direct": true,
+      "status": "ACTIVE",
+      "stores_count": 0,
+      "monthly_gmv": 0
+    },
+    {
+      "id": "agn_1794803077281",
+      "code": "AGN-05",
+      "distributor_id": "dst_01jcbk9v502x8m4v0k5a1b2c01",
+      "distributor_name": "서울특별시 광역총판",
+      "name": "(주)마포상생네트웍스",
+      "region": "서울 마포구",
+      "rep_name": "이마포",
+      "phone": "02-333-4444",
+      "commission_rate": 0.5,
+      "is_direct": false,
+      "stores_count": 0,
+      "monthly_gmv": 0,
+      "biz_number": "105-86-77123",
+      "address": "서울 마포구 양화로 45",
+      "tax_type": "TAX_INVOICE_10",
+      "bank_name": "신한은행",
+      "bank_account": "110-123-456789",
+      "bank_holder": "(주)마포상생네트웍스",
+      "contract_start": "2026-11-16",
+      "contract_end": "2027-11-15",
+      "deposit_amount": 0,
+      "initial_devices": 0,
+      "documents": {
+        "biz_cert": true,
+        "bankbook": true,
+        "surety_bond": false
+      },
+      "agreements": {
+        "privacy_consent": true,
+        "zero_pii_pledge": true,
+        "nda_pledge": true,
+        "standard_contract": true,
+        "signed_at": "2026-11-16T04:24:37.281Z"
+      },
+      "status": "ACTIVE"
+    }
+  ],
+  "partners": [
+    {
+      "id": "ptr_01jcbk9v502x8m4v0k5a1b2c01",
+      "code": "PTR-VAN-01",
+      "name": "한국정보통신(KICC) VAN 협력사",
+      "category": "VAN/POS 단말기 설치",
+      "rep_name": "정협력",
+      "phone": "02-2100-3300",
+      "commission_rate": 0.1,
+      "status": "ACTIVE"
+    },
+    {
+      "id": "ptr_1794812312854",
+      "code": "ALY-02",
+      "alliance_type": "SALES_ALLY",
+      "alliance_label": "영업 제휴",
+      "name": "서초소상공인연합회",
+      "category": "서초구 상인회 추천 채널",
+      "rep_name": "최연합",
+      "phone": "02-588-7700",
+      "commission_rate": 0.2,
+      "biz_number": "214-82-99900",
+      "address": "-",
+      "tax_type": "TAX_INVOICE_10",
+      "bank_name": "농협",
+      "bank_account": "301-0000-1111",
+      "bank_holder": "서초소상공인연합회",
+      "contract_start": "2026-11-16",
+      "contract_end": "2027-11-15",
+      "deposit_amount": 0,
+      "initial_devices": 0,
+      "documents": {
+        "biz_cert": true,
+        "bankbook": true,
+        "surety_bond": false
+      },
+      "agreements": {
+        "privacy_consent": true,
+        "zero_pii_pledge": true,
+        "nda_pledge": true,
+        "standard_contract": true,
+        "signed_at": "2026-11-16T06:58:32.854Z"
+      },
+      "status": "ACTIVE"
+    }
+  ],
+  "platformCoupons": [
+    {
+      "id": "pc_req_1794875213099",
+      "issuer_type": "ALLIANCE",
+      "alliance_name": "강남제일정보시스템",
+      "name": "테스트 권역 1000원 행사",
+      "discount_amount": 1000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 20,
+        "alliance": 80,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_platform_01",
+      "issuer_type": "PLATFORM",
+      "alliance_name": "본사(플랫폼)",
+      "name": "상생 플랫폼 첫주문 2,000원 할인",
+      "discount_amount": 2000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 100,
+        "alliance": 0,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    },
+    {
+      "id": "pc_alliance_01",
+      "issuer_type": "ALLIANCE",
+      "alliance_name": "NH농협 제로페이",
+      "name": "제로페이 결제 시 1,500원 공동 할인",
+      "discount_amount": 1500,
+      "min_order_amount": 12000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 50,
+        "alliance": 50,
+        "merchant": 0
+      },
+      "status": "ACTIVE"
+    }
+  ],
+  "promoRequests": [
+    {
+      "id": "pr_req_1794875213053",
+      "requester_role": "HQ_SUPER",
+      "requester_name": "강남제일정보시스템",
+      "title": "테스트 권역 1000원 행사",
+      "discount_amount": 1000,
+      "min_order_amount": 15000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 20,
+        "alliance": 80,
+        "merchant": 0
+      },
+      "status": "APPROVED",
+      "created_at": "2026-11-17 00:26"
+    },
+    {
+      "id": "pr_req_01",
+      "requester_role": "SALES_ALLY",
+      "requester_name": "서초소상공인연합회",
+      "title": "서초 상권 주말 2,000원 상생 쿠폰",
+      "discount_amount": 2000,
+      "min_order_amount": 18000,
+      "valid_until": "2026-12-31",
+      "cost_split": {
+        "platform": 30,
+        "alliance": 70,
+        "merchant": 0
+      },
+      "status": "REQUESTED",
+      "created_at": "2026-11-17 08:30"
+    }
+  ],
+  "merchantPromoOptOuts": {
+    "STR-11-650-01-56162-0001": []
+  },
+  "auditLogs": [
+    {
+      "id": "aud_1794881532394",
+      "actor_role": "HQ_SUPER",
+      "tenant_id": "hq",
+      "action": "PAYOUT_DECIDE",
+      "target": "바른치킨 서초본점",
+      "detail": "정산 지급 APPROVED (635,800원)",
+      "created_at": "2026-11-17T02:12:12.425Z"
+    },
+    {
+      "id": "aud_init_01",
+      "actor_role": "HQ_SUPER",
+      "tenant_id": "hq",
+      "action": "SYSTEM_BOOT",
+      "target": "PLATFORM_ADMIN",
+      "detail": "슈퍼관리자 감사 원장 초기화 완료",
+      "created_at": "2026-11-17T02:12:12.296Z"
+    }
+  ],
+  "payoutRequests": [
+    {
+      "id": "pay_req_01",
+      "payee_type": "STORE",
+      "payee_id": "STR-11-650-01-56162-0001",
+      "payee_name": "바른치킨 서초본점",
+      "gross_amount": 634300,
+      "platform_promo_reimburse": 750,
+      "alliance_promo_reimburse": 750,
+      "net_payout": 635800,
+      "bank_info": "신한은행 110-***-****",
+      "status": "APPROVED",
+      "requested_at": "2026-11-17 09:00",
+      "decided_at": "2026-11-17T02:12:12.394Z"
+    },
+    {
+      "id": "pay_req_02",
+      "payee_type": "AGENCY",
+      "payee_id": "agn_01jcbk9v502x8m4v0k5a1b2c01",
+      "payee_name": "강남제일정보시스템",
+      "gross_amount": 420000,
+      "platform_promo_reimburse": 0,
+      "alliance_promo_reimburse": 0,
+      "net_payout": 406140,
+      "bank_info": "국민은행 010-***-**** (3.3% 공제)",
+      "status": "PENDING",
+      "requested_at": "2026-11-17 09:05"
+    }
+  ]
+}

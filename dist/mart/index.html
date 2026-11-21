@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AITIP 단위농협 하나로마트 위탁 운영 관제 포털</title>
+  <link rel="stylesheet" href="/mart/mart.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-badge">NH</span>
+        <span class="sidebar-title">하나로마트 위탁운영</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group open" data-group="catalog">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>1. 상품등록</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#catalog" class="nav-item active" data-view="catalog">
+              <svg class="nav-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              <span>일반 · 신선 상품</span>
+            </a>
+            <a href="#prep" class="nav-item" data-view="prep">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              <span>전처리 상품</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="promo">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>2. 행사상품</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#flyer" class="nav-item" data-view="flyer">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+              <span>할인 / 전단일괄</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="online">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>3. 온라인 구성</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#pwa-control" class="nav-item" data-view="pwa-control">
+              <svg class="nav-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+              <span>PWA · 태블릿 · PC 진열</span>
+            </a>
+            <a href="/mart/pwa/" target="_blank" class="nav-item" style="color: #007749; font-weight: 700;">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              <span>마트 몰 새 창 열기</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="orders">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>4. 주문</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#orders-online" class="nav-item" data-view="orders-online">
+              <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <span>온라인 주문내역</span>
+            </a>
+            <a href="#orders-offline" class="nav-item" data-view="orders-offline">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <span>오프라인 주문 (입력·출력)</span>
+            </a>
+            <a href="#picking" class="nav-item" data-view="picking">
+              <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+              <span>피킹 · 결품 정정</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="delivery">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>5. 배송</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#boxing" class="nav-item" data-view="boxing">
+              <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+              <span>포장(상온·냉장·냉동) &amp; 배송</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="settle">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>6. 결제 및 정산</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#settle" class="nav-item" data-view="settle">
+              <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              <span>결제 · 위탁 정산 대사</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="nav-group open" data-group="mart">
+          <button class="nav-group-header" type="button" aria-expanded="true">
+            <span>7. 마트관리</span>
+            <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </button>
+          <div class="nav-group-items">
+            <a href="#mart-info" class="nav-item" data-view="mart-info">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+              <span>마트 기본정보 &amp; 인력</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="user-name">위탁운영 총괄매니저</span>
+        <span>서초구 시니어클럽 대행팀</span>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="top-header">
+        <div class="breadcrumb">
+          <span>하나로마트 온라인 몰 대행</span>
+          <span>/</span>
+          <span class="current" id="current-crumb">1. 상품 · 전처리 · 할인전단</span>
+        </div>
+        <div class="header-actions">
+          <div class="status-indicator">
+            <span class="dot"></span>
+            <span>위탁 운영 서버 정상</span>
+          </div>
+          <a href="/admin/" class="btn btn-default" style="font-size: 12px; text-decoration: none;">슈퍼관리자 &rarr;</a>
+        </div>
+      </header>
+
+      <main class="page-content" id="mart-main-container">
+        <div style="padding: 40px; text-align: center; color: #64748b;">마트 위탁 운영 데이터를 불러오는 중입니다...</div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="/mart/js/app.js"></script>
+</body>
+</html>

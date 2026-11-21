@@ -176,7 +176,7 @@ export async function renderMasterDashboard(container, data, filter = {}) {
                     </td>
                     <td style="font-family: monospace; font-size: 11.5px; color: var(--text-secondary);">${m.biz_number}</td>
                     <td>${m.rep_name} <span style="font-size: 11px; color: var(--text-muted);">(${m.phone})</span></td>
-                    <td>${m.sido} ${m.sigungu}</td>
+                    <td>${[m.sido, m.sigungu].filter(Boolean).join(' ') || m.region || m.address || '-'}</td>
                     <td style="font-size: 12px; font-weight: 700; color: var(--text-primary);">${agencyDisplayName}</td>
                     <td style="text-align: center; font-weight: 800;">${m.devices_cnt}대</td>
                     <td style="text-align: right; font-weight: 700;">${m.today_orders}건</td>
@@ -425,7 +425,7 @@ function showStoreDetailModal(store, agency, devices = []) {
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">업종 구분:</span> <span class="badge-status ${store.isMart ? 'warning' : 'active'}" style="font-size: 10.5px;">${store.isMart ? '하나로마트 공공유통' : (store.category_label || store.ksic_name || '일반 외식 가맹점')}</span></div>
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">사업자등록번호:</span> <code style="font-family: monospace; font-weight: 700;">${store.biz_number}</code></div>
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">대표자 (연락처):</span> ${store.rep_name} (${store.phone})</div>
-          <div><span style="color: #64748b; font-weight: 600;">소재지 주소:</span> ${store.sido} ${store.sigungu} ${store.address || '중앙로 102'}</div>
+          <div><span style="color: #64748b; font-weight: 600;">소재지 주소:</span> ${[store.sido, store.sigungu].filter(Boolean).join(' ')} ${store.address || '중앙로 102'}</div>
         </div>
 
         <!-- 섹션 2: 소속 영업망 & 관리 체계 -->
@@ -435,7 +435,7 @@ function showStoreDetailModal(store, agency, devices = []) {
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">소속 지역 대리점:</span> <strong style="color: #1e40af;">${agencyTitle}</strong></div>
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">대리점 담당자:</span> ${agencyRep}</div>
           <div style="margin-bottom: 6px;"><span style="color: #64748b; font-weight: 600;">영업망 수수료율:</span> 0.5% (지역 대리점 배분)</div>
-          <div><span style="color: #64748b; font-weight: 600;">관제 권역:</span> ${store.sido} ${store.sigungu} 관할</div>
+          <div><span style="color: #64748b; font-weight: 600;">관제 권역:</span> ${[store.sido, store.sigungu].filter(Boolean).join(' ') || store.region || '-'} 관할</div>
         </div>
 
         <!-- 섹션 3: 설치 단말기 & CTI 하드웨어 연동 -->

@@ -67,6 +67,14 @@
       "legal_notices": {
         "origin_or_license": ""
       }
+    },
+    "is_delivery_open": true,
+    "is_pickup_open": true,
+    "pickup_settings": {
+      "enabled": true,
+      "discount_amount": 2000,
+      "prep_time_minutes": 15,
+      "pickup_memo": "카운터 픽업 안내"
     }
   },
   "store_hours": [
@@ -657,6 +665,717 @@
     }
   ],
   "live_orders": [
+    {
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "short_display_id": "A-54",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-0000-0000",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-6056-2500",
+      "virtual_phone_id": "vnm_01m7kk56haxa7vzmf8wkxa7vzm",
+      "virtual_phone_expires_at": "2026-11-17T02:50:15.594Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m7kk56ha5pskdkzrpm5pskdk",
+          "product_id": "prd_01",
+          "name": "후라이드치킨",
+          "quantity": 1,
+          "base_price": 20000,
+          "selected_options": [],
+          "total_price": 20000
+        }
+      ],
+      "items_total": 20000,
+      "delivery_tip": 3000,
+      "discount_amount": 3600,
+      "final_payment_amount": 19400,
+      "estimated_profit": 11600,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-17T01:50:15.594Z",
+      "applied_promotions": {
+        "platform_coupon_id": "pc_alliance_01",
+        "merchant_coupon_id": "cpn_01m71dwjqa81a2dq0hs081a2dq",
+        "platform_discount": 750,
+        "alliance_discount": 750,
+        "merchant_discount": 2000,
+        "point_used": 100,
+        "total_discount": 3600
+      },
+      "customer_uid": "cust_01jcb_pwa_88412"
+    },
+    {
+      "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
+      "short_display_id": "A-53",
+      "status": "CANCELLED",
+      "order_channel": "PWA",
+      "fulfillment_type": "TAKEOUT",
+      "customer_name": "포장테스트",
+      "customer_phone": "010-1111-2222",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-5669-8471",
+      "virtual_phone_id": "vnm_01m7gw30a7wp5gssdebcwp5gss",
+      "virtual_phone_expires_at": "2026-11-16T01:28:37.575Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "방문 포장 픽업",
+      "distance_meters": 0,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m7gw30a60ghnqjjm8j0ghnqj",
+          "product_id": "prd_01h7x8sweet",
+          "name": "메뉴",
+          "quantity": 1,
+          "base_price": 0,
+          "selected_options": [],
+          "total_price": 0
+        }
+      ],
+      "items_total": 0,
+      "delivery_tip": 0,
+      "discount_amount": 0,
+      "final_payment_amount": 0,
+      "estimated_profit": 0,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-16T00:28:37.575Z",
+      "ready_at": "2026-11-16T00:28:37.591Z",
+      "completed_at": "2026-11-16T00:28:37.591Z"
+    },
+    {
+      "order_id": "ord_01m7gpczcwwpk9qwjhjvwpk9qw",
+      "short_display_id": "A-52",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-7723-1906",
+      "virtual_phone_id": "vnm_01m7gpczcwkxzt27427pkxzt27",
+      "virtual_phone_expires_at": "2026-11-15T23:49:12.860Z",
+      "road_address": "경기 남양주시 평내로 6-1 (평내동)",
+      "detail_address": "205호",
+      "postal_code": "12224",
+      "delivery_address": "경기 남양주시 평내로 6-1 (평내동) 205호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요 (아기가 자고 있어요)",
+      "items": [
+        {
+          "item_id": "itm_01m7gpczcwry89aa8rpjry89aa",
+          "product_id": "prd_01h7x8sweet",
+          "name": "바른 양념치킨",
+          "quantity": 1,
+          "base_price": 19900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_boneless",
+              "option_name": "100% 닭다리 순살로 변경",
+              "price": 2000
+            },
+            {
+              "group_id": "optgrp_01h7x8spicy",
+              "group_name": "맛/맵기 강도",
+              "option_id": "opt_spicy_hot",
+              "option_name": "매운맛 (불닭 맵기)",
+              "price": 500
+            },
+            {
+              "group_id": "optgrp_01h7x8sauce",
+              "group_name": "추가 소스/토핑",
+              "option_id": "opt_add_cola",
+              "option_name": "코카콜라 1.25L 사이즈업",
+              "price": 2000
+            }
+          ],
+          "total_price": 24400
+        }
+      ],
+      "items_total": 24400,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 27400,
+      "estimated_profit": 14152,
+      "payment_method": "CARD",
+      "delivery_method": "SELF",
+      "delivery_status": "SELF_DELIVERING",
+      "prep_time_minutes": 20,
+      "rider_dispatch_status": "SELF_DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-15T22:49:12.860Z",
+      "accepted_at": "2026-11-15T22:49:31.136Z"
+    },
+    {
+      "order_id": "ord_01m7gnaadn4mrbpxfjxs4mrbpx",
+      "short_display_id": "A-51",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "추적테스트",
+      "customer_phone": "010-9999-8888",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-9735-5858",
+      "virtual_phone_id": "vnm_01m7gnaadn6s2g87jgj06s2g87",
+      "virtual_phone_expires_at": "2026-11-15T23:30:17.270Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m7gnaadnppne12ykxsppne12",
+          "product_id": "prd_1",
+          "name": "테스트치킨",
+          "quantity": 1,
+          "base_price": 20000,
+          "selected_options": [],
+          "total_price": 20000
+        }
+      ],
+      "items_total": 20000,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 23000,
+      "estimated_profit": 11600,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": 15,
+      "rider_dispatch_status": "DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-15T22:30:17.270Z",
+      "accepted_at": "2026-11-15T22:30:17.356Z"
+    },
+    {
+      "order_id": "ord_01m7gm2njztaxvkjsjcjtaxvkj",
+      "short_display_id": "A-50",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-4586-7960",
+      "virtual_phone_id": "vnm_01m7gm2njztmwyedbxqptmwyed",
+      "virtual_phone_expires_at": "2026-11-15T23:08:37.983Z",
+      "road_address": "경기 남양주시 평내로161번길 3-3 (평내동)",
+      "detail_address": "401호",
+      "postal_code": "12218",
+      "delivery_address": "경기 남양주시 평내로161번길 3-3 (평내동) 401호",
+      "distance_meters": 500,
+      "customer_memo": "조심히 오세요.",
+      "items": [
+        {
+          "item_id": "itm_01m7gm2njz0ycah10fkp0ycah1",
+          "product_id": "prd_01h7x8soy",
+          "name": "통곡물 간장치킨",
+          "quantity": 1,
+          "base_price": 20900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_boneless",
+              "option_name": "100% 닭다리 순살로 변경",
+              "price": 2000
+            },
+            {
+              "group_id": "optgrp_01h7x8sauce",
+              "group_name": "추가 소스/토핑",
+              "option_id": "opt_add_sweet",
+              "option_name": "달콤 양념 소스",
+              "price": 1000
+            }
+          ],
+          "total_price": 23900
+        },
+        {
+          "item_id": "itm_01m7gm2njz6c0ab7wxf36c0ab7",
+          "product_id": "opt_side_menbosha",
+          "name": "통새우 멘보샤 (4개)",
+          "quantity": 1,
+          "base_price": 8000,
+          "selected_options": [],
+          "total_price": 8000
+        },
+        {
+          "item_id": "itm_01m7gm2njzaz8sgxbs8naz8sgx",
+          "product_id": "opt_bevr_soju",
+          "name": "참이슬 후레쉬 (360ml)",
+          "quantity": 1,
+          "base_price": 5000,
+          "selected_options": [],
+          "total_price": 5000
+        }
+      ],
+      "items_total": 36900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 39900,
+      "estimated_profit": 21402,
+      "payment_method": "CARD",
+      "delivery_method": "SELF",
+      "delivery_status": "SELF_DELIVERING",
+      "prep_time_minutes": 25,
+      "rider_dispatch_status": "SELF_DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-15T22:08:37.984Z",
+      "accepted_at": "2026-11-15T22:09:24.155Z"
+    },
+    {
+      "order_id": "ord_01m7gkxcvmcr7qaracnjcr7qar",
+      "short_display_id": "A-49",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-3330-4269",
+      "virtual_phone_id": "vnm_01m7gkxcvmv5143ajrp4v5143a",
+      "virtual_phone_expires_at": "2026-11-15T23:05:45.205Z",
+      "road_address": "서울특별시 서초구 서초대로 42길 11",
+      "detail_address": "302호",
+      "postal_code": "06647",
+      "delivery_address": "서울특별시 서초구 서초대로 42길 11 302호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요 (아기가 자고 있어요)",
+      "items": [
+        {
+          "item_id": "itm_01m7gkxcvmybxhmjp2jpybxhmj",
+          "product_id": "prd_01h7x8brownrice",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_bone",
+              "option_name": "뼈 치킨 (기본)",
+              "price": 0
+            },
+            {
+              "group_id": "optgrp_01h7x8spicy",
+              "group_name": "맛/맵기 강도",
+              "option_id": "opt_spicy_mild",
+              "option_name": "순한맛 (기본 담백)",
+              "price": 0
+            }
+          ],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": 20,
+      "rider_dispatch_status": "DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-15T22:05:45.205Z",
+      "accepted_at": "2026-11-15T22:50:44.881Z"
+    },
+    {
+      "order_id": "ord_01m7gkcq33s2a3b449q0s2a3b4",
+      "short_display_id": "A-48",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "테스트",
+      "customer_phone": "010-1234-5678",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-2686-5739",
+      "virtual_phone_id": "vnm_01m7gkcq34y77hekbteky77hek",
+      "virtual_phone_expires_at": "2026-11-15T22:56:38.628Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 서초대로 34길 18",
+      "distance_meters": 500,
+      "customer_memo": "",
+      "items": [
+        {
+          "item_id": "itm_01m7gkcq34ev93d7axgpev93d7",
+          "product_id": "prd_1",
+          "name": "테스트치킨",
+          "quantity": 1,
+          "base_price": 20000,
+          "selected_options": [],
+          "total_price": 20000
+        }
+      ],
+      "items_total": 20000,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 23000,
+      "estimated_profit": 11600,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T21:56:38.628Z"
+    },
+    {
+      "order_id": "ord_01m7gk6fmfn8r1j0e8cfn8r1j0",
+      "short_display_id": "A-47",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-4663-4206",
+      "virtual_phone_id": "vnm_01m7gk6fmh64sr2bzgtb64sr2b",
+      "virtual_phone_expires_at": "2026-11-15T22:53:14.385Z",
+      "road_address": "경기 남양주시 평내로29번안길 5 (평내동)",
+      "detail_address": "403호",
+      "postal_code": "12224",
+      "delivery_address": "경기 남양주시 평내로29번안길 5 (평내동) 403호",
+      "distance_meters": 500,
+      "customer_memo": "문 열려 있어요.",
+      "items": [
+        {
+          "item_id": "itm_01m7gk6fmhpemcgzbv2wpemcgz",
+          "product_id": "prd_01h7x8redlobster",
+          "name": "대새레드치킨",
+          "quantity": 1,
+          "base_price": 24900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_bone",
+              "option_name": "뼈 치킨 (기본)",
+              "price": 0
+            }
+          ],
+          "total_price": 24900
+        }
+      ],
+      "items_total": 24900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 27900,
+      "estimated_profit": 14442,
+      "payment_method": "MEET_AND_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T21:53:14.385Z"
+    },
+    {
+      "order_id": "ord_01m7ezgzmgxgdt0kgsq3xgdt0k",
+      "short_display_id": "A-46",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": false,
+      "virtual_phone": null,
+      "virtual_phone_id": null,
+      "virtual_phone_expires_at": null,
+      "road_address": "경기 남양주시 평내로 38 (평내동, 우남아파트)",
+      "detail_address": "1205동 1402호",
+      "postal_code": "12229",
+      "delivery_address": "경기 남양주시 평내로 38 (평내동, 우남아파트) 1205동 1402호",
+      "distance_meters": 500,
+      "customer_memo": " 문 앞에",
+      "items": [
+        {
+          "item_id": "itm_01m7ezgzmgetc5aa64d4etc5aa",
+          "product_id": "prd_01h7x8brownrice",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_boneless",
+              "option_name": "100% 닭다리 순살로 변경",
+              "price": 2000
+            },
+            {
+              "group_id": "optgrp_01h7x8spicy",
+              "group_name": "맛/맵기 강도",
+              "option_id": "opt_spicy_hot",
+              "option_name": "매운맛 (불닭 맵기)",
+              "price": 500
+            },
+            {
+              "group_id": "optgrp_01h7x8sauce",
+              "group_name": "추가 소스/토핑",
+              "option_id": "opt_add_cola",
+              "option_name": "코카콜라 1.25L 사이즈업",
+              "price": 2000
+            }
+          ],
+          "total_price": 23400
+        },
+        {
+          "item_id": "itm_01m7ezgzmha92kz80dgsa92kz8",
+          "product_id": "opt_side_menbosha",
+          "name": "통새우 멘보샤 (4개)",
+          "quantity": 1,
+          "base_price": 8000,
+          "selected_options": [],
+          "total_price": 8000
+        },
+        {
+          "item_id": "itm_01m7ezgzmh9tzt1t0yxn9tzt1t",
+          "product_id": "opt_bevr_soju",
+          "name": "참이슬 후레쉬 (360ml)",
+          "quantity": 1,
+          "base_price": 5000,
+          "selected_options": [],
+          "total_price": 5000
+        }
+      ],
+      "items_total": 36400,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 39400,
+      "estimated_profit": 21112,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T06:50:12.497Z"
+    },
+    {
+      "order_id": "ord_01m7ewsdbt7cfg58qb5r7cfg58",
+      "short_display_id": "A-45",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "실시간MQTT고객",
+      "customer_phone": "010-0000-0000",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-2633-2017",
+      "virtual_phone_id": "vnm_01m7ewsdbv70g74ze7np70g74z",
+      "virtual_phone_expires_at": "2026-11-15T07:02:22.971Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 반포대로 22, 101동 502호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요",
+      "items": [
+        {
+          "item_id": "itm_01m7ewsdbv9f5dw7cwgc9f5dw7",
+          "product_id": "prd_01m6wzpjfnfwh9j4zetc21ates",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_name": "부위 선택",
+              "option_name": "뼈 치킨 (기본)"
+            }
+          ],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T06:02:22.971Z"
+    },
+    {
+      "order_id": "ord_01m7es5hyg8bg4e992wm8bg4e9",
+      "short_display_id": "A-44",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "실시간MQTT고객",
+      "customer_phone": "010-0000-0000",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-9926-2016",
+      "virtual_phone_id": "vnm_01m7es5hyghg0t0gnbnshg0t0g",
+      "virtual_phone_expires_at": "2026-11-15T05:59:06.576Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 반포대로 22, 101동 502호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요",
+      "items": [
+        {
+          "item_id": "itm_01m7es5hygbc1chhw6yebc1chh",
+          "product_id": "prd_01m6wzpjfnfwh9j4zetc21ates",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_name": "부위 선택",
+              "option_name": "뼈 치킨 (기본)"
+            }
+          ],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T04:59:06.576Z"
+    },
+    {
+      "order_id": "ord_01m7es2tw2ad1s4ch009ad1s4c",
+      "short_display_id": "A-43",
+      "status": "PENDING",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "실시간MQTT고객",
+      "customer_phone": "010-0000-0000",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-9825-8846",
+      "virtual_phone_id": "vnm_01m7es2tw334xbtg51ve34xbtg",
+      "virtual_phone_expires_at": "2026-11-15T05:57:37.412Z",
+      "road_address": null,
+      "detail_address": null,
+      "postal_code": null,
+      "delivery_address": "서울특별시 서초구 반포대로 22, 101동 502호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요",
+      "items": [
+        {
+          "item_id": "itm_01m7es2tw3jam38ybc4zjam38y",
+          "product_id": "prd_01m6wzpjfnfwh9j4zetc21ates",
+          "name": "현미바삭치킨",
+          "quantity": 1,
+          "base_price": 18900,
+          "selected_options": [
+            {
+              "group_name": "부위 선택",
+              "option_name": "뼈 치킨 (기본)"
+            }
+          ],
+          "total_price": 18900
+        }
+      ],
+      "items_total": 18900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 21900,
+      "estimated_profit": 10962,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": null,
+      "rider_dispatch_status": "WAITING_ACCEPT",
+      "kitchen_ticket_printed": false,
+      "created_at": "2026-11-15T04:57:37.412Z"
+    },
+    {
+      "order_id": "ord_01m7cf4ntyc69k96mfnbc69k96",
+      "short_display_id": "A-42",
+      "status": "ACCEPTED",
+      "order_channel": "PWA",
+      "fulfillment_type": "DELIVERY",
+      "customer_name": "모바일 고객",
+      "customer_phone": "010-3841-9258",
+      "use_virtual_phone": true,
+      "virtual_phone": "0504-4982-6766",
+      "virtual_phone_id": "vnm_01m7cf4nv1rcdzr77824rcdzr7",
+      "virtual_phone_expires_at": "2026-11-14T08:25:23.169Z",
+      "road_address": "서울특별시 서초구 서초대로 42길 11",
+      "detail_address": "302호",
+      "postal_code": "06647",
+      "delivery_address": "서울특별시 서초구 서초대로 42길 11 302호",
+      "distance_meters": 500,
+      "customer_memo": "문 앞에 두고 벨 눌러주세요 (아기가 자고 있어요)",
+      "items": [
+        {
+          "item_id": "itm_01m7cf4nv16s5q3cq9dt6s5q3c",
+          "product_id": "prd_01h7x8soy",
+          "name": "통곡물 간장치킨",
+          "quantity": 1,
+          "base_price": 20900,
+          "selected_options": [
+            {
+              "group_id": "optgrp_01h7x8part",
+              "group_name": "부위 선택",
+              "option_id": "opt_part_boneless",
+              "option_name": "100% 닭다리 순살로 변경",
+              "price": 2000
+            },
+            {
+              "group_id": "optgrp_01h7x8sauce",
+              "group_name": "추가 소스/토핑",
+              "option_id": "opt_add_cola",
+              "option_name": "코카콜라 1.25L 사이즈업",
+              "price": 2000
+            }
+          ],
+          "total_price": 24900
+        }
+      ],
+      "items_total": 24900,
+      "delivery_tip": 3000,
+      "discount_amount": 0,
+      "final_payment_amount": 27900,
+      "estimated_profit": 14442,
+      "payment_method": "AITIP_ZERO_PAY",
+      "delivery_method": null,
+      "delivery_status": null,
+      "prep_time_minutes": 20,
+      "rider_dispatch_status": "DISPATCHED",
+      "kitchen_ticket_printed": true,
+      "created_at": "2026-11-14T07:25:23.170Z",
+      "accepted_at": "2026-11-14T07:26:46.537Z"
+    },
     {
       "order_id": "ord_01m7canmkpsmebqap6mbsmebqa",
       "short_display_id": "A-41",
@@ -1430,6 +2149,114 @@
     }
   ],
   "virtual_numbers": [
+    {
+      "id": "vnm_01m7kk56haxa7vzmf8wkxa7vzm",
+      "virtual_phone": "0504-6056-2500",
+      "order_id": "ord_01m7kk56h8ew7ac0zzm6ew7ac0",
+      "real_customer_phone": "010-0000-0000",
+      "status": "BOUND",
+      "bound_at": "2026-11-17T01:50:15.594Z",
+      "expires_at": "2026-11-17T02:50:15.594Z"
+    },
+    {
+      "id": "vnm_01m7gw30a7wp5gssdebcwp5gss",
+      "virtual_phone": "0504-5669-8471",
+      "order_id": "ord_01m7gw30a5yayfxexxdbyayfxe",
+      "real_customer_phone": "010-1111-2222",
+      "status": "BOUND",
+      "bound_at": "2026-11-16T00:28:37.575Z",
+      "expires_at": "2026-11-16T01:28:37.575Z"
+    },
+    {
+      "id": "vnm_01m7gpczcwkxzt27427pkxzt27",
+      "virtual_phone": "0504-7723-1906",
+      "order_id": "ord_01m7gpczcwwpk9qwjhjvwpk9qw",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T22:49:12.860Z",
+      "expires_at": "2026-11-15T23:49:12.860Z"
+    },
+    {
+      "id": "vnm_01m7gnaadn6s2g87jgj06s2g87",
+      "virtual_phone": "0504-9735-5858",
+      "order_id": "ord_01m7gnaadn4mrbpxfjxs4mrbpx",
+      "real_customer_phone": "010-9999-8888",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T22:30:17.270Z",
+      "expires_at": "2026-11-15T23:30:17.270Z"
+    },
+    {
+      "id": "vnm_01m7gm2njztmwyedbxqptmwyed",
+      "virtual_phone": "0504-4586-7960",
+      "order_id": "ord_01m7gm2njztaxvkjsjcjtaxvkj",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T22:08:37.983Z",
+      "expires_at": "2026-11-15T23:08:37.983Z"
+    },
+    {
+      "id": "vnm_01m7gkxcvmv5143ajrp4v5143a",
+      "virtual_phone": "0504-3330-4269",
+      "order_id": "ord_01m7gkxcvmcr7qaracnjcr7qar",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T22:05:45.205Z",
+      "expires_at": "2026-11-15T23:05:45.205Z"
+    },
+    {
+      "id": "vnm_01m7gkcq34y77hekbteky77hek",
+      "virtual_phone": "0504-2686-5739",
+      "order_id": "ord_01m7gkcq33s2a3b449q0s2a3b4",
+      "real_customer_phone": "010-1234-5678",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T21:56:38.628Z",
+      "expires_at": "2026-11-15T22:56:38.628Z"
+    },
+    {
+      "id": "vnm_01m7gk6fmh64sr2bzgtb64sr2b",
+      "virtual_phone": "0504-4663-4206",
+      "order_id": "ord_01m7gk6fmfn8r1j0e8cfn8r1j0",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T21:53:14.385Z",
+      "expires_at": "2026-11-15T22:53:14.385Z"
+    },
+    {
+      "id": "vnm_01m7ewsdbv70g74ze7np70g74z",
+      "virtual_phone": "0504-2633-2017",
+      "order_id": "ord_01m7ewsdbt7cfg58qb5r7cfg58",
+      "real_customer_phone": "010-0000-0000",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T06:02:22.971Z",
+      "expires_at": "2026-11-15T07:02:22.971Z"
+    },
+    {
+      "id": "vnm_01m7es5hyghg0t0gnbnshg0t0g",
+      "virtual_phone": "0504-9926-2016",
+      "order_id": "ord_01m7es5hyg8bg4e992wm8bg4e9",
+      "real_customer_phone": "010-0000-0000",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T04:59:06.576Z",
+      "expires_at": "2026-11-15T05:59:06.576Z"
+    },
+    {
+      "id": "vnm_01m7es2tw334xbtg51ve34xbtg",
+      "virtual_phone": "0504-9825-8846",
+      "order_id": "ord_01m7es2tw2ad1s4ch009ad1s4c",
+      "real_customer_phone": "010-0000-0000",
+      "status": "BOUND",
+      "bound_at": "2026-11-15T04:57:37.412Z",
+      "expires_at": "2026-11-15T05:57:37.412Z"
+    },
+    {
+      "id": "vnm_01m7cf4nv1rcdzr77824rcdzr7",
+      "virtual_phone": "0504-4982-6766",
+      "order_id": "ord_01m7cf4ntyc69k96mfnbc69k96",
+      "real_customer_phone": "010-3841-9258",
+      "status": "BOUND",
+      "bound_at": "2026-11-14T07:25:23.169Z",
+      "expires_at": "2026-11-14T08:25:23.169Z"
+    },
     {
       "id": "vnm_01m7canmm7zjjqnsrttbzjjqns",
       "virtual_phone": "0504-4113-8943",

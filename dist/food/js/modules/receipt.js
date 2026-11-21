@@ -155,38 +155,38 @@ export function renderReceiptContent() {
         <span style="flex: 1; text-align: center;">수량</span>
         <span style="flex: 1; text-align: right;">금액</span>
       </div>
-      ${o.items.map(it => `
+      ${(o.items || []).map(it => `
         <div class="receipt-row" style="margin-top: 4px;">
           <span style="flex: 2; font-weight: 700;">${it.name}</span>
-          <span style="flex: 1; text-align: center;">${it.quantity}</span>
-          <span style="flex: 1; text-align: right;">${it.total_price.toLocaleString()}</span>
+          <span style="flex: 1; text-align: center;">${it.quantity || 1}</span>
+          <span style="flex: 1; text-align: right;">${Number(it.total_price || 0).toLocaleString()}</span>
         </div>
         ${(it.selected_options || []).map(opt => `
           <div class="receipt-subrow" style="font-size: 11px;">
-            <span style="flex: 3;">- ${opt.option_name}</span>
-            <span style="flex: 1; text-align: right;">+${opt.price.toLocaleString()}</span>
+            <span style="flex: 3;">- ${opt.option_name || ''}</span>
+            <span style="flex: 1; text-align: right;">+${Number(opt.price || 0).toLocaleString()}</span>
           </div>
         `).join('')}
       `).join('')}
       <div class="receipt-dashed"></div>
       <div class="receipt-row">
         <span>공급가액</span>
-        <span>${supplyAmt.toLocaleString()}원</span>
+        <span>${Number(supplyAmt || 0).toLocaleString()}원</span>
       </div>
       <div class="receipt-row">
         <span>부가세 (VAT 10%)</span>
-        <span>${vatAmt.toLocaleString()}원</span>
+        <span>${Number(vatAmt || 0).toLocaleString()}원</span>
       </div>
       ${o.delivery_tip > 0 ? `
         <div class="receipt-row">
           <span>배달팁</span>
-          <span>${o.delivery_tip.toLocaleString()}원</span>
+          <span>${Number(o.delivery_tip || 0).toLocaleString()}원</span>
         </div>
       ` : ''}
       <div class="receipt-dashed"></div>
       <div class="receipt-row bold" style="font-size: 16px;">
         <span>결제금액</span>
-        <span style="color: #191f28;">${o.final_payment_amount.toLocaleString()}원</span>
+        <span style="color: #191f28;">${Number(o.final_payment_amount || 0).toLocaleString()}원</span>
       </div>
       <div class="receipt-row" style="font-size: 12px; color: #64748b;">
         <span>결제수단</span>

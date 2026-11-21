@@ -57,6 +57,21 @@ body {
   background: #ffffff;
   color: #065f46;
 }
+.cart-qty-btn {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  border-radius: 6px;
+  min-width: 26px;
+  height: 26px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+.cart-qty-btn:hover {
+  background: #e2e8f0;
+}
 
 .search-bar {
   margin-top: 10px;

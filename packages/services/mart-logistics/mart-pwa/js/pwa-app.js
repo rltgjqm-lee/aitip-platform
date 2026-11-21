@@ -304,9 +304,9 @@ function renderCartDrawer(totals) {
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
                 <span style="font-weight:700;">${esc(line.product.name)}</span>
                 <div style="display:flex;align-items:center;gap:6px;">
-                  <button type="button" class="pill-btn btn-cart-dec" data-pid="${esc(line.product.id)}" style="padding:2px 8px;">-</button>
+                  <button type="button" class="cart-qty-btn btn-cart-dec" data-pid="${esc(line.product.id)}">-</button>
                   <span style="min-width:20px;text-align:center;font-weight:700;">${line.qty}</span>
-                  <button type="button" class="pill-btn btn-cart-inc" data-pid="${esc(line.product.id)}" style="padding:2px 8px;">+</button>
+                  <button type="button" class="cart-qty-btn btn-cart-inc" data-pid="${esc(line.product.id)}">+</button>
                   <b style="min-width:68px;text-align:right;">${line.lineTotal.toLocaleString()}원</b>
                 </div>
               </div>
@@ -442,4 +442,27 @@ function bindEvents(root) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', render);
+function connectMartPwaRealtime() {
+  try {
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/pwa-config' }));
+      ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/catalog' }));
+    });
+    ws.addEventListener('message', (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg?.topic && document.activeElement?.id !== 'pwa-search-input') {
+          render();
+        }
+      } catch (_) {}
+    });
+    ws.addEventListener('close', () => setTimeout(connectMartPwaRealtime, 5000));
+  } catch (_) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+  connectMartPwaRealtime();
+});

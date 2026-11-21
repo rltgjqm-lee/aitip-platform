@@ -741,7 +741,7 @@ const TAX_SETTLEMENT_ITEMS = [
 export const ROLE_ALLOWED_VIEWS = {
   HQ_SUPER: null, // 전체 허용
   HQ_CS: ['view-dashboard', 'view-orders', 'view-riders', 'view-cs-refunds'],
-  HQ_FINANCE: ['view-dashboard', 'view-settlement-merchants', 'view-settlement-taxes'],
+  HQ_FINANCE: ['view-dashboard', 'view-settlement-merchants', 'view-settlement-taxes', 'view-mart-union'],
   DISTRIBUTOR: ['view-dashboard', 'view-merchants', 'view-distribution', 'view-settlement-merchants', 'view-settlement-taxes'],
   AGENCY: ['view-dashboard', 'view-merchants', 'view-onboarding', 'view-hardware', 'view-settlement-taxes'],
   SALES_ALLY: ['view-dashboard', 'view-distribution', 'view-settlement-taxes'],
@@ -1486,5 +1486,45 @@ export const adminApi = {
       method: 'POST',
       body: JSON.stringify({ id, decision })
     });
+  },
+
+  // 20. 마트 연합 · 공동구매 · 3자 정산 & PWA 강제 제어 (DOC-19)
+  async getMartUnionSnapshot() {
+    const [martsRes, gbRes, stlRes, pwaRes] = await Promise.all([
+      fetch('/api/mart/marts').then(r => r.json()),
+      fetch('/api/mart/group-buys').then(r => r.json()),
+      fetch('/api/mart/settlements').then(r => r.json()),
+      fetch('/api/mart/pwa/config').then(r => r.json())
+    ]);
+    return {
+      marts: martsRes.marts || [],
+      group_buys: gbRes.group_buys || [],
+      settlement: stlRes,
+      pwa: pwaRes
+    };
+  },
+  async updateMartPwaControl(payload) {
+    const res = await fetch('/api/mart/pwa/control', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+  async decideMartGroupBuy(payload) {
+    const res = await fetch('/api/admin/mart/group-buys/decide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
+  },
+  async createMartCoSellProduct(payload) {
+    const res = await fetch('/api/admin/mart/co-sell-products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
   }
 };

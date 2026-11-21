@@ -55,13 +55,31 @@ copyDirSync(
   path.join(DIST_DIR, 'admin')
 );
 
+console.log('[Build] Copying mart portal to dist/mart...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'mart-portal'),
+  path.join(DIST_DIR, 'mart')
+);
+
+console.log('[Build] Copying mart PWA to dist/mart/pwa...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'mart-pwa'),
+  path.join(DIST_DIR, 'mart', 'pwa')
+);
+
 // 3. Functions 데이터 동기화
-console.log('[Build] Synchronizing store_data.json to functions/api/food...');
+console.log('[Build] Synchronizing store_data.json & mart_data.json to functions/api...');
 const functionsApiFoodDir = path.join(ROOT_DIR, 'functions', 'api', 'food');
 fs.mkdirSync(functionsApiFoodDir, { recursive: true });
 fs.copyFileSync(
   path.join(ROOT_DIR, 'packages', 'services', 'food-delivery', 'backend', 'data', 'store_data.json'),
   path.join(functionsApiFoodDir, 'store_data.json')
+);
+const functionsApiMartDir = path.join(ROOT_DIR, 'functions', 'api', 'mart');
+fs.mkdirSync(functionsApiMartDir, { recursive: true });
+fs.copyFileSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'backend', 'data', 'mart_data.json'),
+  path.join(functionsApiMartDir, 'mart_data.json')
 );
 
 // 4. 미니멀 대문 index.html 생성 (사족 없이 2개 버튼만 정갈하게 배치)
@@ -133,11 +151,19 @@ const hubHtml = `<!DOCTYPE html>
     <h1>AITIP 플랫폼</h1>
     <div class="menu-list">
       <a href="/food/pwa/" class="btn" target="_blank" rel="noopener">
-        <span>소비자 주문</span>
+        <span>소비자 주문 (외식)</span>
         <span class="arrow">&rarr;</span>
       </a>
       <a href="/food/" class="btn" target="_blank" rel="noopener">
-        <span>가맹점 관리</span>
+        <span>가맹점 관리 (외식)</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a href="/mart/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #007749;">
+        <span style="color: #065f46;">단위농협 하나로마트 백오피스</span>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a href="/mart/pwa/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #10b981;">
+        <span style="color: #047857;">하나로마트 소비자 · 기관 몰</span>
         <span class="arrow">&rarr;</span>
       </a>
       <a href="/admin/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #2ac1bc;">

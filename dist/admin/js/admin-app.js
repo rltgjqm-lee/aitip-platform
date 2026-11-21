@@ -16,6 +16,7 @@ import { renderHardwareMdmView } from './modules/hardware-mdm.js';
 import { renderRidersDispatchView } from './modules/riders-dispatch.js';
 import { renderPaymentsControlView } from './modules/payments-control.js';
 import { renderTaxSettlement } from './modules/settlement-taxes.js';
+import { renderMartUnionView } from './modules/mart-union.js';
 import { renderPartnerIntegrationsView } from './modules/partner-integrations.js';
 import { renderIamAuditView } from './modules/iam-audit.js';
 import { renderCsRefundsView, setCsSearchQuery } from './modules/cs-refunds.js';
@@ -119,6 +120,7 @@ function syncSidebarActive(viewKey) {
       'view-partners': '제휴 협력사 관리 (Partners & VAN)',
       'view-settlement-merchants': '결제 & 3자 대사 정산 관제',
       'view-settlement-taxes': '유통망 세무 정산 센터',
+      'view-mart-union': '마트 연합 · 공동구매 · 3자 정산',
       'view-integrations': '제휴사 API & 서킷 브레이커',
       'view-accounts': '임직원 RBAC & 감사 로그',
       'view-policies': '시스템 정책 & API 연동'
@@ -350,6 +352,9 @@ async function loadCurrentView(forceRefresh = false) {
   } else if (state.currentView === 'view-settlement-taxes') {
     // 유통망 세무 정산
     await renderTaxSettlement(contentContainer);
+  } else if (state.currentView === 'view-mart-union') {
+    // 마트 연합 · 공구 · 3자 정산 & HQ PWA 관제
+    await renderMartUnionView(contentContainer);
   } else if (state.currentView === 'view-integrations') {
     // 제휴사 API 연동 & 서킷 브레이커
     await renderPartnerIntegrationsView(contentContainer);

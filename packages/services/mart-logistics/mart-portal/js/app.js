@@ -43,7 +43,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   renderCurrentView();
+  connectMartPortalRealtime();
 });
+
+function connectMartPortalRealtime() {
+  try {
+    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
+    ws.addEventListener('open', () => {
+      ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/orders' }));
+      ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/catalog' }));
+    });
+    ws.addEventListener('message', (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (!msg?.topic) return;
+        const hasOpenDrawer = Boolean(document.querySelector('.mc-drawer-backdrop'));
+        if (hasOpenDrawer) return;
+        if (msg.topic.endsWith('/orders') && ['orders', 'orders-online', 'orders-offline', 'picking', 'boxing', 'settle'].includes(currentView)) {
+          renderCurrentView();
+        } else if (msg.topic.endsWith('/catalog') && ['catalog', 'flyer', 'pwa-control'].includes(currentView)) {
+          renderCurrentView();
+        }
+      } catch (_) {}
+    });
+    ws.addEventListener('close', () => setTimeout(connectMartPortalRealtime, 5000));
+  } catch (_) {}
+}
 
 async function renderCurrentView() {
   const container = document.getElementById('mart-main-container');

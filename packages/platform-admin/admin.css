@@ -339,7 +339,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
+  gap: 12px;
+  padding: 0 18px;
   position: sticky;
   top: 0;
   z-index: 500;
@@ -348,9 +349,14 @@ body {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   min-width: 0;
   flex-shrink: 1;
+}
+
+.status-badge {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .view-page-title {
