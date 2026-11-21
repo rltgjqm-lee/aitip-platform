@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AITIP 플랫폼 서비스 관제 허브</title>
+  <style>
+    :root {
+      --bg-app: #f4f6f8;
+      --bg-surface: #ffffff;
+      --border-default: #e5e8eb;
+      --text-primary: #191f28;
+      --text-secondary: #4e5968;
+      --text-muted: #8b95a1;
+      --brand-mint: #2ac1bc;
+      --brand-mint-light: #e6f7f6;
+      --brand-mint-text: #0e706c;
+      --nh-green: #007749;
+      --nh-green-light: #eafbf3;
+      --food-orange: #c25e00;
+      --food-orange-light: #fff8eb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif; }
+    body {
+      background: var(--bg-app);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+    }
+    .header { text-align: center; margin-bottom: 32px; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--brand-mint-light);
+      color: var(--brand-mint-text);
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 5px 14px;
+      border-radius: 9999px;
+      border: 1px solid #b3ebe8;
+      margin-bottom: 14px;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--brand-mint);
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1180px;
+      width: 100%;
+    }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: 1fr; max-width: 520px; }
+      .hub-spacer { display: none; }
+    }
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--brand-mint);
+      box-shadow: 0 10px 24px -6px rgba(42, 193, 188, 0.2);
+    }
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .card-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .card-icon-box svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 2;
+      fill: none;
+    }
+    .card-title-wrap h2 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .card-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+    .card-desc {
+      color: var(--text-secondary);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 8px 0 18px 0;
+    }
+    .card-action {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 800;
+      font-size: 13.5px;
+      padding-top: 12px;
+      border-top: 1px solid #f1f3f5;
+    }
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      AITIP 플랫폼 통합 관제 허브 가동 중
+    </div>
+    <h1>AITIP 플랫폼 서비스 관제 허브</h1>
+    <p class="subtitle">소상공인 외식업 본체 코어와 단위농협 하나로마트 유통망 통합 런처</p>
+  </div>
+
+  <div class="grid">
+    <!-- 1행 1열: 수퍼관리자 -->
+    <a href="/admin/" class="card" style="border-top: 4px solid var(--brand-mint);" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <div class="card-icon-box" style="background: var(--brand-mint-light); color: var(--brand-mint-text);">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          </div>
+          <div class="card-title-wrap">
+            <h2>수퍼관리자 (HQ)</h2>
+            <span class="card-badge" style="background: var(--brand-mint-light); color: var(--brand-mint-text);">전사 통합 관제 · 정산</span>
+          </div>
+        </div>
+        <p class="card-desc">전국 총판 · 대리점 3계층 유통망, 마트 연합 · 공동구매 승인, 다중자산 3자 정산 및 스마트 단말기 MDM 관제</p>
+      </div>
+      <div class="card-action" style="color: var(--brand-mint-text);">
+        <span>수퍼관리자 열기 (/admin/)</span>
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </div>
+    </a>
+
+    <!-- 1행 2열: 가맹점관리자 -->
+    <a href="/food/" class="card" style="border-top: 4px solid var(--food-orange);" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <div class="card-icon-box" style="background: var(--food-orange-light); color: var(--food-orange);">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </div>
+          <div class="card-title-wrap">
+            <h2>가맹점관리자 (외식)</h2>
+            <span class="card-badge" style="background: var(--food-orange-light); color: var(--food-orange);">외식업 본체 코어</span>
+          </div>
+        </div>
+        <p class="card-desc">주방 KDS 실시간 주문 접수, 조리 예상시간 선택, 옵션트리 품절 관리, BOM 원가 계산기 및 쿠폰 관리</p>
+      </div>
+      <div class="card-action" style="color: var(--food-orange);">
+        <span>가맹점관리자 열기 (/food/)</span>
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </div>
+    </a>
+
+    <!-- 1행 3열: 마트관리자 -->
+    <a href="/mart/" class="card" style="border-top: 4px solid var(--nh-green);" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <div class="card-icon-box" style="background: var(--nh-green-light); color: var(--nh-green);">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          </div>
+          <div class="card-title-wrap">
+            <h2>마트관리자 (하나로마트)</h2>
+            <span class="card-badge" style="background: var(--nh-green-light); color: var(--nh-green);">위탁운영 백오피스</span>
+          </div>
+        </div>
+        <p class="card-desc">3단계 상품분류, 전단·행사 룰 연결, PWA 블록 진열 제어, 매대 동선별 피킹 · 박싱 및 DOC-11 결품 정정</p>
+      </div>
+      <div class="card-action" style="color: var(--nh-green);">
+        <span>마트관리자 열기 (/mart/)</span>
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </div>
+    </a>
+
+    <!-- 2행 1열: 수퍼관리자 하단 공백 (모바일 숨김) -->
+    <div class="hub-spacer" aria-hidden="true"></div>
+
+    <!-- 2행 2열: 가맹점 PWA -->
+    <a href="/food/pwa/" class="card" style="border-top: 4px solid #f59e0b;" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <div class="card-icon-box" style="background: var(--food-orange-light); color: var(--food-orange);">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          </div>
+          <div class="card-title-wrap">
+            <h2>가맹점 PWA (소비자 주문)</h2>
+            <span class="card-badge" style="background: var(--food-orange-light); color: var(--food-orange);">모바일 웹앱 · 배달/포장</span>
+          </div>
+        </div>
+        <p class="card-desc">배달 · 포장 · 매장식사 3-Way 주문, 4단계 옵션 위저드, 실시간 주문 추적 및 테이블 QR 주문</p>
+      </div>
+      <div class="card-action" style="color: var(--food-orange);">
+        <span>가맹점 PWA 열기 (/food/pwa/)</span>
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </div>
+    </a>
+
+    <!-- 2행 3열: 마트 PWA -->
+    <a href="/mart/pwa/" class="card" style="border-top: 4px solid #10b981;" target="_blank" rel="noopener">
+      <div>
+        <div class="card-top">
+          <div class="card-icon-box" style="background: var(--nh-green-light); color: var(--nh-green);">
+            <svg viewBox="0 0 24 24" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          </div>
+          <div class="card-title-wrap">
+            <h2>마트 PWA (소비자 · 기관 몰)</h2>
+            <span class="card-badge" style="background: var(--nh-green-light); color: var(--nh-green);">전단특가 · 공구 · 큰글씨</span>
+          </div>
+        </div>
+        <p class="card-desc">금주의 전단 특가, 1+1 · 골라담기 · 카드할인 자동 계산, 우리동네 공동구매 및 경로당/기관 전용 발주</p>
+      </div>
+      <div class="card-action" style="color: var(--nh-green);">
+        <span>마트 PWA 열기 (/mart/pwa/)</span>
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2.5; fill: none;" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">
+    AITIP Platform · Unified Local (:8989) &amp; Cloudflare Pages Architecture
+  </div>
+</body>
+</html>

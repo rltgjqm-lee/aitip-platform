@@ -82,99 +82,11 @@ fs.copyFileSync(
   path.join(functionsApiMartDir, 'mart_data.json')
 );
 
-// 4. 미니멀 대문 index.html 생성 (사족 없이 2개 버튼만 정갈하게 배치)
-const hubHtml = `<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AITIP 플랫폼</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif; }
-    body {
-      background: #f8fafc;
-      color: #0f172a;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-    .box {
-      width: 100%;
-      max-width: 400px;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 32px 24px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-    h1 {
-      font-size: 20px;
-      font-weight: 800;
-      color: #0f172a;
-      letter-spacing: -0.3px;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      text-decoration: none;
-      color: #0f172a;
-      font-size: 15px;
-      font-weight: 700;
-      transition: all 0.15s ease;
-    }
-    .btn:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
-    }
-    .btn span.arrow {
-      color: #94a3b8;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <div class="box">
-    <h1>AITIP 플랫폼</h1>
-    <div class="menu-list">
-      <a href="/food/pwa/" class="btn" target="_blank" rel="noopener">
-        <span>소비자 주문 (외식)</span>
-        <span class="arrow">&rarr;</span>
-      </a>
-      <a href="/food/" class="btn" target="_blank" rel="noopener">
-        <span>가맹점 관리 (외식)</span>
-        <span class="arrow">&rarr;</span>
-      </a>
-      <a href="/mart/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #007749;">
-        <span style="color: #065f46;">단위농협 하나로마트 백오피스</span>
-        <span class="arrow">&rarr;</span>
-      </a>
-      <a href="/mart/pwa/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #10b981;">
-        <span style="color: #047857;">하나로마트 소비자 · 기관 몰</span>
-        <span class="arrow">&rarr;</span>
-      </a>
-      <a href="/admin/" class="btn" target="_blank" rel="noopener" style="border-left: 4px solid #2ac1bc;">
-        <span style="color: #0e706c;">플랫폼 마스터 관리자</span>
-        <span class="arrow">&rarr;</span>
-      </a>
-    </div>
-  </div>
-</body>
-</html>`;
-
-fs.writeFileSync(path.join(DIST_DIR, 'index.html'), hubHtml, 'utf-8');
+// 4. 공통 관제 허브 HTML 복사 (dev-server.mjs와 100% 동일 SSOT)
+console.log('[Build] Copying unified hub index.html to dist/index.html...');
+fs.copyFileSync(
+  path.join(ROOT_DIR, 'packages', 'hub', 'index.html'),
+  path.join(DIST_DIR, 'index.html')
+);
 
 console.log('[Build] Successfully generated clean dist bundle at:', DIST_DIR);
