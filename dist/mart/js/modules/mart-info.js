@@ -4,7 +4,7 @@
  */
 
 import { martApi } from '../api.js';
-import { esc } from '../utils/html.js';
+import { esc, showToast } from '../utils/html.js';
 
 let activeTab = 'BASIC'; // 'BASIC' | 'DELIVERY_BANK' | 'MANAGER' | 'STAFF'
 let editingStaffId = '';
@@ -320,7 +320,7 @@ export async function renderMartInfoView(container) {
       receipt_sub_notice: container.querySelector('#mi-rcpt-sub')?.value?.trim() || '',
       receipt_bottom_notice: container.querySelector('#mi-rcpt-bottom')?.value?.trim() || ''
     });
-    alert('마트 기본정보가 수정되었습니다.');
+    showToast('마트 기본정보가 수정되었습니다.', 'success');
     await renderMartInfoView(container);
   });
 
@@ -334,7 +334,7 @@ export async function renderMartInfoView(container) {
       settlement_account: container.querySelector('#mi-acct')?.value,
       pickup_enabled: Boolean(container.querySelector('#mi-pickup')?.checked)
     });
-    alert('배달·정산 정책이 수정되었습니다.');
+    showToast('배달·정산 정책이 수정되었습니다.', 'success');
     await renderMartInfoView(container);
   });
 
@@ -350,7 +350,7 @@ export async function renderMartInfoView(container) {
         email: container.querySelector('#mgr-email')?.value?.trim()
       }
     });
-    alert('마트 관리자 정보가 수정되었습니다.');
+    showToast('마트 관리자 정보가 수정되었습니다.', 'success');
     await renderMartInfoView(container);
   });
 

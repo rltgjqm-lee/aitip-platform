@@ -8,7 +8,7 @@ import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../util
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
-import { esc } from '../utils/html.js';
+import { esc, showToast } from '../utils/html.js';
 
 let viewTab = 'RULES'; // 'RULES' | 'PROMO_PRODUCTS' | 'FLYER_IMPORT'
 let selectedPromoId = '';
@@ -861,9 +861,15 @@ export async function renderMartFlyerView(container, opts = {}) {
   });
   container.querySelectorAll('.btn-del-promo').forEach(btn => {
     btn.addEventListener('click', async () => {
-      if (!confirm('이 행사 룰을 삭제하시겠습니까? 연결된 상품의 행사도 함께 해제됩니다.')) return;
+      if (btn.dataset.armed !== '1') {
+        btn.dataset.armed = '1';
+        btn.textContent = '삭제 확인';
+        showToast('행사 룰을 삭제하려면 한 번 더 클릭하세요. 연결 상품 할인도 해제됩니다.', 'warn');
+        return;
+      }
       await martApi.deletePromotion(btn.dataset.id);
       if (selectedPromoId === btn.dataset.id) selectedPromoId = '';
+      showToast('행사 룰이 삭제되었습니다.', 'success');
       await renderMartFlyerView(container);
     });
   });
@@ -999,7 +1005,7 @@ export async function renderMartFlyerView(container, opts = {}) {
       });
       updatedCount += 1;
     }
-    alert(`할인 규칙 ${updatedCount}건이 일괄 수정되었습니다.`);
+    showToast(`할인 규칙 ${updatedCount}건이 일괄 수정되었습니다.`, 'success');
     await renderMartFlyerView(container);
   });
 }

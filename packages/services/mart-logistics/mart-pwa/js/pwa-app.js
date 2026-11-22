@@ -576,7 +576,7 @@ function bindEvents(root, { products = [], orders = [] } = {}) {
       const cur = cart.get(prod.id) || { product: prod, qty: 0 };
       const limit = Number(prod.promo_limit_per_person || prod.limit_per_person || 0);
       if (limit > 0 && cur.qty + 1 > limit) {
-        alert(`1인 ${limit}개 한정 상품입니다.`);
+        showPwaToast(`1인 ${limit}개 한정 상품입니다.`, 'warn');
         return;
       }
       cur.qty += 1;
@@ -611,7 +611,7 @@ function bindEvents(root, { products = [], orders = [] } = {}) {
       if (!cur) return;
       const limit = Number(cur.product.promo_limit_per_person || cur.product.limit_per_person || 0);
       if (limit > 0 && cur.qty + 1 > limit) {
-        alert(`1인 ${limit}개 한정 상품입니다.`);
+        showPwaToast(`1인 ${limit}개 한정 상품입니다.`, 'warn');
         return;
       }
       cur.qty += 1;
@@ -646,9 +646,26 @@ function bindEvents(root, { products = [], orders = [] } = {}) {
     cart.clear();
     cartOpen = false;
     pwaTab = 'ORDERS';
-    alert('주문이 정상 접수되었습니다. 내 주문내역 탭에서 실시간 진행 상태를 확인하실 수 있습니다.');
+    showPwaToast('주문이 정상 접수되었습니다. 내 주문내역에서 진행 상태를 확인하세요.', 'success');
     render();
   });
+}
+
+function showPwaToast(message, tone = 'info') {
+  const prev = document.getElementById('mart-pwa-toast');
+  if (prev) prev.remove();
+  const colors = {
+    success: { bg: '#065f46', border: '#10b981' },
+    warn:    { bg: '#92400e', border: '#fbbf24' },
+    info:    { bg: '#0f172a', border: '#38bdf8' }
+  };
+  const c = colors[tone] || colors.info;
+  const el = document.createElement('div');
+  el.id = 'mart-pwa-toast';
+  el.style.cssText = `position:fixed;top:16px;right:16px;z-index:2000;background:${c.bg};color:#fff;padding:11px 16px;border-radius:10px;border-left:4px solid ${c.border};box-shadow:0 10px 25px rgba(15,23,42,0.25);font-size:13px;font-weight:600;max-width:340px;line-height:1.45;`;
+  el.textContent = String(message || '');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
 
 function connectMartPwaRealtime() {

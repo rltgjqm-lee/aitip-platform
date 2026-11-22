@@ -880,7 +880,9 @@
           "qty": 1,
           "uom": "봉",
           "unit_price": 1250,
-          "storage_temp": "AMBIENT"
+          "storage_temp": "AMBIENT",
+          "actual_qty": 1,
+          "adjust_reason": "기관 발주서 수량 수정"
         },
         {
           "product_id": "mrt_sku_1795230314848",
@@ -895,7 +897,8 @@
       ],
       "total_amount": 2500,
       "status": "REQUESTED",
-      "created_at": "2026-11-22T06:51:05.772Z"
+      "created_at": "2026-11-22T06:51:05.772Z",
+      "original_total_amount": 2500
     },
     {
       "order_id": "ORD-11-650-01-47121-0001-261122-0001",
@@ -1080,6 +1083,42 @@
     }
   ],
   "adjustments": [
+    {
+      "adj_id": "adj_1795330540210_0003",
+      "order_id": "ORD-11-650-01-47121-0001-261122-0002",
+      "buyer_name": "서초 양재1동 경로당",
+      "product_id": "mrt_sku_1795230315066",
+      "product_name": "양파링HOT&SPICY",
+      "prev_qty": 1,
+      "actual_qty": 1,
+      "diff_amount": 0,
+      "reason": "기관 발주서 수량 수정",
+      "created_at": "2026-11-22T06:55:40.210Z"
+    },
+    {
+      "adj_id": "adj_1795330539352_0002",
+      "order_id": "ORD-11-650-01-47121-0001-261122-0002",
+      "buyer_name": "서초 양재1동 경로당",
+      "product_id": "mrt_sku_1795230315066",
+      "product_name": "양파링HOT&SPICY",
+      "prev_qty": 1,
+      "actual_qty": 1,
+      "diff_amount": 0,
+      "reason": "기관 발주서 수량 수정",
+      "created_at": "2026-11-22T06:55:39.352Z"
+    },
+    {
+      "adj_id": "adj_1795330538163_0001",
+      "order_id": "ORD-11-650-01-47121-0001-261122-0002",
+      "buyer_name": "서초 양재1동 경로당",
+      "product_id": "mrt_sku_1795230315066",
+      "product_name": "양파링HOT&SPICY",
+      "prev_qty": 1,
+      "actual_qty": 1,
+      "diff_amount": 0,
+      "reason": "기관 발주서 수량 수정",
+      "created_at": "2026-11-22T06:55:38.163Z"
+    },
     {
       "adj_id": "adj_1794892647278",
       "order_id": "ORD-11-650-01-47121-0001-261118-0002",

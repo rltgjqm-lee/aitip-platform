@@ -8,7 +8,7 @@ import { martApi } from '../api.js';
 import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
-import { esc } from '../utils/html.js';
+import { esc, showToast } from '../utils/html.js';
 
 let targetFilter = 'ALL'; // 'ALL' | 'BOTH' | 'B2C_ONLY' | 'B2B_ONLY'
 let l1Filter = 'ALL';
@@ -514,14 +514,14 @@ export async function renderMartChannelAssignView(container) {
     });
     container.querySelector('#btn-ca-apply-daily')?.addEventListener('click', async () => {
       const rows = parseRawPriceRows(container.querySelector('#txt-ca-daily-csv')?.value || '');
-      if (rows.length === 0) { alert('업로드할 시세 데이터가 없습니다.'); return; }
+      if (rows.length === 0) { showToast('업로드할 시세 데이터가 없습니다.', 'warn'); return; }
       const batchRes = await martApi.applyDailyPriceBatch({ rows, mode: priceUploadMode });
       priceBatchResult = batchRes;
       if (batchRes.error_count === 0) {
         priceDrawerOpen = false;
         priceCsvDraft = '';
         priceBatchResult = null;
-        alert(`성공 ${batchRes.success_count}건 시세가 반영되었습니다.${batchRes.synced_suspended_count ? ` (미포함 신선 ${batchRes.synced_suspended_count}건 노출중지)` : ''}`);
+        showToast(`성공 ${batchRes.success_count}건 시세가 반영되었습니다.${batchRes.synced_suspended_count ? ` (미포함 신선 ${batchRes.synced_suspended_count}건 노출중지)` : ''}`, 'success');
       }
       await renderMartChannelAssignView(container);
     });
@@ -547,7 +547,7 @@ export async function renderMartChannelAssignView(container) {
         priceDrawerOpen = false;
         priceCsvDraft = '';
         priceBatchResult = null;
-        alert(`오류건 ${retryRes.success_count}건 재반영이 완료되었습니다.`);
+        showToast(`오류건 ${retryRes.success_count}건 재반영이 완료되었습니다.`, 'success');
       }
       await renderMartChannelAssignView(container);
     });
@@ -564,10 +564,16 @@ export async function renderMartChannelAssignView(container) {
     container.querySelector('#btn-ca-cancel-history')?.addEventListener('click', closeHistory);
     container.querySelectorAll('.btn-ca-rollback').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('선택한 업로드 직전 가격/재고 상태로 복원하시겠습니까?')) return;
+        if (btn.dataset.armed !== '1') {
+          btn.dataset.armed = '1';
+          btn.textContent = '복원 확인(다시 클릭)';
+          btn.style.color = '#b91c1c';
+          showToast('직전 상태로 복원하려면 한 번 더 클릭하세요.', 'warn');
+          return;
+        }
         const rb = await martApi.rollbackPriceUpload(btn.dataset.bid);
         historyDrawerOpen = false;
-        alert(`${rb.restored_count}개 상품이 직전 상태로 복원되었습니다.`);
+        showToast(`${rb.restored_count}개 상품이 직전 상태로 복원되었습니다.`, 'success');
         await renderMartChannelAssignView(container);
       });
     });

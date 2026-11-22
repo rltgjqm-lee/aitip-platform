@@ -29,6 +29,24 @@ let selectedSubCat = 'ALL';
 let searchQuery = '';
 let detailProductId = '';
 let detailOrderId = '';
+let authBanner = null; // { text, tone }
+
+function showB2bToast(message, tone = 'info') {
+  const prev = document.getElementById('mart-b2b-toast');
+  if (prev) prev.remove();
+  const colors = {
+    success: { bg: '#065f46', border: '#10b981' },
+    error:   { bg: '#991b1b', border: '#f87171' },
+    info:    { bg: '#0f172a', border: '#38bdf8' }
+  };
+  const c = colors[tone] || colors.info;
+  const el = document.createElement('div');
+  el.id = 'mart-b2b-toast';
+  el.style.cssText = `position:fixed;top:16px;right:16px;z-index:2000;background:${c.bg};color:#fff;padding:11px 16px;border-radius:10px;border-left:4px solid ${c.border};box-shadow:0 10px 25px rgba(15,23,42,0.25);font-size:13px;font-weight:600;max-width:340px;line-height:1.45;`;
+  el.textContent = String(message || '');
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
 let cartOpen = false;
 let paymentMethod = 'FACILITY_POSTPAY';
 const cart = new Map(); // product_id -> { product, qty }
@@ -72,6 +90,12 @@ function renderAuthScreen(root) {
           <button type="button" class="sub-chip ${authMode === 'LOGIN' ? 'active' : ''}" id="btn-auth-login-tab" style="padding:9px;text-align:center;">기관 로그인</button>
           <button type="button" class="sub-chip ${authMode === 'REGISTER' ? 'active' : ''}" id="btn-auth-reg-tab" style="padding:9px;text-align:center;">기관 회원가입 신청</button>
         </div>
+
+        ${authBanner ? `
+          <div style="margin-bottom:12px;padding:9px 12px;border-radius:8px;font-size:12.5px;font-weight:600;background:${authBanner.tone === 'error' ? '#fef2f2' : '#f0fdf4'};color:${authBanner.tone === 'error' ? '#b91c1c' : '#166534'};border:1px solid ${authBanner.tone === 'error' ? '#fecaca' : '#bbf7d0'};">
+            ${esc(authBanner.text)}
+          </div>
+        ` : ''}
 
         ${authMode === 'LOGIN' ? `
           <form id="form-b2b-login" style="display:flex; flex-direction:column; gap:12px;">
@@ -129,18 +153,20 @@ function renderAuthScreen(root) {
     </div>
   `;
 
-  root.querySelector('#btn-auth-login-tab')?.addEventListener('click', () => { authMode = 'LOGIN'; renderAuthScreen(root); });
-  root.querySelector('#btn-auth-reg-tab')?.addEventListener('click', () => { authMode = 'REGISTER'; renderAuthScreen(root); });
+  root.querySelector('#btn-auth-login-tab')?.addEventListener('click', () => { authMode = 'LOGIN'; authBanner = null; renderAuthScreen(root); });
+  root.querySelector('#btn-auth-reg-tab')?.addEventListener('click', () => { authMode = 'REGISTER'; authBanner = null; renderAuthScreen(root); });
 
   const doLogin = async (val) => {
     try {
       const isCode = /^FAC-/i.test(val);
       const res = await martB2bApi.login(isCode ? { facility_id: val } : { phone: val });
+      authBanner = null;
       activeFacility = res.facility;
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(activeFacility));
       await render();
     } catch (err) {
-      alert(err.message);
+      authBanner = { text: err.message, tone: 'error' };
+      renderAuthScreen(root);
     }
   };
 
@@ -162,11 +188,12 @@ function renderAuthScreen(root) {
         phone: root.querySelector('#reg-phone')?.value?.trim(),
         address: root.querySelector('#reg-addr')?.value?.trim()
       });
-      alert('기관 회원 가입 신청이 접수되었습니다. 마트 관리자 승인 후 로그인하실 수 있습니다.');
+      authBanner = { text: '기관 회원 가입 신청이 접수되었습니다. 마트 관리자 승인 후 로그인하실 수 있습니다.', tone: 'success' };
       authMode = 'LOGIN';
       renderAuthScreen(root);
     } catch (err) {
-      alert(err.message);
+      authBanner = { text: err.message, tone: 'error' };
+      renderAuthScreen(root);
     }
   });
 }
@@ -584,7 +611,7 @@ async function render() {
   root.querySelectorAll('.btn-b2b-join-gb').forEach(btn => {
     btn.addEventListener('click', async () => {
       const res = await martB2bApi.joinGroupBuy({ campaign_id: btn.dataset.cid, qty: 1 });
-      alert(`기관 공구 참여 완료 (${res.campaign.current_qty}/${res.campaign.target_qty})`);
+      showB2bToast(`기관 공구 참여 완료 (${res.campaign.current_qty}/${res.campaign.target_qty})`, 'success');
       render();
     });
   });
@@ -675,7 +702,7 @@ async function render() {
     cart.clear();
     cartOpen = false;
     activeTab = 'ORDERS';
-    alert('기관 B2B 발주가 정상 접수되었습니다.');
+    showB2bToast('기관 B2B 발주가 정상 접수되었습니다.', 'success');
     render();
   });
 }
