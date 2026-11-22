@@ -115,5 +115,29 @@ export const martApi = {
   },
   uploadMedia(payload) {
     return request('/media/upload', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  searchHaccp({ q = '', barcode = '' } = {}) {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (barcode) params.set('barcode', barcode);
+    return request(`/haccp/search?${params.toString()}`);
+  },
+  importHaccpImage(payload) {
+    return request('/haccp/import-image', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  getFacilities() {
+    return request('/facilities');
+  },
+  decideFacility(payload) {
+    return request('/facilities/decide', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  applyDailyPriceBatch(payload) {
+    return request('/prices/batch', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  getPriceUploadHistory() {
+    return request('/prices/history');
+  },
+  rollbackPriceUpload(batch_id) {
+    return request('/prices/rollback', { method: 'POST', body: JSON.stringify({ batch_id }) });
   }
 };

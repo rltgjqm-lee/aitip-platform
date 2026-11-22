@@ -7,6 +7,8 @@ import { martApi } from '../api.js';
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, buildCategoryPath, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
+import { esc, bindStopPropagation } from '../utils/html.js';
+import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 
 let drawerMode = 'NONE'; // 'NONE' | 'EDIT' | 'IMPORT'
 let editingProductId = '';
@@ -15,6 +17,8 @@ let l1Filter = 'ALL';
 let processFilter = 'ALL';
 let tempFilter = 'ALL';
 let imageFilter = 'ALL';
+let currentPage = 1;
+let pageSize = 10;
 let quickPrepImgId = '';
 let draftMedia = { media_id: '', image_url: '' };
 
@@ -32,14 +36,6 @@ function inferPrepProcess(p = {}) {
   if (/슬라이스|채|다이스|컷|깍둑|불고기|구이/.test(txt)) return 'CUT_SLICE';
   if (/탈피|깐|세척|거두|껍질/.test(txt)) return 'WASH_PEEL';
   return 'TRIM_PORTION';
-}
-
-function esc(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 const SAMPLE_PREP = `1\t대파 (손질)\t국내산, 전처리(뿌리·겉잎제거), 상, 1kg/단\t단\t8\t진물·짓무름 없을 것
@@ -67,6 +63,8 @@ export async function renderMartPrepView(container, opts = {}) {
     return true;
   });
 
+  const pageInfo = paginateArray(filtered, currentPage, pageSize);
+  currentPage = pageInfo.page;
   const curImgUrl = draftMedia.image_url || editingProduct?.image_url || '';
 
   container.innerHTML = `
@@ -130,14 +128,14 @@ export async function renderMartPrepView(container, opts = {}) {
                     조건에 맞는 전처리 품목이 없습니다. 필터를 변경하거나 '+ 전처리 등록'을 이용해 주세요.
                   </td>
                 </tr>
-              ` : filtered.map(p => {
+              ` : pageInfo.paged.map(p => {
                 const catInfo = inferCategoryFromProduct(p);
                 const procCode = inferPrepProcess(p);
                 return `
                   <tr class="mc-prep-row" data-id="${p.id}" style="cursor: pointer;">
                     <td>
                       <div class="mc-prod-cell">
-                        <div class="mc-thumb quick-prep-thumb" data-id="${p.id}" onclick="event.stopPropagation()" title="클릭하여 이미지 바로 등록/교체" style="cursor: pointer;">
+                        <div class="mc-thumb quick-prep-thumb mc-stop-prop" data-id="${p.id}" title="클릭하여 이미지 바로 등록/교체" style="cursor: pointer;">
                           ${p.image_url ? `<img src="${esc(p.image_url)}" alt="" />` : '<span style="color:#007749;">+IMG</span>'}
                         </div>
                         <div>
@@ -166,7 +164,7 @@ export async function renderMartPrepView(container, opts = {}) {
                     <td class="mc-num">
                       <strong style="font-size: 14px;">${Number(p.sale_price ?? p.regular_price ?? 0).toLocaleString()}원</strong>
                     </td>
-                    <td style="text-align: right;" onclick="event.stopPropagation()">
+                    <td class="mc-stop-prop" style="text-align: right;">
                       <button type="button" class="mc-row-edit-btn btn-edit-prep" data-id="${p.id}">수정</button>
                     </td>
                   </tr>
@@ -175,6 +173,7 @@ export async function renderMartPrepView(container, opts = {}) {
             </tbody>
           </table>
         </div>
+        ${renderMartPaginationHtml(pageInfo, 'prep')}
       </div>
 
       ${drawerMode === 'EDIT' ? `
@@ -269,6 +268,21 @@ export async function renderMartPrepView(container, opts = {}) {
                   <div>
                     <label class="erp-field-label">공급가 (원) *</label>
                     <input id="pr-price" type="number" min="0" required value="${Number(editingProduct?.sale_price ?? editingProduct?.regular_price ?? 4200)}" class="erp-input" style="font-weight: 700; border-color: #007749;" />
+                  </div>
+                  <div>
+                    <label class="erp-field-label">판매 대상</label>
+                    <select id="pr-sales-target" class="erp-input">
+                      <option value="B2B_ONLY" ${(editingProduct?.sales_target || 'B2B_ONLY') === 'B2B_ONLY' ? 'selected' : ''}>기관 전용 (B2B)</option>
+                      <option value="BOTH" ${editingProduct?.sales_target === 'BOTH' ? 'selected' : ''}>공통 (일반 + 기관)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="erp-field-label">B2B 기관 공급가 (원, 0=기본)</label>
+                    <input id="pr-b2b-price" type="number" min="0" value="${Number(editingProduct?.b2b_price ?? 0)}" class="erp-input" />
+                  </div>
+                  <div>
+                    <label class="erp-field-label">B2B 최소 발주수량</label>
+                    <input id="pr-b2b-min" type="number" min="1" value="${Number(editingProduct?.b2b_min_qty ?? 1)}" class="erp-input" />
                   </div>
                 </div>
               </div>
@@ -418,6 +432,13 @@ export async function renderMartPrepView(container, opts = {}) {
   container.querySelectorAll('.btn-edit-prep').forEach(btn => {
     btn.addEventListener('click', () => openEditDrawer(btn.dataset.id));
   });
+  bindStopPropagation(container);
+  bindMartPaginationEvents(container, {
+    prefix: 'prep',
+    totalPages: pageInfo.totalPages,
+    onPageChange: (nextP) => { currentPage = nextP; renderMartPrepView(container); },
+    onSizeChange: (nextSz) => { pageSize = nextSz; currentPage = 1; renderMartPrepView(container); }
+  });
   container.querySelectorAll('.mc-prep-row').forEach(row => {
     row.addEventListener('click', () => openEditDrawer(row.dataset.id));
   });
@@ -548,7 +569,10 @@ export async function renderMartPrepView(container, opts = {}) {
       media_id: draftMedia.media_id || editingProduct?.media_id || '',
       image_url: draftMedia.image_url || editingProduct?.image_url || '',
       regular_price: price,
-      sale_price: price
+      sale_price: price,
+      sales_target: container.querySelector('#pr-sales-target')?.value || 'B2B_ONLY',
+      b2b_price: Math.max(0, Number(container.querySelector('#pr-b2b-price')?.value ?? 0)),
+      b2b_min_qty: Math.max(1, Number(container.querySelector('#pr-b2b-min')?.value ?? 1))
     };
     if (editingProductId) await martApi.updateProduct(payload);
     else await martApi.addProduct(payload);

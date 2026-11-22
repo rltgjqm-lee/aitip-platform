@@ -4,27 +4,22 @@
  */
 
 import { martApi } from '../api.js';
+import { esc } from '../utils/html.js';
 
 let activeTab = 'BASIC'; // 'BASIC' | 'DELIVERY_BANK' | 'MANAGER' | 'STAFF'
 let editingStaffId = '';
 
-function esc(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 export async function renderMartInfoView(container) {
   if (!container) return;
-  const [profRes, staffRes] = await Promise.all([
+  const [profRes, staffRes, facRes] = await Promise.all([
     martApi.getProfile(),
-    martApi.getStaff()
+    martApi.getStaff(),
+    martApi.getFacilities().catch(() => ({ facilities: [] }))
   ]);
   const m = profRes.mart || {};
   const mgr = m.manager || {};
   const staffList = staffRes.staff || [];
+  const facilities = facRes.facilities || [];
   const editingStaff = editingStaffId ? staffList.find(s => s.staff_id === editingStaffId) : null;
 
   container.innerHTML = `
@@ -39,6 +34,7 @@ export async function renderMartInfoView(container) {
           <button type="button" class="${activeTab === 'DELIVERY_BANK' ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-mi-tab" data-tab="DELIVERY_BANK">배달·정산계좌</button>
           <button type="button" class="${activeTab === 'MANAGER' ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-mi-tab" data-tab="MANAGER">관리자 정보</button>
           <button type="button" class="${activeTab === 'STAFF' ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-mi-tab" data-tab="STAFF">사원 관리 (${staffList.length})</button>
+          <button type="button" class="${activeTab === 'FACILITIES' ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-mi-tab" data-tab="FACILITIES">기관 회원 B2B (${facilities.length})</button>
         </div>
       </div>
 
@@ -76,6 +72,23 @@ export async function renderMartInfoView(container) {
               <label class="erp-field-label">매장 주소</label>
               <input id="mi-addr" class="erp-input" type="text" value="${esc(m.address)}" />
             </div>
+            <div style="grid-column: 1 / -1; border-top: 1px dashed #cbd5e1; padding-top: 10px; margin-top: 4px;">
+              <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px;">80mm 전표·영수증 자체 문구 (비워두면 미출력)</div>
+              <div class="erp-form-grid-3">
+                <div>
+                  <label class="erp-field-label">전표 상단 문구</label>
+                  <input id="mi-rcpt-top" class="erp-input" type="text" placeholder="예: 신선한 우리 농산물, 정직한 가격" value="${esc(m.receipt_top_notice || '')}" />
+                </div>
+                <div>
+                  <label class="erp-field-label">마트 정보 아래 문구</label>
+                  <input id="mi-rcpt-sub" class="erp-input" type="text" placeholder="예: 교환·환불 7일 이내 영수증 지참" value="${esc(m.receipt_sub_notice || '')}" />
+                </div>
+                <div>
+                  <label class="erp-field-label">주문바코드 위 문구</label>
+                  <input id="mi-rcpt-bottom" class="erp-input" type="text" placeholder="예: 이용해 주셔서 감사합니다." value="${esc(m.receipt_bottom_notice || '')}" />
+                </div>
+              </div>
+            </div>
           </div>
           <div class="erp-form-footer" style="justify-content: flex-end;">
             <button type="submit" class="mc-btn-primary">기본정보 수정·저장</button>
@@ -97,10 +110,6 @@ export async function renderMartInfoView(container) {
             <div>
               <label class="erp-field-label">무료배송 기준 (원)</label>
               <input id="mi-free" class="erp-input" type="number" min="0" value="${Number(m.free_delivery_threshold ?? 0)}" />
-            </div>
-            <div>
-              <label class="erp-field-label">위탁 대행 수수료율 (%)</label>
-              <input id="mi-pct" class="erp-input" type="number" min="0" step="0.1" value="${Number(m.agency_fee_pct ?? 5)}" />
             </div>
             <div>
               <label class="erp-field-label">정산 은행</label>
@@ -232,6 +241,60 @@ export async function renderMartInfoView(container) {
           </div>
         </div>
       ` : ''}
+
+      ${activeTab === 'FACILITIES' ? `
+        <div class="mc-surface" style="padding: 18px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong style="font-size: 14.5px; color: #0f172a;">B2B 기관 회원 가입 승인 · 후불 여신 관리</strong>
+              <div style="font-size: 12px; color: #64748b; margin-top: 2px;">기관 발주 포털(/mart/b2b/)에서 가입 신청한 경로당·복지관을 승인하고 여신 한도를 설정합니다.</div>
+            </div>
+            <a href="/mart/b2b/" target="_blank" class="mc-btn-secondary" style="text-decoration: none;">기관 B2B 포털 열기</a>
+          </div>
+          <div class="mc-table-wrap">
+            <table class="mc-table">
+              <thead>
+                <tr>
+                  <th>기관 코드</th>
+                  <th>기관명 / 주소</th>
+                  <th>담당자 / 연락처</th>
+                  <th>월말 여신 한도</th>
+                  <th>상태</th>
+                  <th style="text-align: right;">승인 처리</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${facilities.map(f => `
+                  <tr>
+                    <td><span class="mc-prod-code">${esc(f.facility_id || '발급 대기')}</span></td>
+                    <td>
+                      <strong>${esc(f.facility_name)}</strong>
+                      <div style="font-size: 11.5px; color: #64748b;">${esc(f.address)}</div>
+                    </td>
+                    <td>${esc(f.contact_name)} · ${esc(f.phone)}</td>
+                    <td>
+                      <input type="number" min="0" step="50000" class="erp-input fac-limit-input" data-rid="${esc(f.request_id)}" value="${Number(f.credit_limit || 500000)}" style="width: 120px; height: 30px;" />
+                    </td>
+                    <td>
+                      <span class="mc-pill ${f.status === 'APPROVED' ? 'mc-pill-green' : f.status === 'REJECTED' ? 'mc-pill-red' : 'mc-pill-amber'}">
+                        ${f.status === 'APPROVED' ? '승인 완료' : f.status === 'REJECTED' ? '반려' : '승인 대기'}
+                      </span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                      <button type="button" class="mc-btn-primary btn-fac-approve" data-rid="${esc(f.request_id)}" style="height: 30px; padding: 0 10px; font-size: 12px;">
+                        ${f.status === 'APPROVED' ? '한도 저장' : '승인(FAC발급)'}
+                      </button>
+                      ${f.status === 'PENDING_APPROVAL' ? `
+                        <button type="button" class="mc-row-edit-btn btn-fac-reject" data-rid="${esc(f.request_id)}" style="color: #b91c1c; border-color: #fecaca; margin-left: 4px;">반려</button>
+                      ` : ''}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 
@@ -252,7 +315,10 @@ export async function renderMartInfoView(container) {
       phone: container.querySelector('#mi-phone')?.value,
       open_hours: container.querySelector('#mi-hours')?.value,
       operator_name: container.querySelector('#mi-op')?.value,
-      address: container.querySelector('#mi-addr')?.value
+      address: container.querySelector('#mi-addr')?.value,
+      receipt_top_notice: container.querySelector('#mi-rcpt-top')?.value?.trim() || '',
+      receipt_sub_notice: container.querySelector('#mi-rcpt-sub')?.value?.trim() || '',
+      receipt_bottom_notice: container.querySelector('#mi-rcpt-bottom')?.value?.trim() || ''
     });
     alert('마트 기본정보가 수정되었습니다.');
     await renderMartInfoView(container);
@@ -264,7 +330,6 @@ export async function renderMartInfoView(container) {
       min_order_amount: Math.max(0, Number(container.querySelector('#mi-min')?.value ?? 0)),
       delivery_fee: Math.max(0, Number(container.querySelector('#mi-fee')?.value ?? 0)),
       free_delivery_threshold: Math.max(0, Number(container.querySelector('#mi-free')?.value ?? 0)),
-      agency_fee_pct: Math.max(0, Number(container.querySelector('#mi-pct')?.value ?? 5)),
       settlement_bank: container.querySelector('#mi-bank')?.value,
       settlement_account: container.querySelector('#mi-acct')?.value,
       pickup_enabled: Boolean(container.querySelector('#mi-pickup')?.checked)
@@ -318,5 +383,19 @@ export async function renderMartInfoView(container) {
     });
     editingStaffId = '';
     await renderMartInfoView(container);
+  });
+  container.querySelectorAll('.btn-fac-approve').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const rid = btn.dataset.rid;
+      const limitEl = container.querySelector(`.fac-limit-input[data-rid="${CSS.escape(rid)}"]`);
+      await martApi.decideFacility({ request_id: rid, decision: 'APPROVED', credit_limit: Number(limitEl?.value ?? 500000) });
+      await renderMartInfoView(container);
+    });
+  });
+  container.querySelectorAll('.btn-fac-reject').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await martApi.decideFacility({ request_id: btn.dataset.rid, decision: 'REJECTED' });
+      await renderMartInfoView(container);
+    });
   });
 }

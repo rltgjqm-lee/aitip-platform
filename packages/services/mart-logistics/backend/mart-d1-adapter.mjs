@@ -68,19 +68,43 @@ export class MartD1Adapter {
       INSERT INTO store_promotions (
         id, mart_id, name, promo_type, calc_mode, discount_type, discount_value,
         min_order_amount, bundle_qty, bundle_price, applicable_days_json,
-        channel_scope, card_targets_json, limit_per_person, max_discount_amount,
-        max_receipt_sections, start_at, end_at, is_active, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        channel_scope, card_targets_json, limit_per_person, total_limit_qty, used_qty, status,
+        max_discount_amount, max_receipt_sections, start_at, end_at, is_active, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
     `).bind(
       pr.id, this.martId, pr.name, pr.promo_type, pr.calc_mode || 'UNIT_DISCOUNT',
       pr.discount_type || 'PERCENT', Number(pr.discount_pct || pr.discount_amount || 0),
       Number(pr.min_purchase_amount || 0), Number(pr.required_qty || 1), Number(pr.bundle_price || 0),
       JSON.stringify(pr.days_of_week || []), pr.channel_scope || 'ALL_CHANNELS',
       JSON.stringify(pr.card_targets || []), Number(pr.limit_per_person || 0),
+      Number(pr.total_limit_qty || 0), Number(pr.used_qty || 0), pr.status || 'ACTIVE',
       Number(pr.max_discount_amount || 0), Number(pr.max_receipt_sections || 0),
       pr.start_date, pr.end_date, now, now
     ).run();
     return pr;
+  }
+
+  async recordPriceUploadBatch(batch) {
+    const now = Date.now();
+    await this.db.prepare(`
+      INSERT INTO mart_price_upload_batches (
+        batch_id, mart_id, mode, total_rows, updated_count, error_count,
+        sold_out_count, snapshot_json, rolled_back, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      batch.batch_id, this.martId, batch.mode || 'PARTIAL',
+      Number(batch.total_rows || 0), Number(batch.updated_count || 0),
+      Number(batch.error_count || 0), Number(batch.sold_out_count || 0),
+      JSON.stringify(batch.snapshot || []), batch.rolled_back ? 1 : 0, now
+    ).run();
+    return batch;
+  }
+
+  async getPriceUploadBatches(limit = 20) {
+    const res = await this.db.prepare(
+      'SELECT batch_id, mode, total_rows, updated_count, error_count, sold_out_count, rolled_back, created_at FROM mart_price_upload_batches WHERE mart_id = ? ORDER BY created_at DESC LIMIT ?'
+    ).bind(this.martId, limit).all();
+    return res?.results || [];
   }
 
   async savePromoType(t) {

@@ -189,6 +189,19 @@ function renderHeader() {
     const mode = btn.getAttribute('data-mode');
     btn.classList.toggle('active', mode === state.activeMode);
   });
+
+  // 4. 하단 매장 기본정보 푸터
+  const footerEl = document.getElementById('pwa-store-footer');
+  if (footerEl) {
+    const safe = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    footerEl.style.display = state.activeTab === 'INFO' ? 'none' : 'block';
+    footerEl.innerHTML = `
+      <div style="font-weight: 800; color: #334155; margin-bottom: 4px;">${safe(store.store_name || '')}</div>
+      <div>대표자: ${safe(store.owner_name || '홍길동')} · 사업자등록번호: ${safe(store.biz_number || '214-88-59124')}</div>
+      ${store.address ? `<div>주소: ${safe(store.address)}</div>` : ''}
+      <div>전화: <a href="tel:${safe(store.phone || '02-588-9258')}" style="color: #0284c7; font-weight: 700; text-decoration: none;">${safe(store.phone || '02-588-9258')}</a></div>
+    `;
+  }
 }
 
 // 탭 전환 헬퍼
@@ -197,6 +210,8 @@ function switchToTab(tabName) {
   document.querySelectorAll('.pwa-nav-tab').forEach(t => {
     t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
   });
+  const footerEl = document.getElementById('pwa-store-footer');
+  if (footerEl) footerEl.style.display = tabName === 'INFO' ? 'none' : 'block';
   renderContent();
   updateCartBar();
   window.scrollTo({ top: 0, behavior: 'smooth' });

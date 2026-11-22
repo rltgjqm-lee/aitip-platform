@@ -1883,7 +1883,9 @@ class FoodDeliveryService {
   }
 
   // 8. 정산 및 부가세 세무 증빙 대사 원장 조회 (D1 merchant_daily_bi_snapshots 규격)
-  getSettlementOverview({ year = 2026, month = 11 }) {
+  getSettlementOverview({ year = 2026, month = 11, policy = {} }) {
+    const pgFeePct = Number(policy.food_pg_fee_pct ?? 2.0);
+    const saasFeePerOrder = Number(policy.food_saas_fee_per_order ?? 300);
     // 11월 1일~8일 실제 스냅샷 데이터
     const historicalSnapshots = [
       { business_date: '2026-11-01', order_count: 24, gross_sales: 580000, delivery_tips: 72000, pg_fees: 16300, net_payout: 635700, payout_status: 'COMPLETED', payout_date: '2026-11-02' },
@@ -1911,8 +1913,9 @@ class FoodDeliveryService {
     todayDeliveryTips = Math.max(todayDeliveryTips, 54000);
     todayOrderCount = Math.max(todayOrderCount, 18);
 
-    const todayPgFees = Math.round((todayGrossSales + todayDeliveryTips) * 0.025); // 2.5% PG망 수수료
-    const todayNetPayout = (todayGrossSales + todayDeliveryTips) - todayPgFees;
+    const todayPgFees = Math.round((todayGrossSales + todayDeliveryTips) * (pgFeePct / 100));
+    const todaySaasFees = todayOrderCount * saasFeePerOrder;
+    const todayNetPayout = (todayGrossSales + todayDeliveryTips) - todayPgFees - todaySaasFees;
 
     const todayRecord = {
       business_date: '2026-11-09',
@@ -1920,6 +1923,7 @@ class FoodDeliveryService {
       gross_sales: todayGrossSales,
       delivery_tips: todayDeliveryTips,
       pg_fees: todayPgFees,
+      saas_fees: todaySaasFees,
       net_payout: todayNetPayout,
       payout_status: 'PENDING',
       payout_date: '2026-11-10'
@@ -1930,6 +1934,7 @@ class FoodDeliveryService {
     // 월간 누적 합계 산출
     let totalGrossSales = 0;
     let totalPgFees = 0;
+    let totalSaasFees = 0;
     let totalNetPayout = 0;
     let totalOrders = 0;
     let completedPayout = 0;
@@ -1938,6 +1943,7 @@ class FoodDeliveryService {
     for (const r of allRecords) {
       totalGrossSales += (r.gross_sales + r.delivery_tips);
       totalPgFees += r.pg_fees;
+      totalSaasFees += Number(r.saas_fees || 0);
       totalNetPayout += r.net_payout;
       totalOrders += r.order_count;
       if (r.payout_status === 'COMPLETED') {
@@ -1977,9 +1983,14 @@ class FoodDeliveryService {
         total_orders: totalOrders,
         total_gross_sales: totalGrossSales,
         total_pg_fees: totalPgFees,
+        total_saas_fees: totalSaasFees,
         total_net_payout: totalNetPayout,
         completed_payout: completedPayout,
         pending_payout: pendingPayout
+      },
+      rates: {
+        pg_fee_pct: pgFeePct,
+        saas_fee_per_order: saasFeePerOrder
       },
       tax_report: taxBreakdown
     };

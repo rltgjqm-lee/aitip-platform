@@ -254,7 +254,7 @@ export function createDefaultData() {
     promo_types: createDefaultPromoTypes(),
     orders: [
       {
-        order_id: 'mord_20261117_01',
+        order_id: 'ORD-11-650-01-47121-0001-261117-0001',
         customer_type: 'SENIOR_CENTER',
         facility_id: 'FAC-11-650-01-87391-0001',
         buyer_name: '서초 양재1동 경로당 (주간 급식)',
@@ -269,7 +269,7 @@ export function createDefaultData() {
         created_at: new Date().toISOString()
       },
       {
-        order_id: 'mord_20261117_02',
+        order_id: 'ORD-11-650-01-47121-0001-261117-0002',
         customer_type: 'ELDERLY_CARE',
         facility_id: 'CUST-ZERO-PII-ELDER-01',
         buyer_name: '서초2동 독거어르신 돌봄 꾸러미 (바우처)',

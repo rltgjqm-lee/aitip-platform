@@ -67,6 +67,18 @@ copyDirSync(
   path.join(DIST_DIR, 'mart', 'pwa')
 );
 
+console.log('[Build] Copying mart B2B portal to dist/mart/b2b...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'mart-b2b'),
+  path.join(DIST_DIR, 'mart', 'b2b')
+);
+
+console.log('[Build] Copying mart media assets to dist/mart/media...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'backend', 'media'),
+  path.join(DIST_DIR, 'mart', 'media')
+);
+
 // 3. Functions 데이터 동기화
 console.log('[Build] Synchronizing store_data.json & mart_data.json to functions/api...');
 const functionsApiFoodDir = path.join(ROOT_DIR, 'functions', 'api', 'food');

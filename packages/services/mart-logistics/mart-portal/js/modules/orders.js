@@ -1,11 +1,14 @@
 /**
  * AITIP Mart Portal - 4. 주문 관리 (온라인 주문내역 / 오프라인 주문 입력·출력) 모듈 (ESM)
- * 하이브리드 UI: 배민 B마트 상태 KPI 스트립 + Medusa 주문상세/타임라인 드로어 + 미니샵 결품·실중량 가감 정정
+ * 하이브리드 UI: 배민 B마트 상태 KPI 스트립 + Medusa 주문상세/타임라인 드로어 + 결품·수량 가감 정정
  */
 
 import { martApi } from '../api.js';
 import { openMartPrintModal } from './mart-receipt.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
+import { formatShortOrderNo } from '../utils/order-format.js';
+import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
+import { esc, bindStopPropagation } from '../utils/html.js';
 
 const BUYER_LABEL = {
   INDIVIDUAL: '일반 소비자',
@@ -30,18 +33,13 @@ const STATUS_META = {
 };
 
 let searchQuery = '';
+let dateFilter = '';
 let statusFilter = 'ALL'; // 'ALL' | 'REQUESTED' | 'PICKING' | 'PACKED' | 'DELIVERED'
+let currentPage = 1;
+let pageSize = 10;
 let drawerMode = 'NONE'; // 'NONE' | 'DETAIL' | 'CREATE_OFFLINE'
 let selectedOrderId = '';
 let draftItems = [];
-
-function esc(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 export async function renderMartOrdersView(container, channel = 'ONLINE', opts = {}) {
   if (!container) return;
@@ -68,12 +66,15 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
   const q = searchQuery.trim().toLowerCase();
   const filtered = channelOrders.filter(o => {
     if (statusFilter !== 'ALL' && o.status !== statusFilter) return false;
+    if (dateFilter && String(o.delivery_date || '') !== dateFilter) return false;
     if (q) {
-      const hay = `${o.order_id} ${o.buyer_name} ${(o.items || []).map(i => i.name).join(' ')}`.toLowerCase();
+      const hay = `${o.order_id} ${formatShortOrderNo(o.order_id)} ${o.buyer_name} ${(o.items || []).map(i => i.name).join(' ')}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
   });
+  const pageInfo = paginateArray(filtered, currentPage, pageSize);
+  currentPage = pageInfo.page;
 
   const selectedOrder = selectedOrderId ? channelOrders.find(o => o.order_id === selectedOrderId) : null;
   const draftTotal = draftItems.reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.qty || 1), 0);
@@ -115,9 +116,11 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
         <div class="mc-filter-bar">
           <div class="mc-filter-controls">
             <input id="ord-search-q" class="mc-search" type="text" value="${esc(searchQuery)}" placeholder="주문번호 · 수요처 · 품목 검색" />
+            <input id="ord-date-filter" class="erp-input" type="date" value="${esc(dateFilter)}" style="width: 150px;" title="배송 예정일 필터" />
+            ${(searchQuery || dateFilter || statusFilter !== 'ALL') ? `<button type="button" id="btn-ord-reset-filter" class="mc-btn-secondary">초기화</button>` : ''}
           </div>
           <div style="font-size: 12px; color: #64748b;">
-            조회 ${filtered.length}건 · 행 클릭 시 결품·실중량 정정 및 상세 처리
+            조회 ${filtered.length}건 · [상세보기] 또는 행 클릭 시 결품·수량 정정 및 상세 처리
           </div>
         </div>
 
@@ -125,7 +128,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
           <table class="mc-table">
             <thead>
               <tr>
-                <th>주문 UID</th>
+                <th>주문번호</th>
                 <th>수주 경로 · 수요처</th>
                 <th>품목 요약</th>
                 <th>배송 예정일</th>
@@ -135,17 +138,21 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
               </tr>
             </thead>
             <tbody>
-              ${filtered.length === 0 ? `
+              ${pageInfo.paged.length === 0 ? `
                 <tr><td colspan="7" style="text-align: center; padding: 48px 16px; color: #64748b;">조건에 맞는 주문 내역이 없습니다.</td></tr>
-              ` : filtered.map(o => {
+              ` : pageInfo.paged.map(o => {
                 const sm = STATUS_META[o.status] || { label: o.status, pill: 'mc-pill-gray', next: '', nextLabel: '' };
+                const sourceText = SOURCE_LABEL[o.offline_source] || o.offline_source || o.order_channel;
+                const cleanBuyer = String(o.buyer_name || '').replace(/\s*\((?:PWA 주문|PWA 발주)\)\s*/g, '').trim();
+                const buyerType = BUYER_LABEL[o.customer_type] || o.customer_type || '';
+                const showBuyerType = buyerType && !cleanBuyer.includes(buyerType) && cleanBuyer !== '일반 고객';
                 return `
                   <tr class="mc-ord-row" data-id="${esc(o.order_id)}" style="cursor: pointer;">
-                    <td><span class="mc-prod-code" style="color: #334155;">${esc(o.order_id)}</span></td>
+                    <td><span class="mc-prod-code" style="color: #334155;" title="${esc(o.order_id)}">${esc(formatShortOrderNo(o.order_id))}</span></td>
                     <td>
-                      <div><span class="mc-pill mc-pill-gray">${esc(SOURCE_LABEL[o.offline_source] || o.offline_source || o.order_channel)}</span></div>
-                      <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">${esc(o.buyer_name)}</div>
-                      <div style="font-size: 11.5px; color: #64748b;">${esc(BUYER_LABEL[o.customer_type] || o.customer_type)}</div>
+                      <div><span class="mc-pill mc-pill-gray">${esc(sourceText)}</span></div>
+                      <div style="font-weight: 700; color: #0f172a; margin-top: 4px;">${esc(cleanBuyer || '-')}</div>
+                      ${showBuyerType ? `<div style="font-size: 11.5px; color: #64748b;">${esc(buyerType)}</div>` : ''}
                     </td>
                     <td style="max-width: 260px;">
                       <div style="color: #0f172a;">${(o.items || []).map(it => {
@@ -156,8 +163,9 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
                     <td style="white-space: nowrap;">${esc(o.delivery_date || '-')}</td>
                     <td class="mc-num"><strong>${Number(o.total_amount || 0).toLocaleString()}원</strong></td>
                     <td style="text-align: center;"><span class="mc-pill ${sm.pill}">${esc(sm.label)}</span></td>
-                    <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation()">
-                      <button type="button" class="mc-row-edit-btn btn-print-order" data-id="${esc(o.order_id)}">전표출력</button>
+                    <td class="mc-stop-prop" style="text-align: right; white-space: nowrap;">
+                      <button type="button" class="mc-row-edit-btn btn-ord-detail" data-id="${esc(o.order_id)}">상세보기</button>
+                      <button type="button" class="mc-row-edit-btn btn-print-order" data-id="${esc(o.order_id)}" style="margin-left: 4px;">전표출력</button>
                       ${sm.next ? `
                         <button type="button" class="mc-btn-primary btn-mart-order-next" data-id="${esc(o.order_id)}" data-next="${sm.next}" style="height: 30px; padding: 0 10px; font-size: 12px; margin-left: 4px;">${sm.nextLabel}</button>
                       ` : ''}
@@ -168,6 +176,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
             </tbody>
           </table>
         </div>
+        ${renderMartPaginationHtml(pageInfo, 'ord')}
       </div>
 
       ${drawerMode === 'DETAIL' && selectedOrder ? `
@@ -175,7 +184,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
           <div class="mc-drawer" style="width: 560px;">
             <div class="mc-drawer-header">
               <div>
-                <h2>주문 상세 · 결품/실중량 정정</h2>
+                <h2>주문 상세 · 결품/수량 정정</h2>
                 <div class="mc-prod-code" style="margin-top: 2px;">${esc(selectedOrder.order_id)}</div>
               </div>
               <button type="button" class="mc-drawer-close" id="btn-close-ord-drawer">×</button>
@@ -196,10 +205,10 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
                 </div>
               </div>
 
-              <!-- 섹션 2: 품목별 결품(0개)/실중량 가감 정정 -->
+              <!-- 섹션 2: 품목별 결품(0개)/수량 가감 정정 -->
               <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">
-                  <span>주문 품목 · 실수량 정정</span>
+                  <span>주문 품목 · 확정 수량 정정</span>
                   <strong style="color: #007749; font-size: 14px;">합계 ${Number(selectedOrder.total_amount || 0).toLocaleString()}원</strong>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -215,7 +224,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
                         ${pid ? `
                           <div style="display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
                             <input type="number" min="0" value="${effQty}" class="erp-input adj-qty-input" data-pid="${esc(pid)}" style="width: 72px; height: 30px; font-size: 12px;" />
-                            <input type="text" value="${esc(it.adjust_reason || '')}" placeholder="정정 사유 (예: 실중량 차이)" class="erp-input adj-reason-input" data-pid="${esc(pid)}" style="flex: 1; min-width: 140px; height: 30px; font-size: 12px;" />
+                            <input type="text" value="${esc(it.adjust_reason || '')}" placeholder="정정 사유 (예: 재고 부족으로 수량 변경)" class="erp-input adj-reason-input" data-pid="${esc(pid)}" style="flex: 1; min-width: 140px; height: 30px; font-size: 12px;" />
                             <button type="button" class="mc-btn-secondary btn-adj-apply" data-oid="${esc(selectedOrder.order_id)}" data-pid="${esc(pid)}" style="height: 30px; padding: 0 10px; font-size: 12px;">정정</button>
                             <button type="button" class="mc-btn-secondary btn-adj-oos" data-oid="${esc(selectedOrder.order_id)}" data-pid="${esc(pid)}" style="height: 30px; padding: 0 10px; font-size: 12px; color: #b91c1c; border-color: #fecaca;">결품(0)</button>
                           </div>
@@ -431,15 +440,36 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
   container.querySelectorAll('.btn-ord-kpi').forEach(btn => {
     btn.addEventListener('click', () => {
       statusFilter = btn.dataset.status;
+      currentPage = 1;
       renderMartOrdersView(container, channel);
     });
   });
 
-  // 검색
+  // 검색 및 날짜 필터
   container.querySelector('#ord-search-q')?.addEventListener('input', (e) => {
     searchQuery = e.target.value;
+    currentPage = 1;
     renderMartOrdersView(container, channel, { focusId: 'ord-search-q', cursorPos: e.target.selectionStart });
   });
+  container.querySelector('#ord-date-filter')?.addEventListener('change', (e) => {
+    dateFilter = e.target.value;
+    currentPage = 1;
+    renderMartOrdersView(container, channel);
+  });
+  container.querySelector('#btn-ord-reset-filter')?.addEventListener('click', () => {
+    searchQuery = '';
+    dateFilter = '';
+    statusFilter = 'ALL';
+    currentPage = 1;
+    renderMartOrdersView(container, channel);
+  });
+  bindMartPaginationEvents(container, {
+    prefix: 'ord',
+    totalPages: pageInfo.totalPages,
+    onPageChange: (nextP) => { currentPage = nextP; renderMartOrdersView(container, channel); },
+    onSizeChange: (nextSz) => { pageSize = nextSz; currentPage = 1; renderMartOrdersView(container, channel); }
+  });
+  bindStopPropagation(container);
   if (opts.focusId) {
     const el = container.querySelector(`#${opts.focusId}`);
     if (el) {
@@ -451,9 +481,9 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
   }
 
   // 드로어 열기/닫기
-  container.querySelectorAll('.mc-ord-row').forEach(row => {
-    row.addEventListener('click', () => {
-      selectedOrderId = row.dataset.id;
+  container.querySelectorAll('.mc-ord-row, .btn-ord-detail').forEach(el => {
+    el.addEventListener('click', () => {
+      selectedOrderId = el.dataset.id;
       drawerMode = 'DETAIL';
       renderMartOrdersView(container, channel);
     });
@@ -586,7 +616,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
         order_id: oid,
         product_id: pid,
         actual_qty: Math.max(0, Number(qtyEl?.value ?? 0)),
-        reason: reasonEl?.value?.trim() || '실중량·수량 정정'
+        reason: reasonEl?.value?.trim() || '수량 정정'
       });
       await renderMartOrdersView(container, channel);
     });

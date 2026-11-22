@@ -12,6 +12,14 @@ function esc(v = '') {
     .replace(/"/g, '&quot;');
 }
 
+function shortOrderNo(orderId = '') {
+  const parts = String(orderId || '').trim().split('-');
+  if (parts.length >= 2 && /^\d{6}$/.test(parts[parts.length - 2])) {
+    return `${parts[parts.length - 2]}-${parts[parts.length - 1]}`;
+  }
+  return orderId || '-';
+}
+
 export async function renderMartUnionView(container) {
   if (!container) return;
   const snap = await adminApi.getMartUnionSnapshot();
@@ -51,16 +59,33 @@ export async function renderMartUnionView(container) {
           <div style="font-size: 18px; font-weight: 800; margin-top: 4px;">${Number(totals.gross_sales || 0).toLocaleString()}원</div>
         </div>
         <div class="card" style="padding: 14px;">
-          <div style="font-size: 11.5px; color: #065f46;">면세 (농축수산)</div>
+          <div style="font-size: 11.5px; color: #64748b;">면세 (농축수산)</div>
           <div style="font-size: 18px; font-weight: 800; color: #065f46; margin-top: 4px;">${Number(totals.exempt_sales || 0).toLocaleString()}원</div>
         </div>
         <div class="card" style="padding: 14px;">
-          <div style="font-size: 11.5px; color: #92400e;">위탁대행 수수료</div>
-          <div style="font-size: 18px; font-weight: 800; color: #92400e; margin-top: 4px;">${Number(totals.agency_fee_total || 0).toLocaleString()}원</div>
+          <div style="font-size: 11.5px; color: #92400e;">PG 결제 수수료 (${stl.rates?.pg_fee_pct ?? 2}%)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #92400e; margin-top: 4px;">${Number(totals.pg_fee_total || 0).toLocaleString()}원</div>
         </div>
         <div class="card" style="padding: 14px;">
-          <div style="font-size: 11.5px; color: #1e40af;">플랫폼 수수료</div>
-          <div style="font-size: 18px; font-weight: 800; color: #1e40af; margin-top: 4px;">${Number(totals.platform_fee_total || 0).toLocaleString()}원</div>
+          <div style="font-size: 11.5px; color: #1e40af;">SaaS 이용 수수료 (${stl.rates?.saas_fee_pct ?? 3}%)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #1e40af; margin-top: 4px;">${Number(totals.saas_fee_total || 0).toLocaleString()}원</div>
+        </div>
+        <div class="card" style="padding: 14px;">
+          <div style="font-size: 11.5px; color: #475569;">알림톡·문자 과금 (${Number(totals.alimtalk_sms_count || 0)}건)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-top: 4px;">${Number(totals.alimtalk_sms_fee || 0).toLocaleString()}원</div>
+        </div>
+        <div class="card" style="padding: 14px; border: 1.5px solid #0f766e;">
+          <div style="font-size: 11.5px; color: #0f766e;">총괄 세금계산서 합계 (VAT포함)</div>
+          <div style="font-size: 18px; font-weight: 800; color: #0f766e; margin-top: 4px;">${Number(totals.tax_invoice_total || 0).toLocaleString()}원</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: #f8fafc;">
+        <div style="font-size: 12.5px; color: #334155;">
+          <b>총괄 PG · 통신 정산 요약</b> — PG경유 매출 <b>${Number(totals.pg_sales_total || 0).toLocaleString()}원</b> (실입금 예정 ${Number(totals.mart_pg_payout_total || 0).toLocaleString()}원) · 직접수금(후불/현금) 매출 <b>${Number(totals.direct_sales_total || 0).toLocaleString()}원</b> (월말 SaaS 청구 ${Number(totals.direct_billing_total || 0).toLocaleString()}원)
+        </div>
+        <div style="font-size: 12px; color: #475569;">
+          공급가액 <b>${Number(totals.tax_invoice_supply || 0).toLocaleString()}원</b> · 부가세 <b>${Number(totals.tax_invoice_vat || 0).toLocaleString()}원</b>
         </div>
       </div>
 
@@ -147,28 +172,30 @@ export async function renderMartUnionView(container) {
       </div>
 
       <div class="card" style="padding: 16px;">
-        <h4 style="margin: 0 0 10px;">마트 주문별 3자 정산 & 과면세 대사 원장 (${rows.length}건)</h4>
+        <h4 style="margin: 0 0 10px;">마트 주문별 총괄 PG · SaaS 정산 & 과면세 대사 원장 (${rows.length}건)</h4>
         <table class="data-table" style="width: 100%; font-size: 12px;">
           <thead>
             <tr>
-              <th>정산 원장 UID</th>
+              <th>주문번호</th>
+              <th>정산구분</th>
               <th>수요처 / 기관</th>
               <th style="text-align: right;">면세액</th>
               <th style="text-align: right;">과세액</th>
-              <th style="text-align: right;">위탁대행료</th>
-              <th style="text-align: right;">플랫폼료</th>
+              <th style="text-align: right;">PG 수수료</th>
+              <th style="text-align: right;">SaaS 수수료</th>
               <th style="text-align: right;">마트 정산액</th>
             </tr>
           </thead>
           <tbody>
             ${rows.map(r => `
               <tr>
-                <td><code>${esc(r.ledger_id)}</code></td>
-                <td><strong>${esc(r.buyer_name)}</strong><div><code>${esc(r.facility_id)}</code></div></td>
+                <td><code title="${esc(r.order_id)}">${esc(shortOrderNo(r.order_id))}</code></td>
+                <td><span class="tag">${r.settlement_route === 'PG' ? 'PG경유' : '직접수금'}</span></td>
+                <td><strong>${esc(r.buyer_name)}</strong></td>
                 <td style="text-align: right;">${Number(r.exempt_amount).toLocaleString()}원</td>
                 <td style="text-align: right;">${Number(r.taxable_amount).toLocaleString()}원</td>
-                <td style="text-align: right;">${Number(r.agency_fee).toLocaleString()}원</td>
-                <td style="text-align: right;">${Number(r.platform_fee).toLocaleString()}원</td>
+                <td style="text-align: right;">${Number(r.pg_fee || 0).toLocaleString()}원</td>
+                <td style="text-align: right;">${Number(r.saas_fee || 0).toLocaleString()}원</td>
                 <td style="text-align: right; font-weight: 800;">${Number(r.mart_settlement).toLocaleString()}원</td>
               </tr>
             `).join('')}

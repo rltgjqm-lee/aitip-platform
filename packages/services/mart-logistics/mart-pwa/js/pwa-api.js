@@ -20,5 +20,6 @@ export const martPwaApi = {
   getMarts() { return req('/marts'); },
   getGroupBuys() { return req('/group-buys'); },
   joinGroupBuy(payload) { return req('/group-buys/join', { method: 'POST', body: JSON.stringify(payload) }); },
+  getOrders() { return req('/orders'); },
   createOrder(payload) { return req('/orders', { method: 'POST', body: JSON.stringify(payload) }); }
 };

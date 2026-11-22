@@ -1,20 +1,16 @@
 /**
- * AITIP Mart Portal - 3. 주문 단위 피킹 & DOC-11 결품/실중량 부분정정 모듈 (ESM)
+ * AITIP Mart Portal - 3. 주문 단위 피킹 & DOC-11 결품/수량 부분정정 모듈 (ESM)
  * 모던 커머스 어드민 UI: 오더별 피킹 카드(.mc-surface) + DOC-11 정정 원장
  */
 
 import { martApi } from '../api.js';
+import { formatShortOrderNo } from '../utils/order-format.js';
+import { openMartPrintModal } from './mart-receipt.js';
+import { escapeHtml } from '../utils/html.js';
 
 let selectedDate = '';
 let showAggregate = false;
-
-function escapeHtml(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+let detailOrderId = '';
 
 function renderTempPill(temp) {
   if (temp === 'REFRIGERATED') return '<span class="mc-pill mc-pill-blue">냉장</span>';
@@ -24,10 +20,15 @@ function renderTempPill(temp) {
 
 export async function renderMartPickingView(container) {
   if (!container) return;
-  const data = await martApi.getPicking(selectedDate);
+  const [data, profRes] = await Promise.all([
+    martApi.getPicking(selectedDate),
+    martApi.getProfile()
+  ]);
   const orders = data.orders || [];
+  const mart = profRes.mart || {};
   const summaryItems = data.items || [];
   const adjustments = data.adjustments || [];
+  const detailOrder = detailOrderId ? orders.find(o => o.order_id === detailOrderId) : null;
 
   container.innerHTML = `
     <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -83,13 +84,14 @@ export async function renderMartPickingView(container) {
         <div class="mc-surface">
           <div style="padding: 14px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <span class="mc-prod-code" style="color: #334155;">${escapeHtml(ord.order_id)}</span>
+              <span class="mc-prod-code" style="color: #334155;" title="${escapeHtml(ord.order_id)}">${escapeHtml(formatShortOrderNo(ord.order_id))}</span>
               <strong style="font-size: 14.5px; color: #0f172a;">${escapeHtml(ord.buyer_name)}</strong>
               <span class="mc-pill mc-pill-gray">배송일 ${escapeHtml(ord.delivery_date)}</span>
               <span class="mc-pill ${ord.status === 'PICKING' ? 'mc-pill-blue' : 'mc-pill-amber'}">${escapeHtml(ord.status)}</span>
             </div>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="display: flex; gap: 8px; align-items: center;">
               <span style="font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums;">확정 합계 ${Number(ord.total_amount || 0).toLocaleString()}원</span>
+              <button type="button" class="mc-row-edit-btn btn-pick-detail" data-order-id="${escapeHtml(ord.order_id)}">상세보기</button>
               <button type="button" class="mc-btn-primary btn-complete-picking" data-order-id="${escapeHtml(ord.order_id)}" style="height: 32px; padding: 0 12px; font-size: 12.5px;">피킹 완료 -> 포장 이동</button>
             </div>
           </div>
@@ -100,7 +102,7 @@ export async function renderMartPickingView(container) {
                   <th>품목명</th>
                   <th>보관</th>
                   <th style="text-align: right;">주문 수량</th>
-                  <th style="text-align: right;">실측 수량</th>
+                  <th style="text-align: right;">확정 수량</th>
                   <th>정정 사유 (DOC-11)</th>
                   <th style="text-align: right;">단가</th>
                   <th style="text-align: right;">실행</th>
@@ -117,12 +119,12 @@ export async function renderMartPickingView(container) {
                       <td>${renderTempPill(it.storage_temp)}</td>
                       <td class="mc-num">${it.qty} ${escapeHtml(it.uom || it.unit || '개')}</td>
                       <td class="mc-num">
-                        <input type="number" step="0.1" min="0" class="erp-input adj-qty-input" data-row-key="${escapeHtml(rowKey)}" value="${actual}" style="width: 72px; height: 30px; text-align: right; display: inline-block;" />
+                        <input type="number" step="1" min="0" class="erp-input adj-qty-input" data-row-key="${escapeHtml(rowKey)}" value="${actual}" style="width: 72px; height: 30px; text-align: right; display: inline-block;" />
                       </td>
                       <td>
                         <select class="mc-select adj-reason-select" data-row-key="${escapeHtml(rowKey)}" style="height: 30px; font-size: 12px;">
                           <option value="결품 부분취소" ${it.adjust_reason === '결품 부분취소' ? 'selected' : ''}>결품 부분취소</option>
-                          <option value="실중량 차이 정정" ${it.adjust_reason === '실중량 차이 정정' ? 'selected' : ''}>실중량 차이 정정</option>
+                          <option value="수량 변경 (재고 부족 등)" ${it.adjust_reason === '수량 변경 (재고 부족 등)' ? 'selected' : ''}>수량 변경 (재고 부족 등)</option>
                           <option value="선도 불량 제외" ${it.adjust_reason === '선도 불량 제외' ? 'selected' : ''}>선도 불량 제외</option>
                           <option value="대체 상품 출고" ${it.adjust_reason === '대체 상품 출고' ? 'selected' : ''}>대체 상품 출고</option>
                         </select>
@@ -142,14 +144,13 @@ export async function renderMartPickingView(container) {
 
       <div class="mc-surface">
         <div style="padding: 14px 18px; border-bottom: 1px solid #f1f5f9; font-size: 14px; font-weight: 800; color: #0f172a;">
-          DOC-11 결품 · 실중량 정정 원장 (${adjustments.length}건)
+          DOC-11 결품 · 수량 정정 원장 (${adjustments.length}건)
         </div>
         <div class="mc-table-wrap">
           <table class="mc-table">
             <thead>
               <tr>
-                <th>정정 UID</th>
-                <th>원주문 UID</th>
+                <th>주문번호</th>
                 <th>수요처</th>
                 <th>품목명</th>
                 <th style="text-align: right;">변경 전 -> 후</th>
@@ -159,11 +160,10 @@ export async function renderMartPickingView(container) {
             </thead>
             <tbody>
               ${adjustments.length === 0 ? `
-                <tr><td colspan="7" style="text-align: center; color: #64748b; padding: 28px;">정정 이력이 없습니다.</td></tr>
+                <tr><td colspan="6" style="text-align: center; color: #64748b; padding: 28px;">정정 이력이 없습니다.</td></tr>
               ` : adjustments.map(a => `
                 <tr>
-                  <td><span class="mc-prod-code">${escapeHtml(a.adj_id)}</span></td>
-                  <td><span class="mc-prod-code">${escapeHtml(a.order_id)}</span></td>
+                  <td><span class="mc-prod-code" title="${escapeHtml(a.order_id)}">${escapeHtml(formatShortOrderNo(a.order_id))}</span></td>
                   <td>${escapeHtml(a.buyer_name)}</td>
                   <td><strong>${escapeHtml(a.product_name)}</strong></td>
                   <td class="mc-num">${a.prev_qty} -> <b>${a.actual_qty}</b></td>
@@ -175,6 +175,62 @@ export async function renderMartPickingView(container) {
           </table>
         </div>
       </div>
+
+      ${detailOrder ? `
+        <div class="mc-drawer-backdrop" id="mc-pick-backdrop">
+          <div class="mc-drawer" style="width: 540px;">
+            <div class="mc-drawer-header">
+              <div>
+                <h2>피킹 주문 상세</h2>
+                <div class="mc-prod-code" style="margin-top: 2px;">${escapeHtml(detailOrder.order_id)}</div>
+              </div>
+              <button type="button" class="mc-drawer-close" id="btn-close-pick-drawer">×</button>
+            </div>
+            <div class="mc-drawer-body">
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">
+                  <span>수요처 · 배송 정보</span>
+                  <span class="mc-pill ${detailOrder.status === 'PICKING' ? 'mc-pill-blue' : 'mc-pill-amber'}">${escapeHtml(detailOrder.status)}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12.5px;">
+                  <div><span style="color: #64748b;">수요처:</span> <strong>${escapeHtml(detailOrder.buyer_name)}</strong></div>
+                  <div><span style="color: #64748b;">배송일:</span> ${escapeHtml(detailOrder.delivery_date || '-')}</div>
+                  <div><span style="color: #64748b;">채널:</span> ${escapeHtml(detailOrder.order_channel || '-')}</div>
+                  <div><span style="color: #64748b;">결제금액:</span> <strong style="color: #007749;">${Number(detailOrder.total_amount || 0).toLocaleString()}원</strong></div>
+                  <div style="grid-column: 1 / -1;"><span style="color: #64748b;">요청사항:</span> ${escapeHtml(detailOrder.memo || '없음')}</div>
+                </div>
+              </div>
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">주문 품목 · 실측 내역 (${(detailOrder.items || []).length}건)</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  ${(detailOrder.items || []).map(it => {
+                    const actual = it.actual_qty !== undefined ? Number(it.actual_qty) : Number(it.qty || 0);
+                    return `
+                      <div style="padding: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f8fafc; font-size: 12.5px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <strong>${escapeHtml(it.name || it.sku_name)}</strong>
+                          ${renderTempPill(it.storage_temp)}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-top: 4px; color: #475569;">
+                          <span>주문 ${it.qty}${escapeHtml(it.uom || '개')} / 실측 <b>${actual}${escapeHtml(it.uom || '개')}</b>${it.adjust_reason ? ` (${escapeHtml(it.adjust_reason)})` : ''}</span>
+                          <strong>${(Number(it.unit_price || 0) * actual).toLocaleString()}원</strong>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="mc-drawer-footer" style="justify-content: space-between;">
+              <button type="button" class="mc-btn-secondary" id="btn-print-pick-detail">전표 · 명세표 출력</button>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="mc-btn-secondary" id="btn-cancel-pick-drawer">닫기</button>
+                <button type="button" class="mc-btn-primary btn-complete-picking" data-order-id="${escapeHtml(detailOrder.order_id)}">피킹 완료 -> 포장 이동</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 
@@ -209,7 +265,27 @@ export async function renderMartPickingView(container) {
   container.querySelectorAll('.btn-complete-picking').forEach(btn => {
     btn.addEventListener('click', async () => {
       await martApi.updateOrderStatus(btn.dataset.orderId, 'PACKED');
+      if (detailOrderId === btn.dataset.orderId) detailOrderId = '';
       await renderMartPickingView(container);
     });
+  });
+
+  container.querySelectorAll('.btn-pick-detail').forEach(btn => {
+    btn.addEventListener('click', () => {
+      detailOrderId = btn.dataset.orderId || '';
+      renderMartPickingView(container);
+    });
+  });
+  const closePickDrawer = () => {
+    detailOrderId = '';
+    renderMartPickingView(container);
+  };
+  container.querySelector('#btn-close-pick-drawer')?.addEventListener('click', closePickDrawer);
+  container.querySelector('#btn-cancel-pick-drawer')?.addEventListener('click', closePickDrawer);
+  container.querySelector('#mc-pick-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'mc-pick-backdrop') closePickDrawer();
+  });
+  container.querySelector('#btn-print-pick-detail')?.addEventListener('click', () => {
+    if (detailOrder) openMartPrintModal(detailOrder, mart);
   });
 }

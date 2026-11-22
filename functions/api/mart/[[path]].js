@@ -53,7 +53,8 @@ export async function onRequest(context) {
   }
   if (subPath === 'orders') {
     if (method === 'GET') return jsonRes({ success: true, orders: martData.orders || [] });
-    return jsonRes({ success: true, order: { order_id: `mord_${Date.now()}`, ...body, status: 'REQUESTED' } }, 201);
+    const d = String(body.delivery_date || new Date().toISOString().slice(0, 10)).replace(/-/g, '').slice(2, 8);
+    return jsonRes({ success: true, order: { order_id: `ORD-11-650-01-47121-0001-${d}-${String(Date.now()).slice(-4)}`, ...body, status: 'REQUESTED' } }, 201);
   }
   if (subPath === 'orders/status' || subPath === 'orders/adjust') {
     return jsonRes({ success: true, ...body });

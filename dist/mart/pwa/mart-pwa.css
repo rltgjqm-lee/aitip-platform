@@ -18,9 +18,6 @@ body {
 .pwa-shell.large-text .prod-price { font-size: 18px; }
 
 .pwa-header {
-  position: sticky;
-  top: 0;
-  z-index: 20;
   background: #065f46;
   color: #ffffff;
   padding: 12px 14px;
@@ -39,7 +36,9 @@ body {
   padding: 5px 8px;
   font-size: 13px;
   font-weight: 700;
-  max-width: 210px;
+  max-width: 230px;
+  min-width: 0;
+  text-overflow: ellipsis;
 }
 .pwa-mart-select option { color: #0f172a; }
 
@@ -48,9 +47,11 @@ body {
   background: rgba(255,255,255,0.12);
   color: #ffffff;
   border-radius: 999px;
-  padding: 4px 9px;
+  padding: 5px 10px;
   font-size: 11px;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
 }
 .pill-btn.active {
@@ -144,6 +145,85 @@ body {
   background: #065f46;
   color: #ffffff;
   border-color: #065f46;
+}
+.sub-cat-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 10px;
+  padding-bottom: 2px;
+}
+.sub-chip {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.sub-chip.active {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #10b981;
+}
+.badge-fresh { background: #ecfdf5; color: #047857; }
+.pwa-nav-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+.pwa-nav-tab {
+  border: none;
+  background: transparent;
+  padding: 11px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 2.5px solid transparent;
+}
+.pwa-nav-tab.active {
+  color: #065f46;
+  border-bottom-color: #065f46;
+  background: #f0fdf4;
+}
+.prod-clickable { cursor: pointer; }
+.order-track-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #ffffff;
+}
+.order-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 10px 0;
+}
+.order-step {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 5px 2px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+.order-step.done {
+  background: #d1fae5;
+  color: #065f46;
+}
+.order-step.current {
+  background: #065f46;
+  color: #ffffff;
 }
 
 .prod-grid {

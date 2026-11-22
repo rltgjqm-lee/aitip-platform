@@ -11,6 +11,8 @@
 import { renderMartInfoView } from './modules/mart-info.js';
 import { renderMartCatalogView } from './modules/catalog.js';
 import { renderMartPrepView } from './modules/prep-catalog.js';
+import { renderMartChannelAssignView } from './modules/channel-assign.js';
+import { renderMartDailyPriceView } from './modules/daily-price.js';
 import { renderMartFlyerView } from './modules/flyer-promo.js';
 import { renderMartOrdersView } from './modules/orders.js';
 import { renderMartPickingView } from './modules/picking.js';
@@ -46,28 +48,53 @@ document.addEventListener('DOMContentLoaded', () => {
   connectMartPortalRealtime();
 });
 
+function showMartOrderToast(order = {}) {
+  const prev = document.getElementById('mart-realtime-toast');
+  if (prev) prev.remove();
+  const el = document.createElement('div');
+  el.id = 'mart-realtime-toast';
+  el.style.cssText = 'position:fixed;top:16px;right:16px;z-index:1200;background:#0f172a;color:#fff;padding:12px 16px;border-radius:10px;border-left:4px solid #22c55e;box-shadow:0 10px 25px rgba(15,23,42,0.25);font-size:13px;line-height:1.4;';
+  const buyer = String(order.buyer_name || '신규 고객').replace(/</g, '&lt;');
+  const amt = Number(order.total_amount || 0).toLocaleString();
+  el.innerHTML = `<div style="font-weight:800;color:#4ade80;">[신규 주문 접수]</div><div style="margin-top:2px;">${buyer} · ${amt}원</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 5000);
+}
+
 function connectMartPortalRealtime() {
+  let pingTimer = null;
   try {
     const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
     ws.addEventListener('open', () => {
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/orders' }));
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/catalog' }));
+      pingTimer = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'PING' }));
+        }
+      }, 30000);
     });
     ws.addEventListener('message', (ev) => {
       try {
         const msg = JSON.parse(ev.data);
         if (!msg?.topic) return;
+        if (msg.topic.endsWith('/orders') && msg.payload?.event === 'ORDER_CREATED') {
+          showMartOrderToast(msg.payload?.order);
+        }
         const hasOpenDrawer = Boolean(document.querySelector('.mc-drawer-backdrop'));
         if (hasOpenDrawer) return;
         if (msg.topic.endsWith('/orders') && ['orders', 'orders-online', 'orders-offline', 'picking', 'boxing', 'settle'].includes(currentView)) {
           renderCurrentView();
-        } else if (msg.topic.endsWith('/catalog') && ['catalog', 'flyer', 'pwa-control'].includes(currentView)) {
+        } else if (msg.topic.endsWith('/catalog') && ['catalog', 'channel-assign', 'daily-price', 'flyer', 'pwa-control'].includes(currentView)) {
           renderCurrentView();
         }
       } catch (_) {}
     });
-    ws.addEventListener('close', () => setTimeout(connectMartPortalRealtime, 5000));
+    ws.addEventListener('close', () => {
+      if (pingTimer) clearInterval(pingTimer);
+      setTimeout(connectMartPortalRealtime, 5000);
+    });
   } catch (_) {}
 }
 
@@ -81,6 +108,10 @@ async function renderCurrentView() {
     await renderMartCatalogView(container);
   } else if (currentView === 'prep') {
     await renderMartPrepView(container);
+  } else if (currentView === 'channel-assign') {
+    await renderMartChannelAssignView(container);
+  } else if (currentView === 'daily-price') {
+    await renderMartDailyPriceView(container);
   } else if (currentView === 'flyer') {
     await renderMartFlyerView(container);
   } else if (currentView === 'orders' || currentView === 'orders-online') {

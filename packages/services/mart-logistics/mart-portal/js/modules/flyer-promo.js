@@ -4,14 +4,20 @@
  */
 
 import { martApi } from '../api.js';
-import { downloadExcelCsv, readCsvOrTextFile } from '../utils/excel-csv.js';
+import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
-import { getL1List, inferCategoryFromProduct } from '../utils/mart-categories.js';
+import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../utils/mart-categories.js';
+import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
+import { esc } from '../utils/html.js';
 
 let viewTab = 'RULES'; // 'RULES' | 'PROMO_PRODUCTS' | 'FLYER_IMPORT'
 let selectedPromoId = '';
 let promoProdQuery = '';
 let promoProdL1Filter = 'ALL';
+let promoProdL2Filter = 'ALL';
+let promoProdL3Filter = 'ALL';
+let promoProdPage = 1;
+let promoProdPageSize = 10;
 let flyerPreviewUrl = '';
 let flyerImageFile = null;
 let flyerDraftText = '';
@@ -28,14 +34,6 @@ const CALC_MODE_LABEL = {
   MIX_MATCH: 'N개 골라담기 묶음가',
   THRESHOLD: '기준금액 · 수량 이상 할인'
 };
-
-function esc(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 const SAMPLE_FLYER = `행사기간 : 2026년 11월 17일(화) ~ 2026년 11월 30일(월)
 거봉 (2kg/박스) 17,900원 ※ 1인 2박스 한정
@@ -160,14 +158,22 @@ export async function renderMartFlyerView(container, opts = {}) {
   const activePromo = promotions.find(pr => pr.id === selectedPromoId) || promotions[0] || null;
   const linkedProducts = activePromo ? allProducts.filter(p => p.applied_promo_id === activePromo.id) : [];
   const pq = promoProdQuery.trim().toLowerCase();
+  const promoL2List = promoProdL1Filter !== 'ALL' ? getL2List(promoProdL1Filter) : [];
+  const promoL3List = (promoProdL1Filter !== 'ALL' && promoProdL2Filter !== 'ALL') ? getL3List(promoProdL1Filter, promoProdL2Filter) : [];
   const candidateProducts = activePromo
     ? allProducts.filter(p => {
         if (p.applied_promo_id === activePromo.id) return false;
-        if (promoProdL1Filter !== 'ALL' && inferCategoryFromProduct(p).l1 !== promoProdL1Filter) return false;
+        const cat = inferCategoryFromProduct(p);
+        if (promoProdL1Filter !== 'ALL' && cat.l1 !== promoProdL1Filter) return false;
+        if (promoProdL2Filter !== 'ALL' && cat.l2 !== promoProdL2Filter) return false;
+        if (promoProdL3Filter !== 'ALL' && cat.l3 !== promoProdL3Filter) return false;
         if (pq && !`${p.name} ${p.barcode} ${p.spec}`.toLowerCase().includes(pq)) return false;
         return true;
       })
     : [];
+  const promoProdPg = paginateArray(candidateProducts, promoProdPage, promoProdPageSize);
+  promoProdPage = promoProdPg.page;
+  const pagedCandidateProducts = promoProdPg.paged;
   const filtered = promotions.filter(pr => {
     if (scopeFilter !== 'ALL' && getChannelScope(pr) !== scopeFilter) return false;
     return true;
@@ -187,13 +193,13 @@ export async function renderMartFlyerView(container, opts = {}) {
           </div>
           <div style="display: inline-flex; gap: 6px; padding: 3px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 9px;">
             <button type="button" class="btn-promo-tab" data-tab="RULES" style="height: 30px; padding: 0 12px; border: none; border-radius: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: ${viewTab === 'RULES' ? '#007749' : 'transparent'}; color: ${viewTab === 'RULES' ? '#ffffff' : '#475569'};">
-              할인 · 행사 룰 (${promotions.length})
+              1. 행사 룰 관리 (${promotions.length})
             </button>
             <button type="button" class="btn-promo-tab" data-tab="PROMO_PRODUCTS" style="height: 30px; padding: 0 12px; border: none; border-radius: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: ${viewTab === 'PROMO_PRODUCTS' ? '#007749' : 'transparent'}; color: ${viewTab === 'PROMO_PRODUCTS' ? '#ffffff' : '#475569'};">
-              행사별 상품 연결 (${linkedProducts.length})
+              2. 행사별 상품 연결 (${linkedProducts.length})
             </button>
             <button type="button" class="btn-promo-tab" data-tab="FLYER_IMPORT" style="height: 30px; padding: 0 12px; border: none; border-radius: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; background: ${viewTab === 'FLYER_IMPORT' ? '#007749' : 'transparent'}; color: ${viewTab === 'FLYER_IMPORT' ? '#ffffff' : '#475569'};">
-              전단 이미지 일괄 파싱
+              3. 전단 CSV · 배너 등록
             </button>
           </div>
         </div>
@@ -216,8 +222,13 @@ export async function renderMartFlyerView(container, opts = {}) {
                 <option value="ONLINE_ONLY" ${scopeFilter === 'ONLINE_ONLY' ? 'selected' : ''}>온라인 전용</option>
                 <option value="POS_ONLY" ${scopeFilter === 'POS_ONLY' ? 'selected' : ''}>오프라인 POS 전용</option>
               </select>
+              <button type="button" class="mc-btn-secondary" id="btn-dl-promo-rules-csv" style="height: 32px; font-size: 12px;">할인 규칙 CSV 다운로드</button>
+              <label class="mc-btn-secondary" style="height: 32px; font-size: 12px; display: inline-flex; align-items: center; cursor: pointer;">
+                할인 규칙 일괄 수정(CSV)
+                <input id="file-promo-rules-csv" type="file" accept=".csv,.tsv,.txt" style="display: none;" />
+              </label>
             </div>
-            <div style="font-size: 12px; color: #64748b;">조회 ${filtered.length}건 · [복제]로 기존 룰을 재사용할 수 있습니다</div>
+            <div style="font-size: 12px; color: #64748b;">조회 ${filtered.length}건 · [복제] 또는 CSV로 여러 행사 기간·할인율을 일괄 수정할 수 있습니다</div>
           </div>
 
           <div class="mc-table-wrap">
@@ -339,22 +350,30 @@ export async function renderMartFlyerView(container, opts = {}) {
 
             <div class="mc-surface">
               <div class="mc-filter-bar" style="gap: 8px; flex-wrap: wrap;">
-                <select id="promo-prod-l1" class="mc-select" style="min-width: 120px;">
+                <select id="promo-prod-l1" class="mc-select" style="min-width: 110px;">
                   <option value="ALL" ${promoProdL1Filter === 'ALL' ? 'selected' : ''}>전체 대분류</option>
                   ${l1List.map(c => `<option value="${c.code}" ${promoProdL1Filter === c.code ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
                 </select>
-                <input id="promo-prod-q" type="text" class="mc-search" value="${esc(promoProdQuery)}" placeholder="상품명 · 바코드 검색" style="min-width: 150px; flex: 1;" />
-                <button type="button" class="mc-btn-primary" id="btn-link-selected-prods" style="height: 34px; font-size: 12.5px;">선택 상품 연결</button>
+                <select id="promo-prod-l2" class="mc-select" style="min-width: 125px;" ${promoProdL1Filter === 'ALL' ? 'disabled' : ''}>
+                  <option value="ALL" ${promoProdL2Filter === 'ALL' ? 'selected' : ''}>전체 중분류</option>
+                  ${promoL2List.map(c => `<option value="${c.code}" ${promoProdL2Filter === c.code ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+                </select>
+                <select id="promo-prod-l3" class="mc-select" style="min-width: 130px;" ${promoProdL2Filter === 'ALL' ? 'disabled' : ''}>
+                  <option value="ALL" ${promoProdL3Filter === 'ALL' ? 'selected' : ''}>전체 소분류</option>
+                  ${promoL3List.map(c => `<option value="${c.code}" ${promoProdL3Filter === c.code ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+                </select>
+                <input id="promo-prod-q" type="text" class="mc-search" value="${esc(promoProdQuery)}" placeholder="상품명 · 바코드 검색" style="min-width: 140px; flex: 1;" />
+                <button type="button" class="mc-btn-primary" id="btn-link-selected-prods" style="height: 34px; font-size: 12.5px;">선택 상품 연결 (${candidateProducts.length})</button>
               </div>
-              <div class="mc-table-wrap" style="max-height: 460px; overflow-y: auto;">
+              <div class="mc-table-wrap">
                 <table class="mc-table">
                   <thead>
                     <tr><th style="width: 34px; text-align: center;"><input type="checkbox" id="chk-link-all-prods" title="전체 선택" /></th><th>상품명 · 규격</th><th style="text-align: right;">정상가</th></tr>
                   </thead>
                   <tbody>
-                    ${candidateProducts.length === 0 ? `
+                    ${pagedCandidateProducts.length === 0 ? `
                       <tr><td colspan="3" style="text-align: center; padding: 32px 12px; color: #64748b;">추가 연결 가능한 상품이 없습니다.</td></tr>
-                    ` : candidateProducts.map(p => `
+                    ` : pagedCandidateProducts.map(p => `
                       <tr>
                         <td style="text-align: center;"><input type="checkbox" class="chk-link-prod" data-id="${esc(p.id)}" /></td>
                         <td>
@@ -367,6 +386,7 @@ export async function renderMartFlyerView(container, opts = {}) {
                   </tbody>
                 </table>
               </div>
+              ${renderMartPaginationHtml(promoProdPg, 'fp')}
             </div>
           </div>
         </div>
@@ -561,6 +581,10 @@ export async function renderMartFlyerView(container, opts = {}) {
                     <input id="pm-limit" type="number" min="0" value="${Number(d.limit_per_person ?? 0)}" class="erp-input" />
                   </div>
                   <div>
+                    <label class="erp-field-label">선착순 전체 한정수량 (0=무제한)</label>
+                    <input id="pm-total-limit" type="number" min="0" value="${Number(d.total_limit_qty ?? 0)}" class="erp-input" />
+                  </div>
+                  <div>
                     <label class="erp-field-label">영수증당 최대 구간 (0=무제한)</label>
                     <input id="pm-receipt-sec" type="number" min="0" value="${Number(d.max_receipt_sections ?? 0)}" class="erp-input" />
                   </div>
@@ -698,7 +722,27 @@ export async function renderMartFlyerView(container, opts = {}) {
   }
   container.querySelector('#promo-prod-l1')?.addEventListener('change', (e) => {
     promoProdL1Filter = e.target.value;
+    promoProdL2Filter = 'ALL';
+    promoProdL3Filter = 'ALL';
+    promoProdPage = 1;
     renderMartFlyerView(container);
+  });
+  container.querySelector('#promo-prod-l2')?.addEventListener('change', (e) => {
+    promoProdL2Filter = e.target.value;
+    promoProdL3Filter = 'ALL';
+    promoProdPage = 1;
+    renderMartFlyerView(container);
+  });
+  container.querySelector('#promo-prod-l3')?.addEventListener('change', (e) => {
+    promoProdL3Filter = e.target.value;
+    promoProdPage = 1;
+    renderMartFlyerView(container);
+  });
+  bindMartPaginationEvents(container, {
+    prefix: 'fp',
+    totalPages: promoProdPg.totalPages,
+    onPageChange: (nextP) => { promoProdPage = nextP; renderMartFlyerView(container); },
+    onSizeChange: (nextSz) => { promoProdPageSize = nextSz; promoProdPage = 1; renderMartFlyerView(container); }
   });
   container.querySelector('#chk-link-all-prods')?.addEventListener('change', (e) => {
     const checked = e.target.checked;
@@ -898,6 +942,7 @@ export async function renderMartFlyerView(container, opts = {}) {
       days_of_week: daysOfWeek,
       card_targets: cardTargets,
       limit_per_person: Math.max(0, Number(container.querySelector('#pm-limit')?.value ?? 0)),
+      total_limit_qty: Math.max(0, Number(container.querySelector('#pm-total-limit')?.value ?? 0)),
       max_receipt_sections: Math.max(0, Number(container.querySelector('#pm-receipt-sec')?.value ?? 0)),
       start_date: container.querySelector('#pm-start')?.value || today,
       end_date: container.querySelector('#pm-end')?.value || today
@@ -910,6 +955,51 @@ export async function renderMartFlyerView(container, opts = {}) {
     drawerOpen = false;
     editingPromoId = '';
     cloneDraft = null;
+    await renderMartFlyerView(container);
+  });
+
+  container.querySelector('#btn-dl-promo-rules-csv')?.addEventListener('click', () => {
+    downloadExcelCsv(
+      `mart_promo_rules_${new Date().toISOString().slice(0, 10)}.csv`,
+      ['규칙ID', '행사명', '할인율(%)', '할인금액(원)', '묶음가(원)', '최대할인(원)', '한정수량(0=무제한)', '시작일', '종료일', '상태(ACTIVE/ENDED)'],
+      filtered.map(pr => [
+        pr.id,
+        pr.name || '',
+        pr.discount_pct ?? 0,
+        pr.discount_amount ?? 0,
+        pr.bundle_price ?? 0,
+        pr.max_discount_amount ?? 0,
+        pr.total_limit_qty ?? 0,
+        pr.start_date || '',
+        pr.end_date || '',
+        pr.status || 'ACTIVE'
+      ])
+    );
+  });
+  container.querySelector('#file-promo-rules-csv')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await readCsvOrTextFile(file);
+    const rows = parseDelimitedRows(text).filter(c => c[0] && c[0] !== '규칙ID');
+    let updatedCount = 0;
+    for (const c of rows) {
+      const id = String(c[0] || '').trim();
+      if (!promotions.some(p => p.id === id)) continue;
+      await martApi.updatePromotion({
+        id,
+        name: c[1] ? String(c[1]).trim() : undefined,
+        discount_pct: c[2] !== undefined && c[2] !== '' ? Number(c[2]) : undefined,
+        discount_amount: c[3] !== undefined && c[3] !== '' ? Number(c[3]) : undefined,
+        bundle_price: c[4] !== undefined && c[4] !== '' ? Number(c[4]) : undefined,
+        max_discount_amount: c[5] !== undefined && c[5] !== '' ? Number(c[5]) : undefined,
+        total_limit_qty: c[6] !== undefined && c[6] !== '' ? Number(c[6]) : undefined,
+        start_date: c[7] ? String(c[7]).trim() : undefined,
+        end_date: c[8] ? String(c[8]).trim() : undefined,
+        status: c[9] ? String(c[9]).trim().toUpperCase() : undefined
+      });
+      updatedCount += 1;
+    }
+    alert(`할인 규칙 ${updatedCount}건이 일괄 수정되었습니다.`);
     await renderMartFlyerView(container);
   });
 }

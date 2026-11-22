@@ -14,6 +14,12 @@ import {
   createDefaultPromoTypes,
   createDefaultData
 } from './mart-seed.mjs';
+import {
+  nextMonotonicId,
+  applyDailyPriceBatchToData,
+  getUploadHistoryFromData,
+  rollbackUploadBatchInData
+} from './mart-price-batch.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -174,6 +180,9 @@ class MartService {
         promo_limit_per_person: u.promo_limit_per_person !== undefined ? Number(u.promo_limit_per_person) : (cur.promo_limit_per_person || 0),
         promo_card_targets: Array.isArray(u.promo_card_targets) ? u.promo_card_targets : (cur.promo_card_targets || []),
         online_publish_status: ['PUBLISHED_FEED', 'SEARCH_ONLY', 'SUSPENDED'].includes(u.online_publish_status) ? u.online_publish_status : (cur.online_publish_status || 'PUBLISHED_FEED'),
+        sales_target: ['BOTH', 'B2C_ONLY', 'B2B_ONLY'].includes(u.sales_target) ? u.sales_target : (cur.sales_target || 'BOTH'),
+        b2b_price: u.b2b_price !== undefined ? Math.max(0, Number(u.b2b_price)) : Number(cur.b2b_price ?? 0),
+        b2b_min_qty: u.b2b_min_qty !== undefined ? Math.max(1, Number(u.b2b_min_qty)) : Number(cur.b2b_min_qty ?? 1),
         fulfillment_source: nextSrc
       };
       updatedCount += 1;
@@ -192,6 +201,9 @@ class MartService {
     this.data.products[idx] = {
       ...cur,
       ...payload,
+      sales_target: ['BOTH', 'B2C_ONLY', 'B2B_ONLY'].includes(payload.sales_target) ? payload.sales_target : (cur.sales_target || 'BOTH'),
+      b2b_price: payload.b2b_price !== undefined ? Math.max(0, Number(payload.b2b_price)) : Number(cur.b2b_price ?? 0),
+      b2b_min_qty: payload.b2b_min_qty !== undefined ? Math.max(1, Number(payload.b2b_min_qty)) : Number(cur.b2b_min_qty ?? 1),
       cost_price: payload.cost_price !== undefined ? Math.max(0, Number(payload.cost_price)) : Number(cur.cost_price || 0),
       regular_price: reg,
       sale_price: sale,
@@ -205,7 +217,7 @@ class MartService {
 
   addProduct(payload) {
     const item = {
-      id: `mrt_sku_${Date.now()}`,
+      id: nextMonotonicId('mrt_sku'),
       barcode: payload.barcode || `200${String(Date.now()).slice(-10)}`,
       name: payload.name || '신규 상품',
       category_type: payload.category_type || 'B2B_INDUSTRIAL',
@@ -232,6 +244,9 @@ class MartService {
       upload_batch_type: payload.upload_batch_type || 'BASE_PRODUCT',
       payment_scope: payload.payment_scope === 'POS_ONLY' ? 'POS_ONLY' : 'ONLINE_APPLICABLE',
       channel_scope: ['ALL_CHANNELS', 'ONLINE_ONLY', 'POS_ONLY'].includes(payload.channel_scope) ? payload.channel_scope : (payload.payment_scope === 'POS_ONLY' ? 'POS_ONLY' : 'ALL_CHANNELS'),
+      sales_target: ['BOTH', 'B2C_ONLY', 'B2B_ONLY'].includes(payload.sales_target) ? payload.sales_target : (payload.category_type === 'PREP_PROCESSED' ? 'B2B_ONLY' : 'BOTH'),
+      b2b_price: payload.b2b_price !== undefined ? Math.max(0, Number(payload.b2b_price)) : 0,
+      b2b_min_qty: Math.max(1, Number(payload.b2b_min_qty ?? 1)),
       applied_promo_id: payload.applied_promo_id || '',
       applied_promo_name: payload.applied_promo_name || '',
       applied_promo_type: payload.applied_promo_type || '',
@@ -342,7 +357,7 @@ class MartService {
     const pTypes = this._ensurePromoTypes();
     const matchedType = pTypes.find(t => t.code === payload.promo_type);
     const pr = {
-      id: `mpr_${Date.now()}`,
+      id: nextMonotonicId('mpr'),
       name: payload.name || '신규 마트 행사',
       promo_type: payload.promo_type || 'BOGO_1_PLUS_1',
       calc_mode: payload.calc_mode || matchedType?.calc_mode || 'UNIT_DISCOUNT',
@@ -358,6 +373,8 @@ class MartService {
       days_of_week: Array.isArray(payload.days_of_week) ? payload.days_of_week : [],
       card_targets: Array.isArray(payload.card_targets) ? payload.card_targets : [],
       limit_per_person: Math.max(0, Number(payload.limit_per_person ?? 0)),
+      total_limit_qty: Math.max(0, Number(payload.total_limit_qty ?? 0)),
+      used_qty: 0,
       max_receipt_sections: Math.max(0, Number(payload.max_receipt_sections ?? 0)),
       start_date: payload.start_date || '2026-11-17',
       end_date: payload.end_date || '2026-11-30',
@@ -396,9 +413,12 @@ class MartService {
       days_of_week: Array.isArray(payload.days_of_week) ? payload.days_of_week : (cur.days_of_week || []),
       card_targets: Array.isArray(payload.card_targets) ? payload.card_targets : (cur.card_targets || []),
       limit_per_person: payload.limit_per_person !== undefined ? Math.max(0, Number(payload.limit_per_person)) : (cur.limit_per_person || 0),
+      total_limit_qty: payload.total_limit_qty !== undefined ? Math.max(0, Number(payload.total_limit_qty)) : (cur.total_limit_qty || 0),
+      used_qty: Number(cur.used_qty || 0),
       max_receipt_sections: payload.max_receipt_sections !== undefined ? Math.max(0, Number(payload.max_receipt_sections)) : (cur.max_receipt_sections || 0),
       start_date: payload.start_date || cur.start_date,
-      end_date: payload.end_date || cur.end_date
+      end_date: payload.end_date || cur.end_date,
+      status: ['ACTIVE', 'ENDED', 'PAUSED'].includes(payload.status) ? payload.status : (cur.status || 'ACTIVE')
     };
     this.data.promotions[idx] = updated;
     // 연결된 상품의 행사 메타도 함께 동기화
@@ -501,6 +521,30 @@ class MartService {
       created_at: new Date().toISOString()
     };
     this.data.orders.unshift(order);
+
+    // 선착순 전체 한정 수량(total_limit_qty) 차감 및 소진 시 자동 종료
+    const prodMap = new Map((this.data.products || []).map(p => [p.id, p]));
+    const endedPromoIds = new Set();
+    for (const it of items) {
+      const prod = prodMap.get(it.product_id);
+      const promoId = prod?.applied_promo_id;
+      if (!promoId) continue;
+      const promo = (this.data.promotions || []).find(pr => pr.id === promoId);
+      if (!promo || Number(promo.total_limit_qty || 0) <= 0) continue;
+      promo.used_qty = Number(promo.used_qty || 0) + Number(it.qty || 1);
+      if (promo.used_qty >= Number(promo.total_limit_qty)) {
+        promo.status = 'ENDED';
+        endedPromoIds.add(promo.id);
+      }
+    }
+    if (endedPromoIds.size > 0) {
+      this.data.products = (this.data.products || []).map(p => (
+        endedPromoIds.has(p.applied_promo_id)
+          ? { ...p, applied_promo_id: '', applied_promo_name: '', applied_promo_type: '', sale_price: p.regular_price, discount_pct: 0 }
+          : p
+      ));
+    }
+
     this.saveData();
     return order;
   }
@@ -566,7 +610,7 @@ class MartService {
   }
 
   // Phase 2: DOC-11 결품/실중량 부분정정 (원주문 UID 불변 + 정정 원장 adj_* 생성)
-  adjustOrderItem({ order_id, product_id, actual_qty, reason = '결품·실중량 정정' }) {
+  adjustOrderItem({ order_id, product_id, actual_qty, reason = '결품·수량 정정' }) {
     const ord = (this.data.orders || []).find(o => o.order_id === order_id);
     if (!ord) throw new Error('정정할 주문을 찾을 수 없습니다.');
     const item = (ord.items || []).find(it => (it.product_id || it.id || it.name) === product_id);
@@ -589,7 +633,7 @@ class MartService {
 
     if (!Array.isArray(this.data.adjustments)) this.data.adjustments = [];
     const adj = {
-      adj_id: `adj_${Date.now()}`,
+      adj_id: nextMonotonicId('adj'),
       order_id: ord.order_id,
       buyer_name: ord.buyer_name,
       product_id,
@@ -652,15 +696,22 @@ class MartService {
   }
 
   // Phase 2: 3자 정산 & 과면세·보조금 대사 집계
-  getSettlementSummary() {
+  getSettlementSummary(policy = {}) {
     const prodMap = new Map((this.data.products || []).map(p => [p.id, p]));
-    const agencyFeePct = Number(this.data.mart?.agency_fee_pct ?? 5.0);
-    const platformFeePct = 1.5;
+    const pgFeePct = Number(policy.mart_pg_fee_pct ?? 2.0);
+    const saasFeePct = Number(policy.mart_saas_fee_pct ?? 3.0);
+    const alimtalkUnitFee = Number(policy.alimtalk_base_cost ?? 13) + Number(policy.alimtalk_platform_fee ?? 2);
 
     let grossSales = 0;
     let exemptSales = 0;
     let taxableSales = 0;
     let martCostTotal = 0;
+    let pgSalesTotal = 0;
+    let directSalesTotal = 0;
+    let pgFeeTotal = 0;
+    let saasFeeTotal = 0;
+    let pgDeductionTotal = 0;
+    let directBillingTotal = 0;
 
     const rows = (this.data.orders || []).map(ord => {
       let ordExempt = 0;
@@ -676,14 +727,26 @@ class MartService {
         else ordExempt += amt;
       }
       const ordGross = ordExempt + ordTaxable;
-      const agencyFee = Math.round(ordGross * (agencyFeePct / 100));
-      const platformFee = Math.round(ordGross * (platformFeePct / 100));
-      const martNet = ordGross - agencyFee - platformFee;
+      const payMethod = ord.payment_method || 'FACILITY_POSTPAY';
+      const isPg = payMethod === 'CARD' || payMethod === 'MUNICIPAL_VOUCHER';
+      const pgFee = isPg ? Math.round(ordGross * (pgFeePct / 100)) : 0;
+      const saasFee = Math.round(ordGross * (saasFeePct / 100));
+      const rowDeduction = pgFee + saasFee;
+      const martNet = isPg ? (ordGross - rowDeduction) : ordGross;
 
       grossSales += ordGross;
       exemptSales += ordExempt;
       taxableSales += ordTaxable;
       martCostTotal += ordCost;
+      pgFeeTotal += pgFee;
+      saasFeeTotal += saasFee;
+      if (isPg) {
+        pgSalesTotal += ordGross;
+        pgDeductionTotal += rowDeduction;
+      } else {
+        directSalesTotal += ordGross;
+        directBillingTotal += saasFee;
+      }
 
       return {
         ledger_id: `mstl_${ord.order_id}`,
@@ -691,34 +754,50 @@ class MartService {
         facility_id: ord.facility_id,
         buyer_name: ord.buyer_name,
         customer_type: ord.customer_type,
+        payment_method: payMethod,
+        settlement_route: isPg ? 'PG' : 'DIRECT',
         delivery_date: ord.delivery_date,
         status: ord.status,
         gross_amount: ordGross,
         exempt_amount: ordExempt,
         taxable_amount: ordTaxable,
-        agency_fee: agencyFee,
-        platform_fee: platformFee,
+        agency_fee: 0,
+        pg_fee: pgFee,
+        saas_fee: saasFee,
+        total_fee: rowDeduction,
         mart_settlement: martNet
       };
     });
 
-    const agencyFeeTotal = Math.round(grossSales * (agencyFeePct / 100));
-    const platformFeeTotal = Math.round(grossSales * (platformFeePct / 100));
     const smsCount = (this.data.orders || []).length * 2;
-    const smsFeeTotal = smsCount * 15;
-    const taxInvoiceSupply = agencyFeeTotal + platformFeeTotal + smsFeeTotal;
+    const smsFeeTotal = smsCount * alimtalkUnitFee;
+    const totalDeduction = pgFeeTotal + saasFeeTotal;
+    const taxInvoiceSupply = pgFeeTotal + saasFeeTotal + smsFeeTotal;
     const taxInvoiceVat = Math.round(taxInvoiceSupply * 0.1);
     return {
       mart: this.data.mart,
-      rates: { agency_fee_pct: agencyFeePct, platform_fee_pct: platformFeePct },
+      rates: {
+        agency_fee_pct: 0,
+        pg_fee_pct: pgFeePct,
+        saas_fee_pct: saasFeePct,
+        alimtalk_unit_fee: alimtalkUnitFee,
+        saas_monthly_fee: 0
+      },
       totals: {
         gross_sales: grossSales,
         exempt_sales: exemptSales,
         taxable_sales: taxableSales,
         mart_cost_total: martCostTotal,
-        agency_fee_total: agencyFeeTotal,
-        platform_fee_total: platformFeeTotal,
-        mart_settlement_total: grossSales - agencyFeeTotal - platformFeeTotal,
+        pg_sales_total: pgSalesTotal,
+        direct_sales_total: directSalesTotal,
+        agency_fee_total: 0,
+        pg_fee_total: pgFeeTotal,
+        saas_fee_total: saasFeeTotal,
+        total_deduction: totalDeduction,
+        pg_deduction_total: pgDeductionTotal,
+        direct_billing_total: directBillingTotal,
+        mart_pg_payout_total: pgSalesTotal - pgDeductionTotal,
+        mart_settlement_total: grossSales - totalDeduction,
         adjustment_count: (this.data.adjustments || []).length,
         alimtalk_sms_count: smsCount,
         alimtalk_sms_fee: smsFeeTotal,
@@ -879,7 +958,7 @@ class MartService {
     if (!title) throw new Error('공동구매 캠페인명을 입력하세요.');
     if (!Array.isArray(this.data.group_buys)) this.data.group_buys = createDefaultGroupBuys();
     const gb = {
-      campaign_id: `mgb_${Date.now()}`,
+      campaign_id: nextMonotonicId('mgb'),
       campaign_type: payload.campaign_type === 'B2B_INSTITUTIONAL' ? 'B2B_INSTITUTIONAL' : 'B2C_RESIDENT',
       title,
       mart_id: payload.mart_id || this.data.mart?.mart_id || 'MRT-11-650-01-47121-0001',
@@ -919,7 +998,7 @@ class MartService {
     const reg = Math.max(0, Number(payload.regular_price || 0));
     const sale = Math.max(0, Number(payload.sale_price ?? reg));
     const item = {
-      id: `mrt_cosell_${Date.now()}`,
+      id: nextMonotonicId('mrt_cosell'),
       barcode: String(payload.barcode || `8809${String(Date.now()).slice(-9)}`),
       name,
       category_type: payload.category_type || 'FRESH',
@@ -1005,6 +1084,175 @@ class MartService {
     this.data.media_objects.unshift(record);
     this.saveData();
     return { media_id: medId, image_url: record.cdn_url, r2_object_key: record.r2_object_key, file_size_bytes: buf.length };
+  }
+
+  async searchHaccpProducts({ q = '', barcode = '' } = {}) {
+    const apiKey = process.env.HACCP_API_KEY || '';
+    if (!apiKey) throw new Error('.env에 HACCP_API_KEY가 설정되어 있지 않습니다.');
+    const params = [`serviceKey=${apiKey}`, 'returnType=json', 'pageNo=1', 'numOfRows=10'];
+    if (barcode && String(barcode).trim()) params.push(`barcode=${encodeURIComponent(String(barcode).trim())}`);
+    else if (q && String(q).trim()) params.push(`prdlstNm=${encodeURIComponent(String(q).trim())}`);
+    else return [];
+
+    const url = `https://apis.data.go.kr/B553748/CertImgListServiceV3/getCertImgListServiceV3?${params.join('&')}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HACCP API 오류 (${res.status})`);
+    const json = await res.json();
+    const rawItems = json?.body?.items || [];
+    return rawItems.map(entry => {
+      const it = entry?.item || entry || {};
+      const rawBarcode = String(it.barcode || '').trim();
+      return {
+        prdlstReportNo: it.prdlstReportNo || '',
+        name: it.prdlstNm || '',
+        spec: it.capacity || '-',
+        manufacture: it.manufacture || '',
+        prdkind: it.prdkind || '',
+        barcode: rawBarcode && rawBarcode !== '알수없음' ? rawBarcode : '',
+        image_url: it.imgurl1 || it.imgurl2 || '',
+        allergy: it.allergy && it.allergy !== '알수없음' ? it.allergy : ''
+      };
+    }).filter(x => x.name);
+  }
+
+  async importExternalImageToMedia({ image_url = '', original_name = 'haccp.jpg' } = {}) {
+    const src = String(image_url || '').trim();
+    if (!src || !/^https?:\/\//i.test(src)) throw new Error('유효한 외부 이미지 URL이 아닙니다.');
+    const res = await fetch(src);
+    if (!res.ok) throw new Error(`외부 이미지 다운로드 실패 (${res.status})`);
+    const ctype = String(res.headers.get('content-type') || 'image/jpeg').toLowerCase();
+    const ext = ctype.includes('png') ? 'png' : ctype.includes('webp') ? 'webp' : 'jpg';
+    const buf = Buffer.from(await res.arrayBuffer());
+    const medId = generateMediaTypeId();
+    const martId = this.data.mart?.mart_id || 'MRT-11-650-01-47121-0001';
+    fs.mkdirSync(MEDIA_DIR, { recursive: true });
+    fs.writeFileSync(path.join(MEDIA_DIR, `${medId}.${ext}`), buf);
+
+    const record = {
+      id: medId,
+      owner_type: 'MART_PRODUCT',
+      owner_id: martId,
+      r2_object_key: `mart/${martId}/${medId}.${ext}`,
+      original_file_name: String(original_name || `haccp.${ext}`),
+      content_type: ctype,
+      file_size_bytes: buf.length,
+      cdn_url: `/mart/media/${medId}.${ext}`,
+      created_at: new Date().toISOString()
+    };
+    if (!Array.isArray(this.data.media_objects)) this.data.media_objects = [];
+    this.data.media_objects.unshift(record);
+    this.saveData();
+    return { media_id: medId, image_url: record.cdn_url, r2_object_key: record.r2_object_key, file_size_bytes: buf.length };
+  }
+
+  _ensureFacilities() {
+    if (!Array.isArray(this.data.facilities) || this.data.facilities.length === 0) {
+      this.data.facilities = [
+        {
+          request_id: 'fapp_seed_0001',
+          facility_id: 'FAC-11-650-01-87391-0001',
+          facility_name: '서초 양재1동 경로당',
+          facility_type: 'SENIOR_CENTER',
+          biz_reg_no: '214-80-11901',
+          contact_name: '박영순 회장',
+          phone: '02-571-8801',
+          address: '서울특별시 서초구 양재1동 바우뫼로 45',
+          credit_limit: 500000,
+          credit_balance: 450000,
+          status: 'APPROVED',
+          created_at: '2026-11-10T09:00:00.000Z'
+        }
+      ];
+      this.saveData();
+    }
+    return this.data.facilities;
+  }
+
+  getFacilities() {
+    return this._ensureFacilities();
+  }
+
+  registerFacility(payload = {}) {
+    const list = this._ensureFacilities();
+    const name = String(payload.facility_name || '').trim();
+    const phone = String(payload.phone || '').trim();
+    const address = String(payload.address || '').trim();
+    if (!name || !phone || !address) {
+      throw new Error('기관명, 연락처, 배송 주소를 모두 입력해 주세요.');
+    }
+    const item = {
+      request_id: nextMonotonicId('fapp'),
+      facility_id: '',
+      facility_name: name,
+      facility_type: ['SENIOR_CENTER', 'NURSING_HOME', 'WELFARE_CENTER', 'CHILD_CARE', 'INSTITUTION_B2B'].includes(payload.facility_type) ? payload.facility_type : 'SENIOR_CENTER',
+      biz_reg_no: String(payload.biz_reg_no || '').trim(),
+      contact_name: String(payload.contact_name || '').trim() || '담당자',
+      phone,
+      address,
+      credit_limit: 0,
+      credit_balance: 0,
+      status: 'PENDING_APPROVAL',
+      created_at: new Date().toISOString()
+    };
+    list.unshift(item);
+    this.saveData();
+    return item;
+  }
+
+  decideFacility({ request_id = '', decision = 'APPROVED', credit_limit = 500000 } = {}) {
+    const list = this._ensureFacilities();
+    const idx = list.findIndex(f => f.request_id === request_id || (f.facility_id && f.facility_id === request_id));
+    if (idx < 0) throw new Error('대상 기관 신청 정보를 찾을 수 없습니다.');
+    const cur = list[idx];
+    if (decision === 'REJECTED') {
+      list[idx] = { ...cur, status: 'REJECTED', decided_at: new Date().toISOString() };
+      this.saveData();
+      return list[idx];
+    }
+    const ksic = cur.facility_type === 'CHILD_CARE' ? '87210' : '87391';
+    const seq = String(list.filter(f => f.facility_id).length + 1).padStart(4, '0');
+    const facId = cur.facility_id || `FAC-11-650-01-${ksic}-${seq}`;
+    const limit = Math.max(0, Number(credit_limit ?? 500000));
+    list[idx] = {
+      ...cur,
+      facility_id: facId,
+      credit_limit: limit,
+      credit_balance: cur.status === 'APPROVED' ? Number(cur.credit_balance ?? limit) : limit,
+      status: 'APPROVED',
+      decided_at: new Date().toISOString()
+    };
+    this.saveData();
+    return list[idx];
+  }
+
+  loginFacility({ facility_id = '', phone = '' } = {}) {
+    const list = this._ensureFacilities();
+    const fid = String(facility_id || '').trim().toUpperCase();
+    const normPhone = String(phone || '').replace(/[^0-9]/g, '');
+    const found = list.find(f =>
+      (fid && String(f.facility_id || '').toUpperCase() === fid)
+      || (normPhone && String(f.phone || '').replace(/[^0-9]/g, '') === normPhone)
+    );
+    if (!found) throw new Error('등록된 기관 정보를 찾을 수 없습니다.');
+    if (found.status === 'PENDING_APPROVAL') throw new Error('마트 관리자 승인 대기 중인 기관입니다.');
+    if (found.status === 'REJECTED') throw new Error('가입이 반려된 기관입니다. 마트에 문의해 주세요.');
+    return found;
+  }
+
+  applyDailyPriceBatch(payload = {}) {
+    const { shouldSave, result } = applyDailyPriceBatchToData(this.data, payload);
+    if (shouldSave) this.saveData();
+    return result;
+  }
+
+  getUploadHistory() {
+    return getUploadHistoryFromData(this.data);
+  }
+
+  rollbackUploadBatch(batchId = '') {
+    const result = rollbackUploadBatchInData(this.data, batchId);
+    this.saveData();
+    return result;
   }
 }
 

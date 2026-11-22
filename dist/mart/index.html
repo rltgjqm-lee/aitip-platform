@@ -34,10 +34,18 @@
 
         <div class="nav-group open" data-group="promo">
           <button class="nav-group-header" type="button" aria-expanded="true">
-            <span>2. 행사상품</span>
+            <span>2. 판매 · 행사 적용</span>
             <svg class="nav-group-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
           <div class="nav-group-items">
+            <a href="#channel-assign" class="nav-item" data-view="channel-assign">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 3h5v5"></path><path d="M8 21H3v-5"></path><path d="M21 3l-7 7"></path><path d="M3 21l7-7"></path></svg>
+              <span>B2C · B2B 판매·가격 배정</span>
+            </a>
+            <a href="#daily-price" class="nav-item" data-view="daily-price">
+              <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+              <span>당일 시세 · 변동</span>
+            </a>
             <a href="#flyer" class="nav-item" data-view="flyer">
               <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
               <span>할인 / 전단일괄</span>
@@ -57,7 +65,11 @@
             </a>
             <a href="/mart/pwa/" target="_blank" class="nav-item" style="color: #007749; font-weight: 700;">
               <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-              <span>마트 몰 새 창 열기</span>
+              <span>마트 몰 새 창 열기 (B2C)</span>
+            </a>
+            <a href="/mart/b2b/" target="_blank" class="nav-item" style="color: #0f172a; font-weight: 700;">
+              <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              <span>기관 B2B 몰 새 창 열기</span>
             </a>
           </div>
         </div>
@@ -104,7 +116,7 @@
           <div class="nav-group-items">
             <a href="#settle" class="nav-item" data-view="settle">
               <svg class="nav-icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-              <span>결제 · 위탁 정산 대사</span>
+              <span>결제 · 정산 내역</span>
             </a>
           </div>
         </div>
@@ -151,6 +163,6 @@
     </div>
   </div>
 
-  <script type="module" src="/mart/js/app.js"></script>
+  <script type="module" src="/mart/js/app.js?v=20261122"></script>
 </body>
 </html>

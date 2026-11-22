@@ -7,6 +7,8 @@ import { martApi } from '../api.js';
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, buildCategoryPath, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
+import { bindStopPropagation } from '../utils/html.js';
+import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import {
   SAMPLE_POS_CSV,
   TYPE_LABEL,
@@ -34,7 +36,10 @@ let searchQuery = '';
 let sourceFilter = 'ALL';
 let scopeFilter = 'ALL';
 let publishFilter = 'ALL';
+let stockFilter = 'ALL'; // 'ALL' | 'OK' | 'LOW' | 'OUT'
 let promoFilter = 'ALL'; // 'ALL' | 'PROMO_ACTIVE'
+let currentPage = 1;
+let pageSize = 10;
 let draftAppliedPromo = null;
 let draftMedia = { media_id: '', image_url: '' };
 const selectedIds = new Set();
@@ -58,6 +63,11 @@ export async function renderMartCatalogView(container, opts = {}) {
     if (sourceFilter !== 'ALL' && (p.fulfillment_source || 'MART_FLOOR') !== sourceFilter) return false;
     if (scopeFilter !== 'ALL' && (p.payment_scope || 'ONLINE_APPLICABLE') !== scopeFilter) return false;
     if (publishFilter !== 'ALL' && (p.online_publish_status || 'PUBLISHED_FEED') !== publishFilter) return false;
+    const sq = Number(p.stock_qty ?? 50);
+    const sf = Number(p.safety_stock ?? 5);
+    if (stockFilter === 'OUT' && sq > 0) return false;
+    if (stockFilter === 'LOW' && !(sq > 0 && sq <= sf)) return false;
+    if (stockFilter === 'OK' && sq <= sf) return false;
     if (imageFilter === 'HAS_IMG' && !p.image_url) return false;
     if (imageFilter === 'NO_IMG' && p.image_url) return false;
     if (promoFilter === 'PROMO_ACTIVE' && !p.applied_promo_id && !(p.discount_pct > 0) && !p.promo_start) return false;
@@ -66,6 +76,8 @@ export async function renderMartCatalogView(container, opts = {}) {
     return true;
   });
 
+  const pageInfo = paginateArray(filtered, currentPage, pageSize);
+  currentPage = pageInfo.page;
   const allFilteredSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id));
   const curImgUrl = draftMedia.image_url || editingProduct?.image_url || '';
 
@@ -90,7 +102,34 @@ export async function renderMartCatalogView(container, opts = {}) {
           </label>
           <button type="button" class="mc-btn-secondary" id="btn-open-import">엑셀(CSV) 일괄 등록</button>
           <button type="button" class="mc-btn-primary" id="btn-open-add">+ 상품 등록</button>
+          <button type="button" id="btn-catalog-help" title="사용 설명 보기" style="width: 30px; height: 30px; border-radius: 50%; border: 1px solid #cbd5e1; background: #f8fafc; color: #334155; font-weight: 800; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">?</button>
           <input id="quick-row-img-input" type="file" accept="image/*" style="display: none;" />
+        </div>
+      </div>
+
+      <div id="mc-catalog-help-modal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); z-index: 1000; align-items: center; justify-content: center; padding: 16px;">
+        <div style="background: #ffffff; border-radius: 14px; max-width: 480px; width: 100%; padding: 20px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+            <strong style="font-size: 15px; color: #0f172a;">일반 · 신선 상품 관리 사용 안내</strong>
+            <button type="button" id="btn-close-catalog-help" style="border: none; background: none; font-size: 18px; color: #64748b; cursor: pointer;">×</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+            <div style="padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <strong style="color: #007749;">1. 바코드 이미지 매칭</strong>
+              <div>이미지 파일명을 <b>바코드.jpg</b> 또는 <b>상품명.png</b>로 맞춘 뒤 여러 장을 한 번에 선택하면, WebP로 자동 변환되어 일치하는 상품에 일괄 등록됩니다.</div>
+            </div>
+            <div style="padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <strong style="color: #007749;">2. 엑셀(CSV) 일괄 등록</strong>
+              <div>기본 상품표·전단 행사표·당일 신선 시세표를 CSV로 올려 여러 상품을 한 번에 등록하거나 갱신할 수 있습니다.</div>
+            </div>
+            <div style="padding: 10px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <strong style="color: #007749;">3. 빠른 이미지 교체 · 상세 수정</strong>
+              <div>목록의 <b>+IMG(썸네일)</b>를 누르면 해당 상품 이미지만 즉시 교체되고, 상품 행을 클릭하면 우측 상세 수정 창이 열립니다.</div>
+            </div>
+          </div>
+          <div style="margin-top: 14px; text-align: right;">
+            <button type="button" class="mc-btn-primary" id="btn-ok-catalog-help">확인</button>
+          </div>
         </div>
       </div>
 
@@ -120,6 +159,12 @@ export async function renderMartCatalogView(container, opts = {}) {
               <option value="PUBLISHED_FEED" ${publishFilter === 'PUBLISHED_FEED' ? 'selected' : ''}>홈 진열</option>
               <option value="SEARCH_ONLY" ${publishFilter === 'SEARCH_ONLY' ? 'selected' : ''}>검색 전용</option>
               <option value="SUSPENDED" ${publishFilter === 'SUSPENDED' ? 'selected' : ''}>노출 중지</option>
+            </select>
+            <select id="grid-filter-stock" class="mc-select">
+              <option value="ALL" ${stockFilter === 'ALL' ? 'selected' : ''}>전체 재고</option>
+              <option value="OK" ${stockFilter === 'OK' ? 'selected' : ''}>여유</option>
+              <option value="LOW" ${stockFilter === 'LOW' ? 'selected' : ''}>곧 품절 (${baseProducts.filter(x => Number(x.stock_qty ?? 50) > 0 && Number(x.stock_qty ?? 50) <= Number(x.safety_stock ?? 5)).length})</option>
+              <option value="OUT" ${stockFilter === 'OUT' ? 'selected' : ''}>품절 (${baseProducts.filter(x => Number(x.stock_qty ?? 50) <= 0).length})</option>
             </select>
             <select id="grid-filter-source" class="mc-select">
               <option value="ALL" ${sourceFilter === 'ALL' ? 'selected' : ''}>전체 거점</option>
@@ -202,7 +247,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                     조건에 맞는 상품이 없습니다. 필터를 변경하거나 새 상품을 등록해 주세요.
                   </td>
                 </tr>
-              ` : filtered.map(p => {
+              ` : pageInfo.paged.map(p => {
                 const cost = Number(p.cost_price ?? 0);
                 const reg = Number(p.regular_price ?? 0);
                 const sale = Number(p.sale_price ?? reg);
@@ -220,12 +265,12 @@ export async function renderMartCatalogView(container, opts = {}) {
 
                 return `
                   <tr class="mc-prod-row ${isChecked ? 'is-selected' : ''}" data-id="${p.id}" style="cursor: pointer;">
-                    <td style="text-align: center;" onclick="event.stopPropagation()">
+                    <td class="mc-stop-prop" style="text-align: center;">
                       <input type="checkbox" class="chk-prod" data-id="${p.id}" ${isChecked ? 'checked' : ''} />
                     </td>
                     <td>
                       <div class="mc-prod-cell">
-                        <div class="mc-thumb quick-thumb-upload" data-id="${p.id}" onclick="event.stopPropagation()" title="클릭하여 이미지 바로 등록/교체" style="cursor: pointer;">
+                        <div class="mc-thumb quick-thumb-upload mc-stop-prop" data-id="${p.id}" title="클릭하여 이미지 바로 등록/교체" style="cursor: pointer;">
                           ${p.image_url ? `<img src="${escapeHtml(p.image_url)}" alt="" />` : '<span style="color:#007749;">+IMG</span>'}
                         </div>
                         <div>
@@ -281,7 +326,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                         ${Number(p.pos_price || 0) > 0 && Number(p.pos_price) !== sale ? `<span class="mc-pill mc-pill-red">POS가(${Number(p.pos_price).toLocaleString()}) 불일치</span>` : ''}
                       </div>
                     </td>
-                    <td style="text-align: right; white-space: nowrap;" onclick="event.stopPropagation()">
+                    <td class="mc-stop-prop" style="text-align: right; white-space: nowrap;">
                       ${p.mart_approval_status === 'PENDING_MART' ? `
                         <button type="button" class="mc-btn-primary btn-mart-approve-prod" data-id="${p.id}" style="height: 26px; padding: 0 8px; font-size: 11.5px; margin-right: 4px;">취급 승인</button>
                         <button type="button" class="mc-btn-secondary btn-mart-reject-prod" data-id="${p.id}" style="height: 26px; padding: 0 8px; font-size: 11.5px; color: #b91c1c; margin-right: 4px;">반려</button>
@@ -294,6 +339,7 @@ export async function renderMartCatalogView(container, opts = {}) {
             </tbody>
           </table>
         </div>
+        ${renderMartPaginationHtml(pageInfo, 'cat')}
       </div>
 
       ${drawerMode === 'EDIT' ? `
@@ -336,11 +382,15 @@ export async function renderMartCatalogView(container, opts = {}) {
               </div>
 
               <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">2. 기본 정보</div>
+                <div class="mc-drawer-section-title">
+                  <span>2. 기본 정보</span>
+                  <button type="button" id="btn-haccp-lookup" class="mc-btn-secondary" style="height: 26px; padding: 0 10px; font-size: 11.5px;">HACCP 공식 조회</button>
+                </div>
+                <div id="haccp-lookup-box" style="display: none; margin-bottom: 10px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; max-height: 180px; overflow-y: auto;"></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div style="grid-column: 1 / -1;">
                     <label class="erp-field-label">상품명 *</label>
-                    <input id="mp-name" type="text" required class="erp-input" value="${escapeHtml(editingProduct?.name || '')}" placeholder="예: 국내산 세척당근(특)" />
+                    <input id="mp-name" type="text" required class="erp-input" value="${escapeHtml(editingProduct?.name || '')}" placeholder="예: 국내산 세척당근(특) 또는 신라면 입력 후 HACCP 조회" />
                   </div>
                   <div>
                     <label class="erp-field-label">바코드 / PLU</label>
@@ -369,45 +419,22 @@ export async function renderMartCatalogView(container, opts = {}) {
 
               <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">
-                  <span>3. 가격 · 할인 · 행사기간 · 재고</span>
-                  <span id="mp-margin-preview" class="mc-pill ${initSale < initCost ? 'mc-pill-red' : 'mc-pill-green'}">
-                    ${initSale < initCost ? `역마진 ${initMargin}%` : `예상 마진 ${initMargin}%`}
+                  <span>3. 기준 가격 · 재고 · 이미지</span>
+                  <span id="mp-margin-preview" class="mc-pill ${initReg < initCost ? 'mc-pill-red' : 'mc-pill-green'}">
+                    ${initReg < initCost ? `역마진 ${calcMarginPct(initCost, initReg)}%` : `기준 마진 ${calcMarginPct(initCost, initReg)}%`}
                   </span>
                 </div>
-                <div style="margin-bottom: 12px;">
-                  <label class="erp-field-label">저장된 행사 룰 불러와 적용 (선택 시 가격·기간·채널 자동 채움)</label>
-                  <select id="mp-apply-promo" class="erp-input" style="border-color: #cbd5e1; background: #f8fafc;">
-                    <option value="">-- 직접 입력 (행사 룰 미연결) --</option>
-                    ${promotions.map(pr => `<option value="${escapeHtml(pr.id)}" ${editingProduct?.applied_promo_id === pr.id ? 'selected' : ''}>${escapeHtml(pr.name)}</option>`).join('')}
-                  </select>
-                  <div id="mp-promo-summary" style="font-size: 11.5px; color: #0369a1; margin-top: 4px;">
-                    ${editingProduct?.applied_promo_name ? `적용중: ${escapeHtml(editingProduct.applied_promo_name)}` : ''}
-                  </div>
+                <div style="margin-bottom: 12px; padding: 8px 10px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; color: #475569;">
+                  B2C·B2B 가격/판매대상 배정은 <b>2. 판매 · 행사 적용 > B2C·B2B 판매·가격 배정</b>에서, 1+1·전단 할인은 <b>할인 / 전단일괄</b>에서 적용합니다.
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
                   <div>
                     <label class="erp-field-label">매입원가 (원)</label>
                     <input id="mp-cost" type="number" min="0" value="${initCost}" class="erp-input" />
                   </div>
                   <div>
-                    <label class="erp-field-label">정상판매가 (원) *</label>
-                    <input id="mp-reg" type="number" min="1" required value="${initReg}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">할인율 (%)</label>
-                    <input id="mp-disc" type="number" min="0" max="99" value="${initDisc}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">최종 행사가 (원) *</label>
-                    <input id="mp-price" type="number" min="0" required value="${initSale}" class="erp-input" style="font-weight: 700; border-color: #007749;" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">행사 시작일</label>
-                    <input id="mp-pstart" type="date" value="${escapeHtml(editingProduct?.promo_start || '')}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">행사 종료일</label>
-                    <input id="mp-pend" type="date" value="${escapeHtml(editingProduct?.promo_end || '')}" class="erp-input" />
+                    <label class="erp-field-label">기준 판매가 · 정상가 (원) *</label>
+                    <input id="mp-reg" type="number" min="1" required value="${initReg}" class="erp-input" style="font-weight: 700; border-color: #007749;" />
                   </div>
                   <div>
                     <label class="erp-field-label">현재 재고</label>
@@ -416,51 +443,6 @@ export async function renderMartCatalogView(container, opts = {}) {
                   <div>
                     <label class="erp-field-label">안전 재고</label>
                     <input id="mp-safety" type="number" min="0" value="${Number(editingProduct?.safety_stock ?? 5)}" class="erp-input" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">4. 출고 거점 · 노출 · 결제 · 이미지</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
-                  <div>
-                    <label class="erp-field-label">출고 거점</label>
-                    <select id="mp-src" class="erp-input">
-                      ${Object.entries(SOURCE_LABEL).map(([k, lbl]) => `<option value="${k}" ${editingProduct?.fulfillment_source === k ? 'selected' : ''}>${lbl}</option>`).join('')}
-                    </select>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">온라인 노출</label>
-                    <select id="mp-pub" class="erp-input">
-                      <option value="PUBLISHED_FEED" ${editingProduct?.online_publish_status === 'PUBLISHED_FEED' ? 'selected' : ''}>홈 진열</option>
-                      <option value="SEARCH_ONLY" ${editingProduct?.online_publish_status === 'SEARCH_ONLY' ? 'selected' : ''}>검색 전용</option>
-                      <option value="SUSPENDED" ${editingProduct?.online_publish_status === 'SUSPENDED' ? 'selected' : ''}>노출 중지</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">결제 범위</label>
-                    <select id="mp-scope" class="erp-input">
-                      <option value="ALL_CHANNELS" ${(editingProduct?.channel_scope || (editingProduct?.payment_scope === 'POS_ONLY' ? 'POS_ONLY' : 'ALL_CHANNELS')) === 'ALL_CHANNELS' ? 'selected' : ''}>온·오프 공통</option>
-                      <option value="ONLINE_ONLY" ${editingProduct?.channel_scope === 'ONLINE_ONLY' ? 'selected' : ''}>온라인 전용</option>
-                      <option value="POS_ONLY" ${editingProduct?.payment_scope === 'POS_ONLY' || editingProduct?.channel_scope === 'POS_ONLY' ? 'selected' : ''}>현장 POS 전용</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">POS 기준가 (불일치 감지용, 0=미사용)</label>
-                    <input id="mp-pos-price" type="number" min="0" value="${Number(editingProduct?.pos_price ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">예약 시세변동 정책</label>
-                    <select id="mp-res-policy" class="erp-input">
-                      <option value="FIXED_AT_ORDER" ${editingProduct?.reservation_price_policy !== 'MARKET_AT_DELIVERY' ? 'selected' : ''}>주문시점 가격 고정</option>
-                      <option value="MARKET_AT_DELIVERY" ${editingProduct?.reservation_price_policy === 'MARKET_AT_DELIVERY' ? 'selected' : ''}>배송일 시세 연동(차액 정정)</option>
-                    </select>
-                  </div>
-                  <div style="display: flex; align-items: center; padding-top: 18px;">
-                    <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: #334155; cursor: pointer;">
-                      <input id="mp-pos-agency" type="checkbox" ${editingProduct?.pos_agency_tagged ? 'checked' : ''} />
-                      POS 구매대행(위탁) 품목 표시
-                    </label>
                   </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
@@ -574,6 +556,10 @@ export async function renderMartCatalogView(container, opts = {}) {
     publishFilter = e.target.value;
     renderMartCatalogView(container);
   });
+  container.querySelector('#grid-filter-stock')?.addEventListener('change', (e) => {
+    stockFilter = e.target.value;
+    renderMartCatalogView(container);
+  });
   container.querySelector('#grid-filter-source')?.addEventListener('change', (e) => {
     sourceFilter = e.target.value;
     renderMartCatalogView(container);
@@ -602,6 +588,15 @@ export async function renderMartCatalogView(container, opts = {}) {
       await renderMartCatalogView(container);
     });
   });
+
+  const helpModal = container.querySelector('#mc-catalog-help-modal');
+  container.querySelector('#btn-catalog-help')?.addEventListener('click', () => {
+    if (helpModal) helpModal.style.display = 'flex';
+  });
+  const closeHelp = () => { if (helpModal) helpModal.style.display = 'none'; };
+  container.querySelector('#btn-close-catalog-help')?.addEventListener('click', closeHelp);
+  container.querySelector('#btn-ok-catalog-help')?.addEventListener('click', closeHelp);
+  helpModal?.addEventListener('click', (e) => { if (e.target === helpModal) closeHelp(); });
 
   // 목록 썸네일 클릭 즉시 이미지 보정 업로드 (WebP)
   const quickImgInput = container.querySelector('#quick-row-img-input');
@@ -734,6 +729,13 @@ export async function renderMartCatalogView(container, opts = {}) {
   container.querySelectorAll('.btn-edit-prod').forEach(btn => {
     btn.addEventListener('click', () => openEditDrawer(btn.dataset.id));
   });
+  bindStopPropagation(container);
+  bindMartPaginationEvents(container, {
+    prefix: 'cat',
+    totalPages: pageInfo.totalPages,
+    onPageChange: (nextP) => { currentPage = nextP; renderMartCatalogView(container); },
+    onSizeChange: (nextSz) => { pageSize = nextSz; currentPage = 1; renderMartCatalogView(container); }
+  });
   container.querySelectorAll('.mc-prod-row').forEach(row => {
     row.addEventListener('click', () => openEditDrawer(row.dataset.id));
   });
@@ -764,41 +766,22 @@ export async function renderMartCatalogView(container, opts = {}) {
     }
   });
 
-  // 드로어 내 할인(%) <-> 행사가 양방향 연동 + 실시간 마진율 미리보기
+  // 드로어 내 원가 <-> 기준 판매가 실시간 마진율 미리보기
   const mpCost = container.querySelector('#mp-cost');
   const mpReg = container.querySelector('#mp-reg');
-  const mpDisc = container.querySelector('#mp-disc');
-  const mpPrice = container.querySelector('#mp-price');
   const mpMarginBadge = container.querySelector('#mp-margin-preview');
 
   const refreshMarginPreview = () => {
-    if (!mpMarginBadge || !mpCost || !mpPrice) return;
+    if (!mpMarginBadge || !mpCost || !mpReg) return;
     const c = Number(mpCost.value || 0);
-    const s = Number(mpPrice.value || 0);
-    const m = calcMarginPct(c, s);
-    const neg = s < c;
+    const r = Number(mpReg.value || 0);
+    const m = calcMarginPct(c, r);
+    const neg = r < c;
     mpMarginBadge.className = `mc-pill ${neg ? 'mc-pill-red' : 'mc-pill-green'}`;
-    mpMarginBadge.textContent = neg ? `역마진 ${m}%` : `예상 마진 ${m}%`;
+    mpMarginBadge.textContent = neg ? `역마진 ${m}%` : `기준 마진 ${m}%`;
   };
   mpCost?.addEventListener('input', refreshMarginPreview);
-  mpReg?.addEventListener('input', () => {
-    const r = Number(mpReg.value || 0);
-    const d = Math.max(0, Math.min(99, Number(mpDisc?.value || 0)));
-    if (r > 0 && mpPrice) mpPrice.value = Math.round(r * (1 - d / 100));
-    refreshMarginPreview();
-  });
-  mpDisc?.addEventListener('input', () => {
-    const r = Number(mpReg?.value || 0);
-    const d = Math.max(0, Math.min(99, Number(mpDisc.value || 0)));
-    if (r > 0 && mpPrice) mpPrice.value = Math.round(r * (1 - d / 100));
-    refreshMarginPreview();
-  });
-  mpPrice?.addEventListener('input', () => {
-    const r = Number(mpReg?.value || 0);
-    const s = Number(mpPrice.value || 0);
-    if (r > 0 && mpDisc) mpDisc.value = s < r ? Math.round((1 - s / r) * 100) : 0;
-    refreshMarginPreview();
-  });
+  mpReg?.addEventListener('input', refreshMarginPreview);
 
   // 드로어 내 대/중/소분류 3단 연동
   const mpL1 = container.querySelector('#mp-cat-l1');
@@ -822,6 +805,62 @@ export async function renderMartCatalogView(container, opts = {}) {
     }
   });
   mpL2?.addEventListener('change', syncL3Options);
+
+  // HACCP 공식 제품이미지 · 규격 조회 연동
+  container.querySelector('#btn-haccp-lookup')?.addEventListener('click', async () => {
+    const q = container.querySelector('#mp-name')?.value?.trim() || '';
+    const barcode = container.querySelector('#mp-barcode')?.value?.trim() || '';
+    const box = container.querySelector('#haccp-lookup-box');
+    if (!box) return;
+    if (!q && !barcode) {
+      box.style.display = 'block';
+      box.innerHTML = '<div style="font-size:12px;color:#b45309;">상품명 또는 바코드를 먼저 입력한 뒤 조회하세요.</div>';
+      return;
+    }
+    box.style.display = 'block';
+    box.innerHTML = '<div style="font-size:12px;color:#475569;">HACCP 공식 DB 조회 중...</div>';
+    try {
+      const res = await martApi.searchHaccp({ q, barcode });
+      const list = res.items || [];
+      if (list.length === 0) {
+        box.innerHTML = '<div style="font-size:12px;color:#64748b;">일치하는 HACCP 등록 상품이 없습니다.</div>';
+        return;
+      }
+      box.innerHTML = list.map((it, idx) => `
+        <div class="haccp-pick-row" data-idx="${idx}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${it.image_url ? `<img src="${escapeHtml(it.image_url)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;" />` : ''}
+            <div>
+              <div style="font-size:12.5px;font-weight:700;color:#0f172a;">${escapeHtml(it.name)}</div>
+              <div style="font-size:11px;color:#64748b;">${escapeHtml(it.spec)} · ${escapeHtml(it.manufacture)} ${it.barcode ? `· ${escapeHtml(it.barcode)}` : ''}</div>
+            </div>
+          </div>
+          <span class="mc-pill mc-pill-green">선택</span>
+        </div>
+      `).join('');
+      box.querySelectorAll('.haccp-pick-row').forEach(row => {
+        row.addEventListener('click', async () => {
+          const picked = list[Number(row.dataset.idx)];
+          if (!picked) return;
+          const nameEl = container.querySelector('#mp-name');
+          const specEl = container.querySelector('#mp-spec');
+          const bcEl = container.querySelector('#mp-barcode');
+          if (nameEl) nameEl.value = picked.name;
+          if (specEl && picked.spec && picked.spec !== '-') specEl.value = picked.spec;
+          if (bcEl && picked.barcode) bcEl.value = picked.barcode;
+          if (picked.image_url) {
+            const up = await martApi.importHaccpImage({ image_url: picked.image_url, original_name: `${picked.name}.jpg` });
+            draftMedia = { media_id: up.media_id, image_url: up.image_url };
+            const imgBox = container.querySelector('#mp-img-preview-box');
+            if (imgBox) imgBox.innerHTML = `<img src="${up.image_url}" alt="미리보기" style="width:100%;height:100%;object-fit:cover;" />`;
+          }
+          box.style.display = 'none';
+        });
+      });
+    } catch (err) {
+      box.innerHTML = `<div style="font-size:12px;color:#b91c1c;">조회 실패: ${escapeHtml(err.message)}</div>`;
+    }
+  });
 
   // 드로어 내 저장된 행사 룰 불러와 원클릭 자동 채움
   const mpApplyPromo = container.querySelector('#mp-apply-promo');
@@ -856,27 +895,15 @@ export async function renderMartCatalogView(container, opts = {}) {
     }
   });
 
-  // 단건 등록/수정 저장
+  // 단건 등록/수정 저장 (상품 마스터 기본정보만 저장, 기존 판매/행사 배정값 보존)
   container.querySelector('#form-mart-add')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const l1 = mpL1?.value || '';
     const l2 = mpL2?.value || '';
     const l3 = mpL3?.value || '';
-    const selectedScope = container.querySelector('#mp-scope')?.value || 'ALL_CHANNELS';
-    const promoMeta = draftAppliedPromo || (editingProduct?.applied_promo_id ? {
-      applied_promo_id: editingProduct.applied_promo_id,
-      applied_promo_name: editingProduct.applied_promo_name || '',
-      applied_promo_type: editingProduct.applied_promo_type || '',
-      promo_required_qty: editingProduct.promo_required_qty || 1,
-      promo_bundle_price: editingProduct.promo_bundle_price || 0,
-      promo_days_of_week: editingProduct.promo_days_of_week || [],
-      promo_max_discount_amount: editingProduct.promo_max_discount_amount || 0,
-      promo_limit_per_person: editingProduct.promo_limit_per_person || 0,
-      promo_card_targets: editingProduct.promo_card_targets || []
-    } : {});
+    const regPrice = Math.max(0, Number(container.querySelector('#mp-reg')?.value ?? 0));
     const payload = {
       id: editingProductId || undefined,
-      ...promoMeta,
       category_l1: l1,
       category_l2: l2,
       category_l3: l3,
@@ -885,28 +912,23 @@ export async function renderMartCatalogView(container, opts = {}) {
       category_type: editingProduct?.category_type === 'SUBSCRIPTION'
         ? 'SUBSCRIPTION'
         : (l1List.find(c => c.code === l1)?.default_category_type || 'B2B_INDUSTRIAL'),
-      fulfillment_source: container.querySelector('#mp-src')?.value || 'MART_FLOOR',
       barcode: container.querySelector('#mp-barcode')?.value?.trim(),
       name: container.querySelector('#mp-name')?.value?.trim(),
       spec: container.querySelector('#mp-spec')?.value?.trim(),
       uom: container.querySelector('#mp-uom')?.value,
-      online_publish_status: container.querySelector('#mp-pub')?.value || 'PUBLISHED_FEED',
-      channel_scope: selectedScope,
-      payment_scope: selectedScope === 'POS_ONLY' ? 'POS_ONLY' : 'ONLINE_APPLICABLE',
       storage_temp: container.querySelector('#mp-temp')?.value || 'AMBIENT',
       media_id: draftMedia.media_id || editingProduct?.media_id || '',
       image_url: draftMedia.image_url || editingProduct?.image_url || '',
       cost_price: Math.max(0, Number(container.querySelector('#mp-cost')?.value ?? 0)),
-      regular_price: Math.max(0, Number(container.querySelector('#mp-reg')?.value ?? 0)),
-      sale_price: Math.max(0, Number(container.querySelector('#mp-price')?.value ?? 0)),
-      promo_start: container.querySelector('#mp-pstart')?.value || '',
-      promo_end: container.querySelector('#mp-pend')?.value || '',
-      pos_price: Math.max(0, Number(container.querySelector('#mp-pos-price')?.value ?? 0)),
-      pos_agency_tagged: Boolean(container.querySelector('#mp-pos-agency')?.checked),
-      reservation_price_policy: container.querySelector('#mp-res-policy')?.value || 'FIXED_AT_ORDER',
+      regular_price: regPrice,
       stock_qty: Math.max(0, Number(container.querySelector('#mp-stock')?.value ?? 50)),
       safety_stock: Math.max(0, Number(container.querySelector('#mp-safety')?.value ?? 5))
     };
+    if (!editingProductId) {
+      payload.sale_price = regPrice;
+      payload.sales_target = 'BOTH';
+      payload.online_publish_status = 'PUBLISHED_FEED';
+    }
     if (editingProductId) await martApi.updateProduct(payload);
     else await martApi.addProduct(payload);
     drawerMode = 'NONE';

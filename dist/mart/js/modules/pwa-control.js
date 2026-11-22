@@ -4,21 +4,15 @@
  */
 
 import { martApi } from '../api.js';
+import { escapeHtml } from '../utils/html.js';
 
 let previewDevice = 'MOBILE'; // 'MOBILE' (375px) | 'TABLET' (768px) | 'PC' (1200px)
 let editingBlockId = '';
 let gbDrawerOpen = false;
 let shelfSearchQuery = '';
-let draftFeaturedIds = new Set();
+let draftFeaturedIds = []; // ordered array of product IDs
+let draftShelfOverrides = {}; // { [pid]: { shelf_price } }
 const SHELF_BLOCK_IDS = new Set(['PROMO_SHELF', 'CURATED_SHELF']);
-
-function escapeHtml(v = '') {
-  return String(v)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
 
 export async function renderMartPwaControlView(container, opts = {}) {
   if (!container) return;
@@ -186,20 +180,55 @@ export async function renderMartPwaControlView(container, opts = {}) {
 
       ${editingBlock ? `
         <div class="mc-drawer-backdrop" id="mc-shelf-backdrop">
-          <div class="mc-drawer" style="width: 540px;">
+          <div class="mc-drawer" style="width: 600px;">
             <div class="mc-drawer-header">
               <div>
-                <h2>${escapeHtml(editingBlock.title)} — 진열 상품 선택</h2>
-                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">체크한 상품들이 해당 홈 블록에 우선 진열됩니다. (미지정 시 자동 추천)</div>
+                <h2>${escapeHtml(editingBlock.title)} — 진열 순서 · 매대 전용가 설정</h2>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">진열 순서(▲/▼)와 매대 전용가(0=기본 판매가 유지)를 상품별로 섞어 설정할 수 있습니다.</div>
               </div>
               <button type="button" class="mc-drawer-close" id="btn-close-shelf-drawer">×</button>
             </div>
             <div class="mc-drawer-body">
               <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">
+                  <span>1. 현재 진열된 상품 순서 · 매대 전용가 (${draftFeaturedIds.length}개)</span>
+                </div>
+                ${draftFeaturedIds.length === 0 ? `
+                  <div style="font-size: 12px; color: #64748b; padding: 12px; background: #f8fafc; border-radius: 8px;">선택된 상품이 없습니다. 아래에서 상품을 선택하면 순서와 매대 전용가를 지정할 수 있습니다.</div>
+                ` : `
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    ${draftFeaturedIds.map((pid, idx) => {
+                      const p = allProducts.find(x => x.id === pid);
+                      if (!p) return '';
+                      const ovPrice = Number(draftShelfOverrides[pid]?.shelf_price || 0);
+                      return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 10px; border: 1px solid #007749; background: #f0fdf4; border-radius: 8px;">
+                          <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;">
+                            <span class="mc-pill mc-pill-green">${idx + 1}</span>
+                            <div style="min-width: 0;">
+                              <div style="font-size: 12.5px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</div>
+                              <div style="font-size: 11px; color: #64748b;">기본 ${Number(p.sale_price ?? p.regular_price ?? 0).toLocaleString()}원${p.applied_promo_name ? ` · ${escapeHtml(p.applied_promo_name)}` : ''}</div>
+                            </div>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                            <input type="number" min="0" step="10" class="erp-input inp-shelf-price" data-pid="${escapeHtml(pid)}" value="${ovPrice}" placeholder="매대가(0=기본)" style="width: 92px; height: 28px; font-size: 11.5px; text-align: right;" title="0이면 기본 판매가/행사룰 유지" />
+                            <button type="button" class="mc-btn-secondary btn-shelf-move" data-idx="${idx}" data-dir="-1" ${idx === 0 ? 'disabled' : ''} style="height: 28px; padding: 0 7px; font-size: 11px;">▲</button>
+                            <button type="button" class="mc-btn-secondary btn-shelf-move" data-idx="${idx}" data-dir="1" ${idx === draftFeaturedIds.length - 1 ? 'disabled' : ''} style="height: 28px; padding: 0 7px; font-size: 11px;">▼</button>
+                            <button type="button" class="mc-btn-secondary btn-shelf-remove" data-pid="${escapeHtml(pid)}" style="height: 28px; padding: 0 7px; font-size: 11px; color: #b91c1c;">삭제</button>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `}
+              </div>
+
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title"><span>2. 상품 검색 및 진열 추가</span></div>
                 <input id="shelf-prod-q" type="text" class="mc-search" value="${escapeHtml(shelfSearchQuery)}" placeholder="상품명 · 바코드 · 규격 검색" style="width: 100%; margin-bottom: 12px;" />
-                <div style="max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                <div style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
                   ${filteredProducts.map(p => {
-                    const checked = draftFeaturedIds.has(p.id);
+                    const checked = draftFeaturedIds.includes(p.id);
                     return `
                       <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid ${checked ? '#007749' : '#e5e7eb'}; background: ${checked ? '#f0fdf4' : '#ffffff'}; border-radius: 8px; cursor: pointer;">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -218,7 +247,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
             </div>
             <div class="mc-drawer-footer">
               <button type="button" class="mc-btn-secondary" id="btn-cancel-shelf-drawer">취소</button>
-              <button type="button" class="mc-btn-primary" id="btn-save-shelf-drawer">진열 상품 저장</button>
+              <button type="button" class="mc-btn-primary" id="btn-save-shelf-drawer">진열 순서 · 매대가 저장</button>
             </div>
           </div>
         </div>
@@ -307,20 +336,41 @@ export async function renderMartPwaControlView(container, opts = {}) {
     btn.addEventListener('click', () => {
       editingBlockId = btn.dataset.blockId;
       const targetBlk = blocks.find(b => b.id === editingBlockId);
-      draftFeaturedIds = new Set(Array.isArray(targetBlk?.featured_product_ids) ? targetBlk.featured_product_ids : []);
+      draftFeaturedIds = Array.isArray(targetBlk?.featured_product_ids) ? [...targetBlk.featured_product_ids] : [];
+      draftShelfOverrides = { ...(targetBlk?.shelf_overrides || {}) };
       shelfSearchQuery = '';
       renderMartPwaControlView(container);
     });
   });
   container.querySelectorAll('.chk-shelf-prod').forEach(chk => {
     chk.addEventListener('change', () => {
-      if (chk.checked) draftFeaturedIds.add(chk.value);
-      else draftFeaturedIds.delete(chk.value);
-      const lbl = chk.closest('label');
-      if (lbl) {
-        lbl.style.borderColor = chk.checked ? '#007749' : '#e5e7eb';
-        lbl.style.background = chk.checked ? '#f0fdf4' : '#ffffff';
-      }
+      if (chk.checked && !draftFeaturedIds.includes(chk.value)) draftFeaturedIds.push(chk.value);
+      else if (!chk.checked) draftFeaturedIds = draftFeaturedIds.filter(id => id !== chk.value);
+      renderMartPwaControlView(container);
+    });
+  });
+  container.querySelectorAll('.btn-shelf-move').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.dataset.idx);
+      const dir = Number(btn.dataset.dir);
+      const target = idx + dir;
+      if (target < 0 || target >= draftFeaturedIds.length) return;
+      const [moved] = draftFeaturedIds.splice(idx, 1);
+      draftFeaturedIds.splice(target, 0, moved);
+      renderMartPwaControlView(container);
+    });
+  });
+  container.querySelectorAll('.btn-shelf-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      draftFeaturedIds = draftFeaturedIds.filter(id => id !== btn.dataset.pid);
+      renderMartPwaControlView(container);
+    });
+  });
+  container.querySelectorAll('.inp-shelf-price').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const pid = inp.dataset.pid;
+      const val = Math.max(0, Number(inp.value || 0));
+      draftShelfOverrides[pid] = { ...(draftShelfOverrides[pid] || {}), shelf_price: val };
     });
   });
   container.querySelector('#shelf-prod-q')?.addEventListener('input', (e) => {
@@ -338,7 +388,8 @@ export async function renderMartPwaControlView(container, opts = {}) {
   }
   const closeShelfDrawer = () => {
     editingBlockId = '';
-    draftFeaturedIds = new Set();
+    draftFeaturedIds = [];
+    draftShelfOverrides = {};
     renderMartPwaControlView(container);
   };
   container.querySelector('#btn-close-shelf-drawer')?.addEventListener('click', closeShelfDrawer);
@@ -347,11 +398,17 @@ export async function renderMartPwaControlView(container, opts = {}) {
     if (e.target.id === 'mc-shelf-backdrop') closeShelfDrawer();
   });
   container.querySelector('#btn-save-shelf-drawer')?.addEventListener('click', async () => {
-    const selected = Array.from(draftFeaturedIds);
-    const updatedBlocks = blocks.map(b => b.id === editingBlockId ? { ...b, featured_product_ids: selected } : b);
+    const selected = [...draftFeaturedIds];
+    const cleanOverrides = {};
+    selected.forEach(pid => {
+      const sp = Number(draftShelfOverrides[pid]?.shelf_price || 0);
+      if (sp > 0) cleanOverrides[pid] = { shelf_price: sp };
+    });
+    const updatedBlocks = blocks.map(b => b.id === editingBlockId ? { ...b, featured_product_ids: selected, shelf_overrides: cleanOverrides } : b);
     await martApi.updatePwaControl({ blocks: updatedBlocks });
     editingBlockId = '';
-    draftFeaturedIds = new Set();
+    draftFeaturedIds = [];
+    draftShelfOverrides = {};
     await renderMartPwaControlView(container);
   });
 

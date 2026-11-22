@@ -72,6 +72,47 @@ export async function renderSystemPoliciesView(container) {
           <input id="pol-pii-hours" type="number" min="1" max="168" value="${p.pii_retention_hours_after_delivery ?? 24}" style="width: 140px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
         </div>
 
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div style="font-size: 12.5px; font-weight: 800; color: #166534;">전사 수수료 · 통신 과금 기본정보 (총괄 PG · 월말 세금계산서 기준)</div>
+            <span style="font-size: 11px; color: #15803d; font-weight: 700;">월 고정 이용료 0원 · 위탁대행료 0%</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">마트 PG 수수료 (%)</label>
+              <input id="pol-mart-pg" type="number" min="0" step="0.1" value="${Number(p.mart_pg_fee_pct ?? 2.0)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">마트 SaaS 수수료 (%)</label>
+              <input id="pol-mart-saas" type="number" min="0" step="0.1" value="${Number(p.mart_saas_fee_pct ?? 3.0)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">소상공인 PG 수수료 (%)</label>
+              <input id="pol-food-pg" type="number" min="0" step="0.1" value="${Number(p.food_pg_fee_pct ?? 2.0)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">소상공인 SaaS (원/건)</label>
+              <input id="pol-food-saas" type="number" min="0" step="10" value="${Number(p.food_saas_fee_per_order ?? 300)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">알림톡 원가 (원/건)</label>
+              <input id="pol-alim-base" type="number" min="0" step="1" value="${Number(p.alimtalk_base_cost ?? 13)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">알림톡 이용수수료 (원/건)</label>
+              <input id="pol-alim-fee" type="number" min="0" step="1" value="${Number(p.alimtalk_platform_fee ?? 2)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">문자 원가 (원/건)</label>
+              <input id="pol-sms-base" type="number" min="0" step="1" value="${Number(p.sms_base_cost ?? 18)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: 700;">문자 이용수수료 (원/건)</label>
+              <input id="pol-sms-fee" type="number" min="0" step="1" value="${Number(p.sms_platform_fee ?? 2)}" style="width: 100%; margin-top: 4px; padding: 7px 10px; border: 1px solid var(--border-default); border-radius: 6px;" />
+            </div>
+          </div>
+        </div>
+
         <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
           <div style="font-size: 12.5px; font-weight: 800; color: #0f172a;">알림톡 1 — ARS 전화 인입 시 모바일 주문 링크 발송</div>
           <div>
@@ -126,6 +167,15 @@ export async function renderSystemPoliciesView(container) {
       maintenance_mode: Boolean(bodyEl.querySelector('#pol-maint-mode')?.checked),
       maintenance_notice: bodyEl.querySelector('#pol-maint-notice')?.value,
       pii_retention_hours_after_delivery: Number(bodyEl.querySelector('#pol-pii-hours')?.value || 24),
+      saas_monthly_fee: 0,
+      mart_pg_fee_pct: Math.max(0, Number(bodyEl.querySelector('#pol-mart-pg')?.value ?? 2.0)),
+      mart_saas_fee_pct: Math.max(0, Number(bodyEl.querySelector('#pol-mart-saas')?.value ?? 3.0)),
+      food_pg_fee_pct: Math.max(0, Number(bodyEl.querySelector('#pol-food-pg')?.value ?? 2.0)),
+      food_saas_fee_per_order: Math.max(0, Number(bodyEl.querySelector('#pol-food-saas')?.value ?? 300)),
+      alimtalk_base_cost: Math.max(0, Number(bodyEl.querySelector('#pol-alim-base')?.value ?? 13)),
+      alimtalk_platform_fee: Math.max(0, Number(bodyEl.querySelector('#pol-alim-fee')?.value ?? 2)),
+      sms_base_cost: Math.max(0, Number(bodyEl.querySelector('#pol-sms-base')?.value ?? 18)),
+      sms_platform_fee: Math.max(0, Number(bodyEl.querySelector('#pol-sms-fee')?.value ?? 2)),
       alimtalk_ars_order_body: bodyEl.querySelector('#pol-alim-ars-body')?.value,
       alimtalk_ars_order_btn_label: bodyEl.querySelector('#pol-alim-ars-btn')?.value,
       alimtalk_ars_order_btn_url: bodyEl.querySelector('#pol-alim-ars-url')?.value,

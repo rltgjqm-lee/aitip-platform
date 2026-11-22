@@ -164,6 +164,9 @@ CREATE TABLE mart_suppliers (
     attributes_json        TEXT NOT NULL DEFAULT '{}'
                            CONSTRAINT chk_mart_attrs CHECK (json_valid(attributes_json) AND json_type(attributes_json) = 'object' AND length(attributes_json) <= 8192),
     attributes_version     INTEGER NOT NULL DEFAULT 1 CONSTRAINT chk_mart_attrs_ver CHECK (attributes_version >= 1),
+    receipt_top_notice     TEXT,
+    receipt_sub_notice     TEXT,
+    receipt_bottom_notice  TEXT,
     is_active              INTEGER NOT NULL DEFAULT 1 CONSTRAINT chk_mart_suppliers_active CHECK (is_active IN (0, 1)),
     created_at             INTEGER NOT NULL,
     updated_at             INTEGER NOT NULL
@@ -356,6 +359,11 @@ CREATE TABLE products (
     pos_plu_code           TEXT CONSTRAINT chk_products_plu CHECK (pos_plu_code IS NULL OR length(pos_plu_code) <= 30),
     is_local_food          INTEGER NOT NULL DEFAULT 0 CONSTRAINT chk_products_local_food CHECK (is_local_food IN (0, 1)),
     daily_price_updated_at INTEGER CONSTRAINT chk_products_daily_price CHECK (daily_price_updated_at IS NULL OR daily_price_updated_at > 0),
+    applied_promo_id       TEXT,
+    channel_scope          TEXT NOT NULL DEFAULT 'BOTH'
+                           CONSTRAINT chk_products_channel_scope CHECK (channel_scope IN ('BOTH', 'ONLINE_ONLY', 'OFFLINE_ONLY')),
+    is_prep                INTEGER NOT NULL DEFAULT 0
+                           CONSTRAINT chk_products_is_prep CHECK (is_prep IN (0, 1)),
     created_at             INTEGER NOT NULL,
     updated_at     INTEGER NOT NULL,
     CONSTRAINT chk_products_owner CHECK (
@@ -367,6 +375,8 @@ CREATE INDEX idx_products_store ON products (store_id);
 CREATE INDEX idx_products_mart  ON products (mart_id);
 CREATE INDEX idx_products_mart_barcode  ON products (mart_id, barcode_sku) WHERE barcode_sku IS NOT NULL;
 CREATE INDEX idx_products_mart_location ON products (mart_id, shelf_location) WHERE shelf_location IS NOT NULL;
+CREATE INDEX idx_products_mart_promo    ON products (mart_id, applied_promo_id) WHERE applied_promo_id IS NOT NULL;
+CREATE INDEX idx_products_mart_channel_prep ON products (mart_id, channel_scope, is_prep);
 
 -- ============================================================================
 -- [5] 통합 주문
@@ -450,6 +460,8 @@ CREATE UNIQUE INDEX uq_orders_phone_client_req ON orders (caller_phone_hmac, cli
 CREATE INDEX idx_orders_buyer_created ON orders (buyer_user_id, created_at);
 CREATE INDEX idx_orders_store_created ON orders (store_id, created_at);
 CREATE INDEX idx_orders_mart_created  ON orders (mart_id, created_at);
+CREATE INDEX idx_orders_mart_status_created ON orders (mart_id, order_status, created_at) WHERE mart_id IS NOT NULL;
+CREATE INDEX idx_orders_mart_business_date  ON orders (mart_id, business_date) WHERE mart_id IS NOT NULL;
 CREATE INDEX idx_orders_facility      ON orders (buyer_facility_id);
 
 CREATE TABLE order_items (
@@ -653,11 +665,9 @@ CREATE TABLE store_promotions (
     mart_id              TEXT REFERENCES mart_suppliers(id)
                          CONSTRAINT chk_promotions_mart_id CHECK (mart_id IS NULL OR (length(mart_id) = 30 AND mart_id GLOB 'mrt_*')),
     name                 TEXT NOT NULL,
-    promo_type           TEXT NOT NULL
-                         CONSTRAINT chk_promo_type CHECK (promo_type IN (
-                             'TAKEOUT_DISCOUNT', 'TIME_SALE', 'BASKET_DISCOUNT',
-                             'BUNDLE_DISCOUNT', 'BUY_X_GET_Y', 'CROSS_CATEGORY', 'DAY_OF_WEEK'
-                         )),
+    promo_type           TEXT NOT NULL,
+    calc_mode            TEXT NOT NULL DEFAULT 'UNIT_DISCOUNT'
+                         CONSTRAINT chk_promo_calc_mode CHECK (calc_mode IN ('UNIT_DISCOUNT', 'BOGO_BUNDLE', 'MIX_MATCH', 'THRESHOLD')),
     discount_type        TEXT NOT NULL
                          CONSTRAINT chk_promo_disc_type CHECK (discount_type IN ('FIXED_AMOUNT', 'PERCENTAGE', 'SET_PRICE')),
     discount_value       INTEGER NOT NULL CONSTRAINT chk_promo_disc_val CHECK (discount_value > 0),
@@ -668,6 +678,16 @@ CREATE TABLE store_promotions (
                          CONSTRAINT chk_promo_cross_cat CHECK (cross_category_id IS NULL OR (length(cross_category_id) = 30 AND cross_category_id GLOB 'cat_*')),
     promo_group_tag      TEXT,
     applicable_days_json TEXT,
+    channel_scope        TEXT NOT NULL DEFAULT 'BOTH'
+                         CONSTRAINT chk_promo_channel_scope CHECK (channel_scope IN ('BOTH', 'ONLINE_ONLY', 'OFFLINE_ONLY')),
+    card_targets_json    TEXT,
+    limit_per_person     INTEGER CONSTRAINT chk_promo_limit_person CHECK (limit_per_person IS NULL OR limit_per_person >= 1),
+    total_limit_qty      INTEGER NOT NULL DEFAULT 0,
+    used_qty             INTEGER NOT NULL DEFAULT 0,
+    status               TEXT NOT NULL DEFAULT 'ACTIVE'
+                         CONSTRAINT chk_promo_status CHECK (status IN ('ACTIVE', 'ENDED', 'PAUSED')),
+    max_discount_amount  INTEGER CONSTRAINT chk_promo_max_discount CHECK (max_discount_amount IS NULL OR max_discount_amount >= 0),
+    max_receipt_sections INTEGER CONSTRAINT chk_promo_max_sections CHECK (max_receipt_sections IS NULL OR max_receipt_sections >= 1),
     start_at             TEXT NOT NULL,
     end_at               TEXT NOT NULL,
     is_active            INTEGER NOT NULL DEFAULT 1 CONSTRAINT chk_promo_active CHECK (is_active IN (0, 1)),
@@ -680,6 +700,24 @@ CREATE TABLE store_promotions (
 );
 CREATE INDEX idx_promotions_store ON store_promotions (store_id);
 CREATE INDEX idx_promotions_mart  ON store_promotions (mart_id);
+CREATE INDEX idx_promotions_mart_channel_active ON store_promotions (mart_id, channel_scope, is_active) WHERE mart_id IS NOT NULL;
+CREATE INDEX idx_promotions_mart_status         ON store_promotions (mart_id, status) WHERE mart_id IS NOT NULL;
+
+-- [prt_] 마트별 커스텀 행사 유형 마스터 (표시 라벨 자유 추가 + 계산 엔진 4종 매핑)
+CREATE TABLE mart_promo_types (
+    id         TEXT PRIMARY KEY,
+    mart_id    TEXT REFERENCES mart_suppliers(id)
+               CONSTRAINT chk_promo_types_mart_id CHECK (mart_id IS NULL OR (length(mart_id) = 30 AND mart_id GLOB 'mrt_*')),
+    code       TEXT NOT NULL,
+    label      TEXT NOT NULL,
+    calc_mode  TEXT NOT NULL DEFAULT 'UNIT_DISCOUNT'
+               CONSTRAINT chk_promo_types_calc_mode CHECK (calc_mode IN ('UNIT_DISCOUNT', 'BOGO_BUNDLE', 'MIX_MATCH', 'THRESHOLD')),
+    is_active  INTEGER NOT NULL DEFAULT 1 CONSTRAINT chk_promo_types_active CHECK (is_active IN (0, 1)),
+    is_system  INTEGER NOT NULL DEFAULT 0 CONSTRAINT chk_promo_types_system CHECK (is_system IN (0, 1)),
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX uq_mart_promo_types_code ON mart_promo_types (mart_id, code);
 
 -- [sch_] 하나로마트 정기 순회 배송 시간표
 CREATE TABLE mart_delivery_schedules (
@@ -1134,3 +1172,35 @@ CREATE TABLE inventory_demand_forecasts (
 CREATE UNIQUE INDEX uq_forecast_product_date ON inventory_demand_forecasts (product_id, forecast_target_date);
 CREATE INDEX idx_forecast_store ON inventory_demand_forecasts (store_id, forecast_target_date) WHERE store_id IS NOT NULL;
 CREATE INDEX idx_forecast_mart  ON inventory_demand_forecasts (mart_id, forecast_target_date)  WHERE mart_id IS NOT NULL;
+
+-- ============================================================================
+-- [마트 운영 고도화 증보] DOC-11 결품·수량 정정 원장 & 시세 일괄 업로드/롤백
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS mart_adjustments (
+    adj_id       TEXT PRIMARY KEY,
+    mart_id      TEXT NOT NULL REFERENCES mart_suppliers(id),
+    order_id     TEXT NOT NULL REFERENCES orders(id),
+    buyer_name   TEXT,
+    product_id   TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    prev_qty     INTEGER NOT NULL,
+    actual_qty   INTEGER NOT NULL,
+    diff_amount  INTEGER NOT NULL DEFAULT 0,
+    reason       TEXT NOT NULL,
+    created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_adjustments_mart_order ON mart_adjustments (mart_id, order_id);
+
+CREATE TABLE IF NOT EXISTS mart_price_upload_batches (
+    batch_id       TEXT PRIMARY KEY,
+    mart_id        TEXT NOT NULL REFERENCES mart_suppliers(id),
+    mode           TEXT NOT NULL DEFAULT 'PARTIAL',
+    total_rows     INTEGER NOT NULL DEFAULT 0,
+    updated_count  INTEGER NOT NULL DEFAULT 0,
+    error_count    INTEGER NOT NULL DEFAULT 0,
+    sold_out_count INTEGER NOT NULL DEFAULT 0,
+    snapshot_json  TEXT NOT NULL,
+    rolled_back    INTEGER NOT NULL DEFAULT 0 CHECK (rolled_back IN (0, 1)),
+    created_at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_price_batches_mart_created ON mart_price_upload_batches (mart_id, created_at);

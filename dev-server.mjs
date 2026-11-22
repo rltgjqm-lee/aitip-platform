@@ -9,6 +9,19 @@ import { mqttBridge } from './packages/core/realtime/mqtt-bridge.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load .env if present (without overriding existing env vars)
+const ENV_PATH = path.join(__dirname, '.env');
+if (fs.existsSync(ENV_PATH)) {
+  for (const line of fs.readFileSync(ENV_PATH, 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    const k = trimmed.slice(0, eqIdx).trim();
+    const v = trimmed.slice(eqIdx + 1).trim();
+    if (k && process.env[k] === undefined) process.env[k] = v;
+  }
+}
+
 const PORT = 8989;
 
 const MIME_TYPES = {
@@ -220,6 +233,15 @@ function ensureAdminState() {
         maintenance_mode: false,
         maintenance_notice: '시스템 정기 점검 중입니다. 잠시 후 다시 이용해 주세요.',
         pii_retention_hours_after_delivery: 24,
+        saas_monthly_fee: 0,
+        mart_pg_fee_pct: 2.0,
+        mart_saas_fee_pct: 3.0,
+        food_pg_fee_pct: 2.0,
+        food_saas_fee_per_order: 300,
+        alimtalk_base_cost: 13,
+        alimtalk_platform_fee: 2,
+        sms_base_cost: 18,
+        sms_platform_fee: 2,
         alimtalk_ars_order_body: '[AITIP] #{store_name}입니다. 아래 버튼을 눌러 바로 메뉴를 보고 주문하실 수 있습니다.',
         alimtalk_ars_order_btn_label: '주문하기',
         alimtalk_ars_order_btn_url: 'https://aitip-platform.pages.dev/food/pwa/?storeId=#{store_id}',
@@ -1349,7 +1371,7 @@ const server = http.createServer(async (req, res) => {
         if (method === 'GET') {
           const year = Number(url.searchParams.get('year')) || 2026;
           const month = Number(url.searchParams.get('month')) || 11;
-          const overview = foodService.getSettlementOverview({ year, month });
+          const overview = foodService.getSettlementOverview({ year, month, policy: ensureAdminState().systemPolicies });
           return sendJson(res, 200, overview);
         }
       }
@@ -1984,7 +2006,7 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, ...martService.getBoxingManifest(deliveryDate) });
       }
       if (pathname === '/api/mart/settlements' && method === 'GET') {
-        return sendJson(res, 200, { success: true, ...martService.getSettlementSummary() });
+        return sendJson(res, 200, { success: true, ...martService.getSettlementSummary(ensureAdminState().systemPolicies) });
       }
       if (pathname === '/api/mart/pwa/config' && method === 'GET') {
         return sendJson(res, 200, { success: true, ...martService.getPwaConfig() });
@@ -2035,6 +2057,50 @@ const server = http.createServer(async (req, res) => {
         const media = martService.saveMediaWebp(body || {});
         return sendJson(res, 201, { success: true, ...media });
       }
+      if (pathname === '/api/mart/haccp/search' && method === 'GET') {
+        const q = url.searchParams.get('q') || '';
+        const barcode = url.searchParams.get('barcode') || '';
+        const items = await martService.searchHaccpProducts({ q, barcode });
+        return sendJson(res, 200, { success: true, items });
+      }
+      if (pathname === '/api/mart/haccp/import-image' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const media = await martService.importExternalImageToMedia(body || {});
+        return sendJson(res, 201, { success: true, ...media });
+      }
+      if (pathname === '/api/mart/facilities' && method === 'GET') {
+        return sendJson(res, 200, { success: true, facilities: martService.getFacilities() });
+      }
+      if (pathname === '/api/mart/facilities/register' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const facility = martService.registerFacility(body || {});
+        return sendJson(res, 201, { success: true, facility });
+      }
+      if (pathname === '/api/mart/facilities/decide' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const facility = martService.decideFacility(body || {});
+        return sendJson(res, 200, { success: true, facility });
+      }
+      if (pathname === '/api/mart/b2b/login' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const facility = martService.loginFacility(body || {});
+        return sendJson(res, 200, { success: true, facility });
+      }
+      if (pathname === '/api/mart/prices/batch' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = martService.applyDailyPriceBatch(body || {});
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'PRICES_BATCH_UPDATED', ...result });
+        return sendJson(res, 200, { success: true, ...result });
+      }
+      if (pathname === '/api/mart/prices/history' && method === 'GET') {
+        return sendJson(res, 200, { success: true, history: martService.getUploadHistory() });
+      }
+      if (pathname === '/api/mart/prices/rollback' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const result = martService.rollbackUploadBatch(body?.batch_id);
+        mqttBridge.publish('aitip/marts/MRT-11-650-01-47121-0001/catalog', { event: 'PRICES_ROLLED_BACK', ...result });
+        return sendJson(res, 200, { success: true, ...result });
+      }
       return sendJson(res, 404, { error: 'Not Found' });
     } catch (err) {
       return sendJson(res, 400, { error: err.message });
@@ -2058,7 +2124,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 3-0. 마트 전용 소비자·기관 모바일 PWA 정적 파일 서빙 (/mart/pwa/*)
+  // 3-0-2. 마트 B2B 기관 전용 발주 포털 정적 파일 서빙 (/mart/b2b/*)
+  if (pathname.startsWith('/mart/b2b')) {
+    let subpath = pathname.replace(/^\/mart\/b2b\/?/, '');
+    if (!subpath || subpath === '') subpath = 'index.html';
+    const filePath = path.join(__dirname, 'packages', 'services', 'mart-logistics', 'mart-b2b', subpath);
+    serveStatic(filePath, res);
+    return;
+  }
+
+  // 3-0. 마트 전용 소비자 모바일 PWA 정적 파일 서빙 (/mart/pwa/*)
   if (pathname.startsWith('/mart/pwa')) {
     let subpath = pathname.replace(/^\/mart\/pwa\/?/, '');
     if (!subpath || subpath === '') subpath = 'index.html';
