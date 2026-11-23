@@ -8,3 +8,4 @@ __pycache__/
 *.pyc
 references/
 _worker.bundle
+*.local.md

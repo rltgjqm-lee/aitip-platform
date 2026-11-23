@@ -1,7 +1,7 @@
 # 🚀 AITIP-Platform 마스터 핸드오버 및 실무 개발 지침서 (HANDOVER)
 
-> **문서 번호**: AITIP-HANDOVER-2026-V27  
-> **최종 갱신 일시**: 2026-11-16 16:15 (KST)  
+> **문서 번호**: AITIP-HANDOVER-2026-V32  
+> **최종 갱신 일시**: 2026-11-23 20:28 (KST)  
 > **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V26 (전사 8대 계층형 UID & 통계청 KSIC-11 5자리 법정코드 결합, 주소 엔진 ➔ 관할 총판·대리점 자동 매핑 거버넌스, $O(1)$ 핀포인트 조회, UI 숨김 표시 및 토글 관제, 소상공인 본체 코어 & AITIP 단말기 연동, 경로당·마을 공동구매 메커니즘, 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합, 전사 이모티콘 100% 완전 박멸, 물음표 커서 영구 퇴출, 전사 테이블 1열 상호명/관리코드 전진 배치, 가맹점 상세 관제 SSOT 모달 완성, MQTT-하드웨어 기술 규격서 증보 v1.1.0 완비, MQTT 실시간 중추망 3대 파이프라인 E2E 100% 가동, 전사 8대 계층형 UID 일원화 정규화 완결, 카카오 최신 CDN t1.kakaocdn.net 및 PWA 서비스 워커 sw.js 캐시 판올림 전사 7개 프로젝트 100% GitHub 푸시 완료, Cloudflare Pages 서버리스 한계 규명 및 TryCloudflare 퀵 터널 원격 실물 테스트 체계 완비, 슈퍼관리자 단순 조회를 탈피한 4대 축 실무형 통합 관제탑 Control Tower 고도화 로드맵 수립)  
 > **개발 행동 강령**: `AGENTS.md` (절대 신조: 상생 신뢰, 정직한 조언, 거짓말/꼼수 금지, 사전 보고·승인제, UID 무결성 사수, ESM/API 계층화)  
 > **프로젝트 위치**: `C:\Users\user\Desktop\aitip-platform`  
@@ -265,6 +265,7 @@ aitip-platform/
 | **DOC-14** | [docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-14_스마트단말기_MDM_원격관제_및_OTA_무중단펌웨어_명세서.md) | MDM 5대 텔레메트리 감시망, A/B 파티션 무중단 OTA 배포, 하드웨어 와치독 롤백 | **V1.0 최신** |
 | **DOC-15** | [docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-15_가맹점_경영분석BI_원가기여도_및_수요예측_명세서.md) | 일간 실질 공헌이익 BI 스냅샷, 4분면 메뉴 진단, 기상 연동 AI 발주 추천, 영양 리포트 | **V1.0 최신** |
 | **DOC-18** | [docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-18_엔터프라이즈_플랫폼_마스터_관리자_및_다중자산_정산_상세설계서.md) | **주소 엔진 ➔ 관할 총판·대리점 자동 매핑 스트립 및 UI 숨김 표시 거버넌스** | **V2.0 최신** |
+| **DOC-20** | [docs/DOC-20_공공데이터포털_HACCP_상품바코드_API_연동가이드.md](file:///c:/Users/user/Desktop/aitip-platform/docs/DOC-20_공공데이터포털_HACCP_상품바코드_API_연동가이드.md) | **공공데이터포털 HACCP 제품이미지·바코드 API(`CertImgListServiceV3`) 연동 및 Cloudflare 이관 가이드** | **V1.0 최신** |
 | **DDL 스키마** | [docs/schema_aitip_v01.sql](file:///c:/Users/user/Desktop/aitip-platform/docs/schema_aitip_v01.sql) | D1 SQLite 정규화 스키마 (278개 제약조건 실측 통과) | **V3.1 최신** |
 | **테스트 스위트** | [scripts/test_schema_integrity.py](file:///c:/Users/user/Desktop/aitip-platform/scripts/test_schema_integrity.py) | 278개 제약조건 자동 검증 파이썬 스크립트 | **100% PASS** |
 | **행동 강령** | [.agents/AGENTS.md](file:///c:/Users/user/Desktop/aitip-platform/.agents/AGENTS.md) | 절대 행동 원칙: 사전 보고·승인제, UID 무결성, ESM/API 모듈화 | **절대 준수** |
@@ -745,5 +746,182 @@ aitip-platform/
      3. **소비자 PWA (`customer-pwa`)**:
         - 장바구니/결제 화면에서 **쿠폰 중복 적용 규칙(`플랫폼/제휴 쿠폰 1개 + 가맹점 쿠폰 1개 + 보유 포인트`)** 검증 및 선택 UI 구현.
         - `POST /api/food/orders` 시 `applied_promotions` 스냅샷(`platform_discount`, `alliance_discount`, `merchant_discount`, `point_used`) 적재로 사후 정산 대사 정합성 확보.
+
+---
+
+### 23) 하나로마트 위탁운영 포털(`mart-portal`) UI/UX 전면 개편, 3단계 표준 상품분류, 대항군 결함 수정 (2026-11-17 ~ 2026-11-18)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-18 16:25 기준)**:
+> - **완료됨**: `mart-portal` 9개 전체 화면을 모던 커머스 어드민(`.mc-*` 읽기 중심 테이블 + 우측 슬라이드 드로어 + 다중 선택 일괄 액션 바 + 클릭형 KPI 스트립)으로 통일 개편. 마트 표준 3단계 상품분류(`대분류 > 중분류 > 소분류`, `mart-categories.js`)를 일반·신선(`catalog.js`) 및 전처리(`prep-catalog.js`)에 도입. 대항군(Red-Team) 검수를 통해 입력 상태 유실 버그 4종, 프론트↔백엔드 계약 불일치(`createPromotion`, `adjustOrderItem`), `0` 값 덮어쓰기/음수 미방어, 드로어 섹션 순서 오류 수정 완료.
+> - **명시적 제외 결정**: `샵앤샵관리` 매뉴얼 검토 후 **매장 상품 POP 인쇄 기능은 플랫폼에서 아예 제외**하기로 사용자 확정.
+> - **실행 상태**: `dev-server.mjs` `http://localhost:8989` (`task-5733`) 정상 가동 중, 수정된 백엔드/프론트 모듈 모두 `node --check` 및 HTTP `200` 확인 완료.
+
+1. **사이드바·인프라 및 공통 기반 (`2026-11-17 ~ 11-18`)**:
+   - 좌측 사이드바 7개 도메인 그룹(`1. 상품등록`, `2. 행사상품`, `3. 온라인 구성`, `4. 주문`, `5. 배송`, `6. 결제 및 정산`, `7. 마트관리`) 아코디언 구조(`packages/services/mart-logistics/mart-portal/index.html`, `mart.css`) 정비.
+   - JPG/PNG → WebP 클라이언트 경량 변환(`js/utils/media-webp.js`) 및 `/api/mart/media/upload`(`med_*`) 연동.
+   - `DOC-00` UID 체계(`MRT-11-650-01-47121-0001-A01`, `-U001`, `ORD-11-650-01-47121-0001-YYMMDD-0001`) 및 80mm 전표/A4 거래명세표 출력(`mart-receipt.js`) 연동.
+
+2. **모던 커머스 어드민(`.mc-*`) 전면 개편 (`mart.css` 및 9개 모듈)**:
+   - **공통 스타일 (`packages/services/mart-logistics/mart-portal/mart.css`)**: `.mc-page-header`, `.mc-surface`, `.mc-filter-bar`, `.mc-bulk-bar`, `.mc-table`, `.mc-pill`, `.mc-drawer` 우측 슬라이드 드로어 스타일 추가(기존 `.erp-*` 클래스 호환 유지).
+   - **일반·신선 상품 (`js/modules/catalog.js`)**: 행마다 9개씩 깔려 있던 `input`/`select` 벽을 제거하고 읽기 중심 테이블 + 체크박스 다중 선택 일괄 액션 바(노출/결제범위/일괄 할인%) + 우측 드로어로 전환. 드로어 내 `할인(%) ↔ 행사가` 양방향 계산 및 실시간 예상 마진/역마진 경고 배지 제공.
+   - **전처리 상품 (`js/modules/prep-catalog.js`)**: 3단계 표준 분류 + 전처리 공정 구분(`세척·탈피 / 절단·슬라이스 / 정선·소분 / 양념·가공`) 및 보관 필터, 우측 등록/수정/발주서 일괄 드로어 적용.
+   - **행사·전단 (`js/modules/flyer-promo.js`)**: 원본 전단 대조 Split View + 결제범위 필터 + 단건 행사 룰 등록 드로어(`POST /api/mart/promotions`).
+   - **온라인 구성 (`js/modules/pwa-control.js`)**: 좌측 설정 카드 + 우측 고정(`sticky`) 실시간 모바일 PWA 미리보기(`375px` / `768px` / `1200px` 전환 시 편집 상태 유지).
+   - **주문관리 (`js/modules/orders.js`)**: 배민 B마트형 클릭형 상태 KPI 스트립(`전체/신규접수/피킹중/포장완료/배송완료`) + Medusa 스타일 주문상세/타임라인 드로어 + 품목별 실수량 정정/1클릭 `결품(0)`(`POST /api/mart/orders/adjust`) + 오프라인 주문 입력 드로어 분리.
+   - **피킹·박싱·정산·마트정보 (`picking.js`, `boxing.js`, `settlement.js`, `mart-info.js`)**: 동일 `.mc-*` 카드/테이블/뱃지/버튼 톤으로 통일 완료.
+
+3. **마트 표준 3단계 상품분류 체계 (`js/utils/mart-categories.js`)**:
+   - `01 농산`, `02 축산`, `03 수산`, `04 가공식품`, `05 냉장·냉동·유제품`, `06 생활·비식품` 3단계 트리(`getL1List`, `getL2List`, `getL3List`, `buildCategoryPath`, `inferCategoryFromProduct`) 구축.
+   - `catalog.js` 및 `prep-catalog.js` 드로어 최상단(`1. 표준 상품분류`)에 3단 연동 셀렉트 배치 및 신규 등록 시 과면세/운영구분 자동 추천.
+   - `mart-service.mjs` `addProduct()` / `updateProduct()`에 `category_l1`, `category_l2`, `category_l3`, `category_path` 저장 반영.
+
+4. **대항군(Red-Team) 검수 및 결함 수정 완료 항목**:
+   - **입력 상태 유실 차단**: `catalog.js`, `prep-catalog.js`, `flyer-promo.js` 이미지 업로드 시 미리보기 박스만 부분 갱신, `orders.js` 오프라인 품목 추가/삭제 시 리스트만 부분 갱신, `pwa-control.js` 디바이스 전환 시 DOM 스타일만 전환해 미저장 입력값 보호.
+   - **프론트↔백엔드 계약 일치**: `mart-service.mjs` `createPromotion()`에 `payment_scope` 및 `discount_pct` 저장 보강, `flyer-promo.js` 행사 유형 코드(`BOGO_1_PLUS_1`, `BOGO_2_PLUS_1`, `MIX_AND_MATCH`, `QTY_DISCOUNT`, `PRICE_DISCOUNT`) 및 `discount_pct` 통일, `orders.js`에서 `actual_qty ?? qty` 표시 및 `product_id || id || name` 매칭 통일.
+   - **`0` 값 보존 및 음수 차단**: `??` 연산자 및 `Math.max(0, ...)` / `min="0"` 적용으로 재고 `0`, 안전재고 `0`, 행사가 `0`, 수수료 `0%` 정상 저장 보장.
+   - **분류 추론 교정**: `양파/마늘/대파/고추`가 `양념채소(010203)`로 정확히 매핑되도록 정규식 우선순위 수정 (`국내산 깐마늘(대)` → `01 0102 010203` 검증 통과).
+
+5. **내일 이어서 진행할 과제 (Next Steps)**:
+   1. **사용자 화면 검수 후 세부 수정**: 새로 개편된 `mart-portal` 전 메뉴(`http://localhost:8989/mart/`)에 대한 사용자 피드백 반영.
+   2. **UX 피드백·모바일 반응형 보완 (대항군 5번 잔여 항목)**:
+      - 전 모듈 API 호출(`martApi.*`) `try/catch` + 공통 토스트(성공/오류 안내) 추가, `mart-info.js` 블로킹 `alert()` 제거 및 사원 삭제 확인 UX 추가.
+      - `@media (max-width: 800px)` 모바일 뷰포트용 사이드바 토글 버튼(`index.html`/`mart.css`) 및 `orders.js`/`flyer-promo.js`/`pwa-control.js` 인라인 그리드 반응형 브레이크포인트 보강.
+   3. **일괄 파서(`mart-catalog-parser.mjs`) 고도화**: POS CSV 분류코드 → `category_l1/l2/l3` 직접 매핑 및 전단/전처리 반복 업로드 시 바코드 충돌 방지.
+   4. **플랫폼 전체 4자 통합 프로모션 아키텍처(22절 로드맵)** 및 `DOC-19` 슈퍼관리자 ↔ 마트 포털 통합 연동 이어서 진행.
+
+---
+
+### 24) 마트 실무 행사·진열 SSOT, 양방향 승인, 전단 미리보기, D1 전환 준비 & 통합 E2E 검증 (2026-11-19 ~ 2026-11-20)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-20 12:55 기준)**:
+> - **완료됨**:
+>   1. **행사-상품-PWA 진열 SSOT 연동**: `flyer-promo.js` 3번째 탭 `행사별 상품 연결`(`applied_promo_id` 양방향 동기화), `pwa-control.js`의 `PROMO_SHELF`/`CURATED_SHELF` 블록별 `[진열 상품 선택]` 서랍(`featured_product_ids` 저장, `draftFeaturedIds`로 검색 중 체크 상태 보존), 고객용 `pwa-app.js` 홈 블록 실연동 완료.
+>   2. **동적 행사 유형 관리 & PWA 다중 행사 계산 엔진**: `금토일 특가`를 `DAY_OF_WEEK`(요일별 특가)로 일반화하고 마트별 커스텀 행사 유형 추가·숨김·삭제(`GET/POST/PATCH/DELETE /api/mart/promo-types`, `mart_promo_types`) 구축. `pwa-promo-engine.js`에서 `1+1`, `2+1`, `골라담기`, 요일 제한, 카드사 제한, 최대 할인 한도, 1인 한정 통합 계산 연동.
+>   3. **양방향 등록 · 승인 거버넌스**: 마트 포털(`pwa-control.js` `+ 공동구매 등록`, `POST /api/mart/group-buys`) ➔ 슈퍼관리자(`/admin/` `mart-union.js`, `POST /api/admin/mart/group-buys/decide`) 승인 시 PWA 노출. 반대로 슈퍼관리자(`mart-union.js`, `POST /api/admin/mart/co-sell-products`)가 전국 공동판매 상품 배포 제안 ➔ 마트 포털(`catalog.js` `본부 배포 승인대기`, `POST /api/mart/products/approve`) 취급 승인/반려 구현.
+>   4. **전단 일괄 파싱 고도화**: `mart-catalog-parser.mjs`에 카드사·요일·채널·최대할인·`applied_promo_id` 추출 추가, `POST /api/mart/import/preview` + `flyer-promo.js` 2단계(`1. 파싱 미리보기` ➔ `2. 확정 일괄 반영`) 검수 UI 및 기존 상품 자동 매칭(`MATCHED_EXISTING`) 적용.
+>   5. **리팩토링 & D1 전환 준비**: `mart-seed.mjs`(272줄) 및 `catalog-helpers.js`(112줄) 분리, `docs/schema_aitip_v01.sql`에 신규 컬럼·복합 인덱스·`mart_promo_types` 반영, 루트 `wrangler.toml`, `packages/services/mart-logistics/migrations/0001_mart_d1_init.sql`, `packages/services/mart-logistics/backend/mart-d1-adapter.mjs`(`MartD1Adapter`) 생성.
+> - **통합 E2E 검증 실측 결과 (`http://localhost:8989`, 2026-11-20)**:
+>   - 마트 포털(`/mart/`), 고객 PWA(`/mart/pwa/`), 슈퍼관리자(`/admin/` `#mart-union`) 전 화면 HTTP `>= 400` 에러 `0건`, 콘솔 에러 `0건`.
+>   - 검증 중 발견된 `flyer-promo.js:430` (`renderChannelBadge` 미정의) 즉시 수정 후 `1. 파싱 미리보기` 5건 검수 테이블 정상 렌더링 재검증 완료.
+> - **남은 과제 / Gap (다음 작업 후보)**:
+>   1. **Cloudflare D1 실제 런타임 연결**: 현재 `dev-server.mjs`의 `mart-service.mjs`는 로컬 JSON(`mart_data.json`) 기반이며, `MartD1Adapter`를 Workers 엔트리포인트에 연결하는 작업은 아직 미구현.
+>   2. **마트(`mart-logistics`) MQTT 실시간 연동**: `packages/core/realtime/mqtt-bridge.mjs`는 `food-delivery`에만 연결되어 있고 `mart-logistics`에는 미연결 상태(`aitip/marts/{martId}/*` 토픽 연결 필요).
+>   3. **`catalog.js` 추가 분할 & 관찰된 사소한 UI 보완**: `catalog.js`(987줄) 모달 분리, PWA 장바구니 `+/-` 버튼 대비 시인성 보완, `/admin/` `#dashboard`의 일부 샘플 가맹점 `undefined undefined` 권역 표시 및 1280px 상단 바 줄바꿈 보정.
+
+---
+
+### 25) 전단 CSV·배너 PWA 게시, 축산/전품목 분류 상세화, 행사 룰 수정·삭제 CRUD 완결 (2026-11-20 오후)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-20 16:15 기준)**:
+> - **오늘 오후 추가 완료 항목**:
+>   1. **전단 행사표 CSV 정석 업로드 & 전단 배너 PWA 실연동**:
+>      - 실물 마트 전단지(다단 그리드·카드사 로고 이미지·전품목 1+1)는 정규식 OCR만으로 무인 자동화가 불가능함을 확인하고, **정석(전단 CSV 양식 다운로드/업로드 + 전단 이미지는 고객 PWA 상단 `FLYER_CAROUSEL` 배너 게시)**을 1차 메인으로 구현. (향후 비전 AI 초벌 추출 + `1. 파싱 미리보기` 검수 UI를 2차 보조 수단으로 확장 예정)
+>      - `mart-catalog-parser.mjs`: `parseMartFlyerCsvRows` 추가 (`바코드, 상품명, 행사유형, 정상가, 행사가, 필요수량, 묶음가, 시작일, 종료일, 채널, 카드사`).
+>      - `flyer-promo.js`: `[전단 CSV 양식]`, `[CSV/엑셀 업로드]`, `[PWA 배너 게시]`(`pwa_config.flyer_banners` 저장 ➔ `pwa-app.js` `FLYER_CAROUSEL` 이미지 슬라이더 노출) 및 `행사별 상품 연결` 탭 **대분류 필터 + 전체 선택/해제 체크박스** 추가.
+>   2. **상품 표준 3단계 분류 상세화 & 과면세 단일화**:
+>      - `mart-categories.js`: `02 축산`에서 `0204 오리 · 특수육` 분리 및 `0205 수입육 · 양념육` 신설, 전 대분류 실무 품목(`밀키트`, `통조림·즉석밥`, `주방·반려동물` 등) 및 `inferCategoryFromProduct()` 키워드 매핑 대폭 보강.
+>      - `catalog.js`: 등록 드로어 내 구식 `#mp-cat`(공산품/농·수산/예약·정기) 드롭다운을 제거하고 `과면세 구분 *`(면세/과세) 단일 셀렉트로 정리(`category_type`은 대분류 코드 기반 자동 매핑).
+>   3. **행사 룰 수정 · 삭제 CRUD 완결**:
+>      - `mart-service.mjs` (`updatePromotion`, `deletePromotion`), `dev-server.mjs` (`PATCH/DELETE /api/mart/promotions`), `api.js`, `flyer-promo.js` (`[수정] · [복제] · [삭제]`) 구현.
+>      - 수정 시 연결 상품(`applied_promo_id`)의 행사 조건 자동 동기화, 삭제 시 연결 상품 행사 자동 해제(정상가 복원) 보장.
+>   4. **검증 및 서버 상태**: `dev-server.mjs` (`task-6458`, `http://localhost:8989`) 가동 중. `node --check` 및 `POST -> PATCH -> DELETE /api/mart/promotions`, `POST /api/mart/import/preview`, `inferCategoryFromProduct`, HTTP `200` 모두 실측 통과.
+> - **내일 이어서 진행할 과제**:
+>   1. **추가 화면/기능 수정 사항 확인**: 사용자 추가 피드백(관찰된 PWA `+/-` 버튼 대비, `/admin/` `#dashboard` `undefined undefined` 권역 보정, 추가 UI 개선 요청 등) 반영.
+>   2. **전단 이미지 비전 AI 보조 추출 (`/api/mart/import/vision-preview`)** 또는 **Cloudflare D1 실제 런타임 연결 / 마트 MQTT 실시간 브릿지(`aitip/marts/{martId}/*`)** 중 사용자 지정 우선순위로 진행.
+
+---
+
+### 26) 80mm 실무 전표·바코드·자체문구, 공공데이터포털 HACCP 문서화, 정산 UI/UX 정비 (2026-11-21)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-21 19:15 기준)**:
+> - **오늘 완료 항목**:
+>   1. **실물 마트 규격 80mm 전표 & A4 거래명세표 고도화 (`mart-receipt.js`, `pwa-app.js`, `mart-info.js`, `mart_data.json`)**:
+>      - `mart-receipt.js`: 순수 SVG `Code 39` 1D 바코드 생성기(`renderCode39Svg`) 탑재, 매장 헤더(`mart_name`, `biz_number`, `phone`, `address`), 배송모드(`당일배송`/`매장픽업`), 품목별 면세 `*` 표기 및 `barcode || product_id`·단가×수량=금액, 면세/과세공급가/부가세 10% 분리 집계, `promo_discount_total`, 보관 온도대 수량, 인수자 서명란, 하단 주문 UID Code 39 바코드 및 `@page { size: 80mm auto; margin: 3mm; }` 인쇄 CSS 적용. A4 거래명세표에도 `바코드/SKU`·`과면세` 컬럼 추가.
+>      - 마트 자체 전표 문구 3종(`receipt_top_notice` 상단, `receipt_sub_notice` 마트 정보 아래, `receipt_bottom_notice` 주문바코드 위) 스키마(`mart_data.json`), 관리 입력 UI(`mart-info.js` `#mi-rcpt-top`, `#mi-rcpt-sub`, `#mi-rcpt-bottom`), 전표 조건부 출력(`mart-receipt.js`) 연동.
+>      - `pwa-app.js`: 주문 생성(`#btn-submit-pwa-order`) 시 각 품목에 `barcode`, `tax_type` 포함 전달.
+>   2. **공공데이터포털 HACCP API 연동 문서화 (`docs/DOC-20_공공데이터포털_HACCP_상품바코드_API_연동가이드.md`)**:
+>      - `CertImgListServiceV3/getCertImgListServiceV3` 엔드포인트, Encoding/Decoding 인증키 설정 주의사항(`serviceKey=${apiKey}`), `mart-service.mjs`(`searchHaccpProducts`, `importExternalImageToMedia`), `dev-server.mjs`(`GET /api/mart/haccp/search`, `POST /api/mart/haccp/import-image`), `catalog.js`(`#btn-haccp-lookup`) 구조 및 Cloudflare Pages Functions(`functions/api/`) 미이관 Gap 명시.
+>   3. **마트 정산 화면 SaaS 관점 정비 · UID 축약 · 검색/날짜 필터 추가 (`settlement.js`)**:
+>      - 마트 포털(`settlement.js`)에서 세부 수수료(`위탁대행 5%`, `플랫폼 1.5%`) 개별 노출 및 합산 세금계산서 박스를 제거하고(세부 3자 수수료 원장은 슈퍼관리자 `/admin/` 영역으로 분리), `총 확정 매출 / 면세 / 과세 / 정산 공제 합계 / 마트 입금 예정액` 5종 KPI로 단순화.
+>      - 내부 `ledger_id`(`mstl_...`), `facility_id`(`FAC-...`) 화면 표출 제거, `order_id` 축약 표시(`formatShortOrderNo`, 예: `261118-0001`, 마우스 오버 `title` 및 `data-order-id`에 전체 UID 보존).
+>      - 통합 검색(`#stl-search`: 축약번호/끝자리/바코드 전체 `ORD-...`/수요처명 매칭) + 배송일 필터(`#stl-date`) + 검색 결과 합계 요약 바 추가.
+> - **검증 및 서버 상태**:
+>   - `node --check` 통과: `mart-receipt.js`, `pwa-app.js`, `mart-info.js`, `settlement.js` (`exit 0`).
+>   - `mart_data.json` JSON 파싱 확인 및 `node scripts/build-pages.mjs` 빌드 완료 (`exit 0`).
+>   - `dev-server.mjs` (`task-6808`, `http://localhost:8989`) 가동 중, `/mart/js/modules/mart-receipt.js`, `/mart/pwa/js/pwa-app.js`, `/mart/js/modules/mart-info.js`, `/mart/js/modules/settlement.js` HTTP `200` 및 `/api/mart/profile` 응답 실측 확인.
+> - **내일 다시 기획 · 진행할 과제 (Next Steps)**:
+>   1. **SaaS 플랫폼 정산·과금 정책 및 `/admin/` ↔ `/mart/` 역할 분리 재기획**: 슈퍼관리자(`/admin/`) 측 3자 수수료·알림톡·세금계산서 상세 원장과 마트 포털(`/mart/`) 실입금·청구 화면 간 정책 일관성 점검.
+>   2. **전사 포털 UID 표시 및 검색 UX 통일 기획**: `orders.js` 등 마트/가맹점 테이블의 `주문 UID` 축약 표시(`YYMMDD-SEQ`) + 바코드/짧은번호/수요처 통합 검색 일관 적용 여부 결정.
+>   3. **운영 인프라 이관 우선순위 확정**: `functions/api/` Cloudflare Pages Functions 이관(`HACCP_API_KEY` 시크릿, R2 미디어 업로드, D1 `MartD1Adapter` 런타임 연결) 및 `mart-logistics` MQTT 브릿지 연결.
+
+---
+
+### 27) 시범사업 피드백 기반 마트 운영 4대 고도화 및 전사 공통 페이지네이션 적용 (2026-11-22)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-22 16:02 기준)**:
+> - **완료 항목 (대항목 1~4번 + 전사 공통 페이지네이션)**:
+>   1. **대항목 1 — 당일 시세 일괄 업로드 · 오류 행만 재업로드 · 미니 엑셀 · `SYNC_FRESH` · 원클릭 롤백 (`channel-assign.js`, `mart-service.mjs`, `dev-server.mjs`, `api.js`)**:
+>      - `POST /api/mart/prices/batch` (`applyDailyPriceBatch`), `GET /api/mart/prices/history` (`getUploadHistory`), `POST /api/mart/prices/rollback` (`rollbackUploadBatch`) 구현.
+>      - 전체 재업로드 없이 오류 행만 인라인 수정·재업로드 또는 오류 CSV 내보내기 지원, 체크박스 선택 상품 미니 엑셀 다운로드, `SYNC_FRESH`(당일 신선 목록 미포함 기존 신선 상품 자동 품절), 업로드 직전 스냅샷 기반 원클릭 롤백 반영.
+>   2. **대항목 2 — 재고 0 자동 품절 & 재고 상태 필터 (`catalog.js`, `b2b-app.js`)**:
+>      - `catalog.js`에 재고 상태 필터(`OK`/`LOW`/`OUT`) 추가 및 `b2b-app.js`에서 `stock_qty === 0` 상품 품절 비활성화 처리.
+>   3. **대항목 3 — 기획전 매대 진열 순서(`▲`/`▼`) & 매대 전용가 (`pwa-control.js`, `pwa-app.js`)**:
+>      - 매대 내 진열 상품 순서 이동(`▲`/`▼`) 및 상품별 `shelf_price` 오버라이드(`shelf_overrides`) 저장·PWA 실반영 구현.
+>   4. **대항목 4 — 할인 규칙 CSV 일괄 관리 & 선착순 한정수량 자동 종료 (`flyer-promo.js`, `mart-service.mjs`)**:
+>      - `mart-service.mjs`: `createPromotion` (`total_limit_qty`, `used_qty: 0`), `updatePromotion` (`total_limit_qty`, `used_qty`, `status`: `ACTIVE`/`ENDED`/`PAUSED`), `createOrder` (`used_qty` 누적 후 `total_limit_qty > 0 && used_qty >= total_limit_qty` 시 자동 `ENDED` 전환 및 연결 상품 정상가 원복).
+>      - `flyer-promo.js`: `RULES` 탭 `[할인 규칙 CSV 다운로드]` (`#btn-dl-promo-rules-csv`), `[할인 규칙 일괄 수정(CSV)]` (`#file-promo-rules-csv`), 등록 드로어 `#pm-total-limit` (`선착순 전체 한정수량`) 추가.
+>   5. **전사 공통 하단 센터 페이지네이션 (`<< < 1 2 > >>`)**: `catalog.js`, `prep-catalog.js`, `channel-assign.js`, `daily-price.js`, `flyer-promo.js`, `orders.js`, `settlement.js` 마트 포털 전 주요 목록에 적용 완료.
+>   6. **4~6번 대항목 상세보기 & 실중량 용어 정리**: `orders.js`, `picking.js`, `boxing.js`, `settlement.js` 전 모듈에 `[상세보기]` 버튼 및 우측 상세 드로어(전표·명세표 출력 연동) 추가, `실중량` 표현 제거 후 `결품·수량 정정`으로 통일.
+>   7. **당일 시세 · 변동 독립 메뉴 & 사용 안내 모달**:
+>      - `mart-portal/index.html` (`2. 판매 · 행사 적용 > 당일 시세 · 변동`, `/mart/js/app.js?v=20261122` 캐시 버스팅), `app.js`, `daily-price.js` 신설(실시간 시세·재고 즉시 수정, 일괄 CSV·오류 행 재업로드, `SYNC_FRESH`, 원클릭 롤백).
+>      - `catalog.js` 상단 우측 원형 `?` 버튼(`#btn-catalog-help`) 및 사용 안내 모달(`#mc-catalog-help-modal`) 추가.
+>   8. **허브·B2B·PWA UI/UX, 사업자 푸터 & B2B 발주 상세/수정·취소**:
+>      - `packages/hub/index.html`: 컴팩트 3×2 대칭 6카드(1행 HQ·외식관리자·외식 PWA, 2행 마트관리자·마트 PWA·마트 B2B).
+>      - `mart-b2b`: PC·태블릿 인증 카드 중앙 정렬(`.b2b-auth-stage`), 하단 사업자 푸터, `내 발주` `[상세보기]` + 피킹 전(`REQUESTED`) 수량 수정·발주 취소(`b2b-api.js`, `b2b-app.js`) 구현.
+>      - `mart-pwa`, `food/pwa`: 관리자 기본정보(`mart`/`store`)와 실시간 연동되는 하단 사업자 푸터 추가(`food/pwa`는 `매장정보` 탭에서 중복 숨김).
+>   9. **중간점검 리팩토링·ESM 순수화·D1/R2 스키마/인덱스/UID 일관성 정비**:
+>      - `0001_mart_d1_init.sql` & `docs/schema_aitip_v01.sql`: `store_promotions` (`total_limit_qty`, `used_qty`, `status`, `idx_promotions_mart_status`), `orders` (`idx_orders_mart_delivery`/`idx_orders_mart_business_date`), `mart_adjustments` (`idx_adjustments_mart_order`), `mart_price_upload_batches` (`idx_price_batches_mart_created`), `mart_suppliers` 전표 자체문구 3종(`receipt_top_notice`, `receipt_sub_notice`, `receipt_bottom_notice`), `0001_mart_d1_init.sql` `products` 3단분류/B2B/`media_id` 동기화 완료.
+>      - `mart-d1-adapter.mjs`: `createPromotion` 신규 필드 반영 및 `recordPriceUploadBatch`, `getPriceUploadBatches` 추가.
+>      - `mart-price-batch.mjs` 분리 및 충돌 방지용 순차 ID 생성기 `nextMonotonicId(prefix)` 도입(`mart-service.mjs` 내 `Date.now()` 단독 ID 전면 교체).
+>      - `mart-portal/js/utils/html.js` (`escapeHtml`, `esc`, `bindStopPropagation`) 신설로 10개 모듈 중복 이스케이프 함수 제거 및 인라인 `onclick="event.stopPropagation()"` 7건 완전 제거(`0건`).
+>   10. **설계서 동기화**: `docs/DOC-19_하나로마트_위탁운영_PWA_몰_관리자_수퍼관리자_통합연동_설계서.md` 제12장 및 `docs/전사_다중_프로젝트_통합_플랫폼_표준_아키텍처_총람_v06.md` 제6장 `6) 전사 공통 운영 UI/UX 표준 규격` 업데이트 완료.
+> - **검증 및 서버 상태**:
+>   - `node --check`: `mart-logistics` 및 `food/pwa` 수정 모듈 모두 종료 코드 `0` 통과.
+>   - `node scripts/build-pages.mjs` 빌드 완료 (`exit 0`).
+>   - `dev-server.mjs` (`task-7614`, `http://localhost:8989`) 가동 중, `/`, `/mart/`, `/mart/pwa/`, `/mart/b2b/`, `/food/pwa/`, `/api/mart/catalog`, `/api/mart/prices/history` 모두 HTTP `200` 실측 확인.
+> - **다음 이어서 진행할 과제 (Next Steps)**:
+>   1. **운영 인프라 이관**: `functions/api/` Cloudflare Pages Functions 이관(`HACCP_API_KEY`, R2, D1 `MartD1Adapter`) 및 `mart-logistics` MQTT 실시간 브릿지 연결.
+>   2. **SaaS 정산·UID 표시 일관성**: `/admin/` ↔ `/mart/` 정산 역할 분리 및 `orders.js` 등 전사 테이블 주문 UID 축약 표시(`YYMMDD-SEQ`) 적용 검토.
+
+---
+
+### 28) Cloudflare D1·R2 바인딩 복구, HACCP 5,206건 WebP 공용 풀 & 식약처 C005 분할 적재 (2026-11-23)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-23 20:28 기준)**:
+> - **오늘 완료 항목**:
+>   1. **Cloudflare Pages D1·R2 바인딩 복구 (`aitip-platform.pages.dev`)**:
+>      - 루트에 바인딩이 비어 있던 `wrangler.json`이 `wrangler.toml`보다 우선 적용되어 런타임 `env.DB`/`env.MEDIA_PUBLIC`/`env.MEDIA_PRIVATE`가 `undefined`로 들어오던 원인 규명 및 `wrangler.json` 제거(`87ab765`).
+>      - Pages `Production`/`Preview` 양쪽에 `DB` (`aitip-core-db`, `e56618aa-1047-4196-9e9d-a7384f09a427`), `MEDIA_PUBLIC` (`aitip-media-public`), `MEDIA_PRIVATE` (`aitip-media-private`) 및 `HACCP_API_KEY` 시크릿 정상 연결·실측 검증 완료 (`https://aitip-platform.pages.dev`).
+>   2. **공용 바코드 카탈로그 스키마 & HACCP 5,206건 WebP 사전 적재**:
+>      - `packages/services/mart-logistics/migrations/0002_shared_barcode_catalog.sql` 원격 `aitip-core-db` 적용(총 14테이블).
+>      - `scripts/preload-haccp-barcodes.mjs`: HACCP `CertImgListServiceV3` 전체 147페이지(`14,602건`) 스캔 -> 유효 바코드+이미지 `5,213건` 추출 -> Python Pillow 12.2.0 실제 WebP 변환(최대 800px, quality=82) -> `node:crypto` AWS SigV4 R2 S3 API 직결 병렬 업로드(`shared/barcode/{barcode}.webp`, 영구 404 7건 제외 **5,206건** 적재 완료).
+>      - UID 규칙 준수: `bar_0...` 30자 표준 Crockford Base32 ULID(`bar_[0-7]*`) 및 `ON CONFLICT(barcode) DO UPDATE` 적용.
+>   3. **식약처 `C005`(바코드연계제품정보) 현행 생산분 1일차 1만 건 적재**:
+>      - `C:\Users\user\Downloads\C005.csv.gz`(전체 `260,104행`) 중 `END_DT`(생산종료일) 공란인 현행 생산 유효 바코드 **`127,533건`** 필터링 완료.
+>      - Cloudflare 무료 플랜 D1 일일 쓰기 한도(100,000 rows written/day, 건당 약 5 rows written) 고려하여 `scripts/import-c005-barcodes.mjs` 작성 및 1일차 `--offset=0 --limit=10000` 적재 완료 (`ON CONFLICT(barcode) DO NOTHING`으로 기존 HACCP WebP 5,206건 보존, 누적 **`15,058건`**, DB `5.19 MB`).
+>   4. **API·마트 포털 UI·자가증식(`MERCHANT_INPUT`) 연동**:
+>      - `mart-d1-adapter.mjs` (`lookupSharedBarcode`, `lookupSharedBarcodesBatch`, `contributeSharedBarcode`), `functions/api/mart/[[path]].js` (`GET /api/mart/catalog/barcode/:barcode`, `POST /api/mart/catalog/barcodes/lookup`, `GET /api/mart/media/public/*`, `GET /api/mart/haccp/search` D1 우선+실시간 HACCP 3.5s 폴백 병합, `POST /api/mart/haccp/import-image`, `POST /api/mart/products` 신규 `id` 생성 및 `MERCHANT_INPUT` 자동 축적) 구현 및 Pages 배포(`06c6802`).
+>      - `mart-portal/js/api.js` (`lookupBarcodesBatch`), `catalog.js` (`#mp-name`/`#mp-barcode` Enter 키 조기 폼 제출 방지 및 자동 조회 `102e852`, 공용 WebP 직접 사용), `daily-price.js` (CSV 일괄 업로드 전 `lookupBarcodesBatch` 자동 매칭) 반영.
+>   5. **인증키 로컬 보관 (Git 제외)**:
+>      - `.env`(gitignored): `HACCP_API_KEY`, `R2_S3_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `FSK_API_KEY` 저장.
+>      - `docs/R2_S3_CREDENTIALS.local.md`: `.gitignore`에 `*.local.md` 추가하여 로컬 전용 보관.
+> - **실측 검증 상태 (2026-11-23)**:
+>   - `https://aitip-platform.pages.dev/api/mart/catalog/barcode/8809678470007` (`200`, `참군고구마칩`), `POST /api/mart/catalog/barcodes/lookup` (`200`, `count: 2`), `GET /api/mart/media/public/shared/barcode/8809678470007.webp` (`200`, `image/webp`, `16,412 bytes`), `GET /api/mart/haccp/search?q=너구리` (`200`, `순한너구리`·`얼큰한너구리` 2건) 실측 통과.
+>   - 로컬 `dev-server.mjs` (`task-8289`, `http://localhost:8989`) 가동 중.
+> - **다음 이어서 진행할 과제 (Next Steps)**:
+>   1. **`C005` 현행 생산분 잔여 일일 분할 적재**: 내일 이후 하루 10,000건씩 이어서 실행 (`node scripts/import-c005-barcodes.mjs --apply --offset=10000 --limit=10000`, 전체 `127,533건` 완료까지 약 12일치 분할).
+>   2. **`mart-logistics` MQTT 실시간 브릿지 연결** 및 **SaaS 정산(`/admin/` ↔ `/mart/`)·전사 테이블 주문 UID 축약 표시 통일**.
+
+
 
 
