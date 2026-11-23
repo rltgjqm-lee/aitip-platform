@@ -308,13 +308,17 @@ async function main() {
 
   if (!isApply) return;
 
-  const targetSlice = limit > 0 ? validList.slice(offset, offset + limit) : validList.slice(offset);
-  console.log(`[HACCP Apply] 대상: offset=${offset}, count=${targetSlice.length} (전체 ${validList.length}건 중)`);
-
   const rawDir = path.join(ROOT_DIR, 'scratch', 'haccp_raw');
   const webpDir = path.join(ROOT_DIR, 'scratch', 'haccp_webp');
   fs.mkdirSync(rawDir, { recursive: true });
   fs.mkdirSync(webpDir, { recursive: true });
+
+  const isMissingOnly = args.includes('--missing-only');
+  let targetSlice = limit > 0 ? validList.slice(offset, offset + limit) : validList.slice(offset);
+  if (isMissingOnly) {
+    targetSlice = targetSlice.filter(it => !fs.existsSync(path.join(webpDir, `${it.barcode}.webp`)));
+  }
+  console.log(`[HACCP Apply] 대상: offset=${offset}, count=${targetSlice.length} (전체 ${validList.length}건 중${isMissingOnly ? ', 미적재분만' : ''})`);
 
   const downloaded = [];
   let downloadFail = 0;
@@ -322,10 +326,21 @@ async function main() {
     const rawFile = path.join(rawDir, `${item.barcode}.bin`);
     try {
       if (!fs.existsSync(rawFile) || fs.statSync(rawFile).size === 0) {
-        const imgRes = await fetch(item.source_image_url);
-        if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status}`);
-        const buf = Buffer.from(await imgRes.arrayBuffer());
-        fs.writeFileSync(rawFile, buf);
+        let lastErr;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const imgRes = await fetch(item.source_image_url, { signal: AbortSignal.timeout(10000) });
+            if (!imgRes.ok) throw new Error(`HTTP ${imgRes.status}`);
+            const buf = Buffer.from(await imgRes.arrayBuffer());
+            fs.writeFileSync(rawFile, buf);
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            if (attempt < 2) await new Promise(r => setTimeout(r, 500));
+          }
+        }
+        if (lastErr) throw lastErr;
       }
       downloaded.push(item);
     } catch (err) {

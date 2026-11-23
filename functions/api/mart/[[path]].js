@@ -284,8 +284,80 @@ export async function onRequest(context) {
     const pathBc = subPath.startsWith('catalog/barcode/') ? subPath.slice('catalog/barcode/'.length) : '';
     const barcode = pathBc || urlObj.searchParams.get('barcode') || '';
     const q = urlObj.searchParams.get('q') || '';
-    const items = d1 ? await d1.lookupSharedBarcode({ barcode, q }) : [];
-    return jsonRes({ success: true, source: 'shared_barcode_catalog', items, item: items[0] || null });
+    const d1Items = d1 ? await d1.lookupSharedBarcode({ barcode, q }) : [];
+    let items = [...d1Items];
+
+    if (subPath === 'haccp/search' && env?.HACCP_API_KEY && (q.trim() || (barcode.trim() && d1Items.length === 0))) {
+      try {
+        const qs = [`serviceKey=${env.HACCP_API_KEY}`, 'returnType=json', 'pageNo=1', 'numOfRows=15'];
+        if (barcode.trim()) qs.push(`barcode=${encodeURIComponent(barcode.trim())}`);
+        else if (q.trim()) qs.push(`prdlstNm=${encodeURIComponent(q.trim())}`);
+        const hRes = await fetch(`https://apis.data.go.kr/B553748/CertImgListServiceV3/getCertImgListServiceV3?${qs.join('&')}`, {
+          signal: AbortSignal.timeout(3500)
+        });
+        if (hRes.ok) {
+          const hJson = await hRes.json();
+          const raw = hJson?.body?.items || [];
+          const arr = (Array.isArray(raw) ? raw : [raw]).map(w => w?.item || w).filter(Boolean);
+          const seenBc = new Set(d1Items.map(i => i.barcode).filter(Boolean));
+          const seenKey = new Set(d1Items.map(i => `${i.name}|${i.barcode || ''}`));
+          for (const it of arr) {
+            const name = String(it.prdlstNm || '').trim();
+            if (!name) continue;
+            const rawBc = String(it.barcode || '').replace(/[^0-9]/g, '');
+            if (rawBc && seenBc.has(rawBc)) continue;
+            const key = `${name}|${rawBc}`;
+            if (seenKey.has(key)) continue;
+            seenKey.add(key);
+            if (rawBc) seenBc.add(rawBc);
+            items.push({
+              prdlstReportNo: it.prdlstReportNo || '',
+              name,
+              spec: it.capacity && it.capacity !== '알수없음' ? it.capacity : '-',
+              manufacture: it.manufacture && it.manufacture !== '알수없음' ? it.manufacture : '',
+              prdkind: it.prdkind || '',
+              barcode: rawBc,
+              image_url: it.imgurl1 || it.imgurl2 || '',
+              allergy: it.allergy && it.allergy !== '알수없음' ? it.allergy : '',
+              source_type: 'HACCP_LIVE'
+            });
+          }
+        }
+      } catch (_) {}
+    }
+    return jsonRes({ success: true, source: d1Items.length ? 'shared_barcode_catalog' : 'haccp_live', items, item: items[0] || null });
+  }
+  if (method === 'POST' && subPath === 'haccp/import-image') {
+    const src = String(body?.image_url || '').trim();
+    if (!/^https?:\/\//i.test(src)) return jsonRes({ success: false, error: '유효한 외부 이미지 URL이 필요합니다.' }, 400);
+    const imgRes = await fetch(src, { signal: AbortSignal.timeout(5000) });
+    if (!imgRes.ok) return jsonRes({ success: false, error: `외부 이미지 다운로드 실패 (${imgRes.status})` }, 502);
+    const contentType = String(imgRes.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+    const bytes = new Uint8Array(await imgRes.arrayBuffer());
+    const mediaId = `med_0${Date.now().toString(32).padStart(10, '0')}`.padEnd(30, '0').slice(0, 30);
+    const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';
+    const r2Key = buildPublicMediaKey({ domain: 'MART', tenantUid: martId, itemType: 'products', mediaId, variant: 'orig' });
+    if (env?.MEDIA_PUBLIC) {
+      await env.MEDIA_PUBLIC.put(r2Key, bytes, { httpMetadata: { contentType } });
+    }
+    if (d1) {
+      await d1.recordMediaObject({
+        id: mediaId,
+        domain: 'MART',
+        region_code: extractRegionCodeFromUid(martId),
+        tenant_id: martId,
+        owner_type: 'MART_PRODUCT',
+        owner_id: martId,
+        r2_bucket_name: 'aitip-media-public',
+        r2_object_key: r2Key,
+        original_file_name: String(body?.original_name || 'haccp.jpg'),
+        content_type: contentType,
+        file_size_bytes: bytes.byteLength,
+        cdn_url: `/api/mart/media/public/${r2Key}`,
+        access_scope: 'PUBLIC'
+      });
+    }
+    return jsonRes({ success: true, media_id: mediaId, r2_object_key: r2Key, image_url: `/api/mart/media/public/${r2Key}` }, 201);
   }
   if (method === 'POST' && subPath === 'catalog/barcodes/lookup') {
     const barcodes = Array.isArray(body?.barcodes) ? body.barcodes : [];
