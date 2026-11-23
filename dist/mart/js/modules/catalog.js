@@ -806,8 +806,17 @@ export async function renderMartCatalogView(container, opts = {}) {
   });
   mpL2?.addEventListener('change', syncL3Options);
 
-  // HACCP 공식 제품이미지 · 규격 조회 연동
-  container.querySelector('#btn-haccp-lookup')?.addEventListener('click', async () => {
+  // HACCP 공식 제품이미지 · 규격 조회 연동 (Enter 키 조기 폼 제출 방지 및 자동 조회)
+  const haccpLookupBtn = container.querySelector('#btn-haccp-lookup');
+  ['#mp-name', '#mp-barcode'].forEach(sel => {
+    container.querySelector(sel)?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        haccpLookupBtn?.click();
+      }
+    });
+  });
+  haccpLookupBtn?.addEventListener('click', async () => {
     const q = container.querySelector('#mp-name')?.value?.trim() || '';
     const barcode = container.querySelector('#mp-barcode')?.value?.trim() || '';
     const box = container.querySelector('#haccp-lookup-box');
