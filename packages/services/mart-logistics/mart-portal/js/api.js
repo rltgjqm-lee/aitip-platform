@@ -122,6 +122,9 @@ export const martApi = {
     if (barcode) params.set('barcode', barcode);
     return request(`/haccp/search?${params.toString()}`);
   },
+  lookupBarcodesBatch(barcodes = []) {
+    return request('/catalog/barcodes/lookup', { method: 'POST', body: JSON.stringify({ barcodes }) });
+  },
   importHaccpImage(payload) {
     return request('/haccp/import-image', { method: 'POST', body: JSON.stringify(payload) });
   },

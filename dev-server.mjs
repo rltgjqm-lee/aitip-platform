@@ -876,8 +876,28 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/haccp/search' && method === 'GET') {
         const q = url.searchParams.get('q') || '';
         const barcode = url.searchParams.get('barcode') || '';
+        const cached = martService.lookupSharedBarcode({ q, barcode });
+        if (cached.length > 0) return sendJson(res, 200, { success: true, source: 'shared_barcode_catalog', items: cached, item: cached[0] });
         const items = await martService.searchHaccpProducts({ q, barcode });
-        return sendJson(res, 200, { success: true, items });
+        return sendJson(res, 200, { success: true, source: 'haccp_live', items, item: items[0] || null });
+      }
+      if ((pathname === '/api/mart/catalog/barcode' || pathname.startsWith('/api/mart/catalog/barcode/')) && method === 'GET') {
+        const pathBc = pathname.startsWith('/api/mart/catalog/barcode/') ? pathname.slice('/api/mart/catalog/barcode/'.length) : '';
+        const barcode = pathBc || url.searchParams.get('barcode') || '';
+        const q = url.searchParams.get('q') || '';
+        const items = martService.lookupSharedBarcode({ q, barcode });
+        return sendJson(res, 200, { success: true, source: 'shared_barcode_catalog', items, item: items[0] || null });
+      }
+      if (pathname === '/api/mart/catalog/barcodes/lookup' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const map = martService.lookupSharedBarcodesBatch(body?.barcodes || []);
+        return sendJson(res, 200, { success: true, source: 'shared_barcode_catalog', count: Object.keys(map).length, items_by_barcode: map });
+      }
+      if (pathname.startsWith('/api/mart/media/public/shared/barcode/') && method === 'GET') {
+        const filename = path.basename(pathname);
+        const filePath = path.join(__dirname, 'scratch', 'haccp_webp', filename);
+        serveStatic(filePath, res);
+        return;
       }
       if (pathname === '/api/mart/haccp/import-image' && method === 'POST') {
         const body = await parseJsonBody(req);

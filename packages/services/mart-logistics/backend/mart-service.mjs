@@ -1254,6 +1254,73 @@ class MartService {
     this.saveData();
     return result;
   }
+
+  _loadSharedBarcodePool() {
+    if (this._sharedBarcodePool) return this._sharedBarcodePool;
+    const previewPath = path.resolve(__dirname, '../../../../scratch/haccp_preload_preview.json');
+    try {
+      if (fs.existsSync(previewPath)) {
+        const parsed = JSON.parse(fs.readFileSync(previewPath, 'utf8'));
+        this._sharedBarcodePool = Array.isArray(parsed.valid) ? parsed.valid : [];
+        return this._sharedBarcodePool;
+      }
+    } catch (_) {}
+    this._sharedBarcodePool = [];
+    return this._sharedBarcodePool;
+  }
+
+  _formatSharedCatalogRow(r) {
+    const r2Key = `shared/barcode/${r.barcode}.webp`;
+    const localWebp = path.resolve(__dirname, '../../../../scratch/haccp_webp', `${r.barcode}.webp`);
+    const hasLocalWebp = fs.existsSync(localWebp);
+    return {
+      barcode: r.barcode,
+      product_name: r.product_name,
+      name: r.product_name,
+      manufacturer: r.manufacturer || '',
+      manufacture: r.manufacturer || '',
+      standard_spec: r.standard_spec || '-',
+      spec: r.standard_spec || '-',
+      category_name: r.category_name || '',
+      prdkind: r.category_name || '',
+      allergens_text: r.allergens_text || '',
+      allergy: r.allergens_text || '',
+      image_r2_key: r2Key,
+      image_url: hasLocalWebp ? `/api/mart/media/public/${r2Key}` : (r.source_image_url || ''),
+      source_type: 'HACCP'
+    };
+  }
+
+  lookupSharedBarcode({ barcode = '', q = '', limit = 20 } = {}) {
+    const pool = this._loadSharedBarcodePool();
+    const cleanBc = String(barcode || '').replace(/[^0-9]/g, '');
+    const cleanQ = String(q || '').trim().toLowerCase();
+    const safeLimit = Math.min(Math.max(1, Number(limit || 20)), 50);
+    if (cleanBc) {
+      const hit = pool.find(r => r.barcode === cleanBc);
+      return hit ? [this._formatSharedCatalogRow(hit)] : [];
+    }
+    if (cleanQ) {
+      return pool
+        .filter(r => String(r.product_name || '').toLowerCase().includes(cleanQ))
+        .slice(0, safeLimit)
+        .map(r => this._formatSharedCatalogRow(r));
+    }
+    return [];
+  }
+
+  lookupSharedBarcodesBatch(barcodes = []) {
+    const pool = this._loadSharedBarcodePool();
+    const byBc = new Map(pool.map(r => [r.barcode, r]));
+    const map = {};
+    for (const raw of (Array.isArray(barcodes) ? barcodes : [])) {
+      const bc = String(raw || '').replace(/[^0-9]/g, '');
+      if (bc && byBc.has(bc) && !map[bc]) {
+        map[bc] = this._formatSharedCatalogRow(byBc.get(bc));
+      }
+    }
+    return map;
+  }
 }
 
 export const martService = new MartService();

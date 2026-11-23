@@ -346,4 +346,60 @@ export class MartD1Adapter {
     ).run();
     return meta;
   }
+
+  async lookupSharedBarcode({ barcode = '', q = '', limit = 20 } = {}) {
+    const cleanBc = String(barcode || '').replace(/[^0-9]/g, '');
+    const cleanQ = String(q || '').trim();
+    const safeLimit = Math.min(Math.max(1, Number(limit || 20)), 50);
+    let res;
+    if (cleanBc) {
+      res = await this.db.prepare(
+        'SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE barcode = ? LIMIT 1'
+      ).bind(cleanBc).all();
+    } else if (cleanQ) {
+      res = await this.db.prepare(
+        'SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE product_name LIKE ? ORDER BY updated_at DESC LIMIT ?'
+      ).bind(`%${cleanQ}%`, safeLimit).all();
+    } else {
+      return [];
+    }
+    return (res?.results || []).map(r => ({
+      ...r,
+      name: r.product_name,
+      spec: r.standard_spec || '-',
+      manufacture: r.manufacturer || '',
+      prdkind: r.category_name || '',
+      allergy: r.allergens_text || '',
+      image_url: r.image_r2_key ? `/api/mart/media/public/${r.image_r2_key}` : (r.image_url || '')
+    }));
+  }
+
+  async lookupSharedBarcodesBatch(barcodes = []) {
+    const cleanList = Array.from(new Set(
+      (Array.isArray(barcodes) ? barcodes : [])
+        .map(b => String(b || '').replace(/[^0-9]/g, ''))
+        .filter(b => b.length >= 8 && b.length <= 14)
+    ));
+    if (cleanList.length === 0) return {};
+    const map = {};
+    for (let i = 0; i < cleanList.length; i += 50) {
+      const chunk = cleanList.slice(i, i + 50);
+      const placeholders = chunk.map(() => '?').join(', ');
+      const res = await this.db.prepare(
+        `SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE barcode IN (${placeholders})`
+      ).bind(...chunk).all();
+      for (const r of (res?.results || [])) {
+        map[r.barcode] = {
+          ...r,
+          name: r.product_name,
+          spec: r.standard_spec || '-',
+          manufacture: r.manufacturer || '',
+          prdkind: r.category_name || '',
+          allergy: r.allergens_text || '',
+          image_url: r.image_r2_key ? `/api/mart/media/public/${r.image_r2_key}` : (r.image_url || '')
+        };
+      }
+    }
+    return map;
+  }
 }

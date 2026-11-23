@@ -356,6 +356,21 @@ export async function renderMartDailyPriceView(container) {
           stock_qty: cols[6] ?? ''
         }));
       if (parsed.length === 0) return;
+      const barcodesToLookup = parsed.map(r => String(r.barcode || '').replace(/[^0-9]/g, '')).filter(b => b.length >= 8);
+      if (barcodesToLookup.length > 0) {
+        try {
+          const catRes = await martApi.lookupBarcodesBatch(barcodesToLookup);
+          const byBc = catRes?.items_by_barcode || {};
+          parsed.forEach(r => {
+            const cleanBc = String(r.barcode || '').replace(/[^0-9]/g, '');
+            const hit = byBc[cleanBc];
+            if (!hit) return;
+            if (!r.name || r.name === '-') r.name = hit.product_name || hit.name || r.name;
+            if (!r.spec && hit.standard_spec) r.spec = hit.standard_spec;
+            if (!r.image_url && hit.image_url) r.image_url = hit.image_url;
+          });
+        } catch (_) {}
+      }
       batchResult = await martApi.applyDailyPriceBatch({
         mode: uploadMode,
         source_name: 'daily_price_batch.csv',

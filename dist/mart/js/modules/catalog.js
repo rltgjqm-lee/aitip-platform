@@ -849,10 +849,14 @@ export async function renderMartCatalogView(container, opts = {}) {
           if (specEl && picked.spec && picked.spec !== '-') specEl.value = picked.spec;
           if (bcEl && picked.barcode) bcEl.value = picked.barcode;
           if (picked.image_url) {
-            const up = await martApi.importHaccpImage({ image_url: picked.image_url, original_name: `${picked.name}.jpg` });
-            draftMedia = { media_id: up.media_id, image_url: up.image_url };
+            if (picked.image_url.startsWith('/api/mart/media/public/')) {
+              draftMedia = { media_id: picked.id || null, image_url: picked.image_url };
+            } else {
+              const up = await martApi.importHaccpImage({ image_url: picked.image_url, original_name: `${picked.name}.jpg` });
+              draftMedia = { media_id: up.media_id, image_url: up.image_url };
+            }
             const imgBox = container.querySelector('#mp-img-preview-box');
-            if (imgBox) imgBox.innerHTML = `<img src="${up.image_url}" alt="미리보기" style="width:100%;height:100%;object-fit:cover;" />`;
+            if (imgBox) imgBox.innerHTML = `<img src="${draftMedia.image_url}" alt="미리보기" style="width:100%;height:100%;object-fit:cover;" />`;
           }
           box.style.display = 'none';
         });

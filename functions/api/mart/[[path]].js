@@ -266,6 +266,32 @@ export async function onRequest(context) {
     }
     return jsonRes({ success: true, media_id: mediaId, r2_object_key: r2Key, image_url: `/mart/media/${r2Key}` });
   }
+  if (method === 'GET' && subPath.startsWith('media/public/')) {
+    const r2Key = subPath.slice('media/public/'.length);
+    if (!r2Key || r2Key.includes('..')) return jsonRes({ success: false, error: 'Invalid media key' }, 400);
+    if (!env?.MEDIA_PUBLIC) return jsonRes({ success: false, error: 'MEDIA_PUBLIC binding unavailable' }, 503);
+    const obj = await env.MEDIA_PUBLIC.get(r2Key);
+    if (!obj) return jsonRes({ success: false, error: 'Media not found' }, 404);
+    const headers = new Headers();
+    obj.writeHttpMetadata(headers);
+    if (!headers.has('Content-Type')) headers.set('Content-Type', r2Key.endsWith('.webp') ? 'image/webp' : 'application/octet-stream');
+    headers.set('Cache-Control', 'public, max-age=86400');
+    headers.set('Access-Control-Allow-Origin', '*');
+    return new Response(obj.body, { status: 200, headers });
+  }
+  if (method === 'GET' && (subPath === 'catalog/barcode' || subPath.startsWith('catalog/barcode/') || subPath === 'haccp/search')) {
+    const urlObj = new URL(request.url);
+    const pathBc = subPath.startsWith('catalog/barcode/') ? subPath.slice('catalog/barcode/'.length) : '';
+    const barcode = pathBc || urlObj.searchParams.get('barcode') || '';
+    const q = urlObj.searchParams.get('q') || '';
+    const items = d1 ? await d1.lookupSharedBarcode({ barcode, q }) : [];
+    return jsonRes({ success: true, source: 'shared_barcode_catalog', items, item: items[0] || null });
+  }
+  if (method === 'POST' && subPath === 'catalog/barcodes/lookup') {
+    const barcodes = Array.isArray(body?.barcodes) ? body.barcodes : [];
+    const map = d1 ? await d1.lookupSharedBarcodesBatch(barcodes) : {};
+    return jsonRes({ success: true, source: 'shared_barcode_catalog', count: Object.keys(map).length, items_by_barcode: map });
+  }
 
   return jsonRes({ success: false, error: `Unknown mart endpoint: /api/mart/${subPath}` }, 404);
 }
