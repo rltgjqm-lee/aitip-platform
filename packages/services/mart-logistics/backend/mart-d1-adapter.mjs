@@ -3,6 +3,15 @@
  * env.DB (D1Database) 바인딩을 사용하는 Workers 환경용 비동기 데이터 어댑터
  */
 
+const CROCKFORD = '0123456789abcdefghjkmnpqrstvwxyz';
+
+function generateBarcodeCatalogId() {
+  const ts = Date.now().toString(32).toLowerCase().padStart(10, '0').slice(-10);
+  let tail = '';
+  for (let i = 0; i < 15; i++) tail += CROCKFORD[Math.floor(Math.random() * 32)];
+  return `bar_0${ts}${tail}`.slice(0, 30);
+}
+
 export class MartD1Adapter {
   constructor(dbOrEnv, martId = 'MRT-11-650-01-47121-0001') {
     const db = (dbOrEnv && typeof dbOrEnv.prepare === 'function')
@@ -62,7 +71,38 @@ export class MartD1Adapter {
       Number(p.stock_qty ?? 50), Number(p.safety_stock ?? 5), p.image_url || null,
       now, now
     ).run();
+    await this.contributeSharedBarcode(p).catch(() => {});
     return p;
+  }
+
+  async contributeSharedBarcode(p) {
+    const cleanBc = String(p?.barcode || p?.barcode_sku || '').replace(/[^0-9]/g, '');
+    const name = String(p?.name || p?.product_name || '').trim();
+    if (!/^\d{8,14}$/.test(cleanBc) || /^2\d{12}$/.test(cleanBc)) return false;
+    if (!name || name === '-') return false;
+
+    const rawImg = String(p?.image_url || '').trim();
+    const r2Key = rawImg.startsWith('/api/mart/media/public/')
+      ? rawImg.slice('/api/mart/media/public/'.length)
+      : (p?.image_r2_key || null);
+    const now = Date.now();
+    const id = generateBarcodeCatalogId();
+
+    await this.db.prepare(`
+      INSERT INTO shared_barcode_catalog (
+        id, barcode, product_name, manufacturer, standard_spec, category_name,
+        allergens_text, image_r2_key, image_url, source_type, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'MERCHANT_INPUT', ?, ?)
+      ON CONFLICT(barcode) DO NOTHING
+    `).bind(
+      id, cleanBc, name,
+      String(p?.manufacturer || p?.manufacture || '').trim() || null,
+      String(p?.spec || p?.standard_spec || '').trim() || null,
+      String(p?.category_path || p?.category_name || '').trim() || null,
+      String(p?.allergy || p?.allergens_text || '').trim() || null,
+      r2Key, rawImg || null, now, now
+    ).run();
+    return true;
   }
 
   async createPromotion(pr) {

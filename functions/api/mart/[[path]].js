@@ -64,10 +64,11 @@ export async function onRequest(context) {
     });
   }
   if (subPath === 'products' || subPath === 'products/approve') {
-    if (d1 && body?.id) {
-      await d1.upsertProduct(body);
+    const item = { ...body, id: body?.id || (body?.name ? `mrt_sku_${Date.now()}` : undefined) };
+    if (d1 && item.id) {
+      await d1.upsertProduct(item);
     }
-    return jsonRes({ success: true, item: body }, method === 'POST' ? 201 : 200);
+    return jsonRes({ success: true, item }, method === 'POST' ? 201 : 200);
   }
   if (subPath === 'products/bulk-grid') {
     return jsonRes({ success: true, updated_count: Array.isArray(body?.updates) ? body.updates.length : 0 });
