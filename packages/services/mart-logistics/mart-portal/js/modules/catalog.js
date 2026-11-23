@@ -445,19 +445,27 @@ export async function renderMartCatalogView(container, opts = {}) {
                     <input id="mp-safety" type="number" min="0" value="${Number(editingProduct?.safety_stock ?? 5)}" class="erp-input" />
                   </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                <div style="display: flex; align-items: flex-start; gap: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
                   <div id="mp-img-preview-box" style="width: 76px; height: 76px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
                     ${curImgUrl
                       ? `<img src="${escapeHtml(curImgUrl)}" alt="상품 이미지" style="width: 100%; height: 100%; object-fit: cover;" />`
                       : `<span style="font-size: 11px; color: #94a3b8;">이미지 없음</span>`
                     }
                   </div>
-                  <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <label class="mc-btn-secondary" style="display: inline-flex; align-items: center; cursor: pointer;">
-                      이미지 파일 선택 (WebP 변환)
-                      <input id="mp-img-file" type="file" accept="image/*" style="display: none;" />
-                    </label>
-                    <span style="font-size: 11.5px; color: #64748b;">JPG/PNG 업로드 시 입력값 유지 상태로 경량화 저장됩니다.</span>
+                  <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                      <label class="mc-btn-secondary" style="display: inline-flex; align-items: center; cursor: pointer; height: 28px; padding: 0 10px; font-size: 11.5px;">
+                        이미지 파일 선택 (WebP)
+                        <input id="mp-img-file" type="file" accept="image/*" style="display: none;" />
+                      </label>
+                      <button type="button" id="btn-web-img-google" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px;">구글 이미지 검색</button>
+                      <button type="button" id="btn-web-img-naver" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px;">네이버 쇼핑 검색</button>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                      <input id="mp-img-url" type="url" class="erp-input" style="height: 28px; font-size: 11.5px; flex: 1;" placeholder="이미지 주소(https://...) 붙여넣기 또는 화면에서 Ctrl+V" />
+                      <button type="button" id="btn-mp-img-url" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; white-space: nowrap;">URL 가져오기</button>
+                    </div>
+                    <span id="mp-img-status" style="font-size: 11px; color: #64748b;">타사 워터마크·연출컷 사용 금지 / 제조사 공식 단품 또는 직접 촬영 사진만 등록 (Ctrl+V 붙여넣기 지원)</span>
                   </div>
                 </div>
               </div>
@@ -753,17 +761,72 @@ export async function renderMartCatalogView(container, opts = {}) {
     if (e.target.id === 'mc-drawer-backdrop') closeDrawer();
   });
 
-  // 드로어 내 이미지 업로드 (WebP, 입력 중인 폼 상태 유실 없이 미리보기만 갱신)
+  // 드로어 내 이미지 업로드 (파일 선택 / Ctrl+V 클립보드 붙여넣기 / 외부 URL 가져오기 / 웹 검색 바로가기)
+  const setImgStatus = (msg, isError = false) => {
+    const st = container.querySelector('#mp-img-status');
+    if (st) {
+      st.style.color = isError ? '#b91c1c' : '#64748b';
+      st.textContent = msg;
+    }
+  };
+  const setImgPreview = (url) => {
+    const box = container.querySelector('#mp-img-preview-box');
+    if (box) box.innerHTML = `<img src="${escapeHtml(url)}" alt="상품 이미지" style="width: 100%; height: 100%; object-fit: cover;" />`;
+  };
+  const uploadProductImageFile = async (file) => {
+    if (!file) return;
+    setImgStatus('WebP 변환 및 업로드 중...');
+    const webpDataUrl = await fileToWebpDataUrl(file);
+    const uploaded = await martApi.uploadMedia({ data_url: webpDataUrl, original_name: file.name || 'paste.webp' });
+    draftMedia = { media_id: uploaded.media_id, image_url: uploaded.image_url };
+    setImgPreview(uploaded.image_url);
+    setImgStatus('WebP 변환 및 매장 전용 이미지 저장 완료');
+  };
+
   container.querySelector('#mp-img-file')?.addEventListener('change', async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const webpDataUrl = await fileToWebpDataUrl(file);
-    const uploaded = await martApi.uploadMedia({ data_url: webpDataUrl, original_name: file.name });
-    draftMedia = { media_id: uploaded.media_id, image_url: uploaded.image_url };
-    const box = container.querySelector('#mp-img-preview-box');
-    if (box) {
-      box.innerHTML = `<img src="${escapeHtml(uploaded.image_url)}" alt="상품 이미지" style="width: 100%; height: 100%; object-fit: cover;" />`;
+    if (file) await uploadProductImageFile(file);
+  });
+
+  const buildWebSearchQuery = () => {
+    const nm = container.querySelector('#mp-name')?.value?.trim() || '';
+    const bc = container.querySelector('#mp-barcode')?.value?.trim() || '';
+    return [nm, bc].filter(Boolean).join(' ').trim();
+  };
+  container.querySelector('#btn-web-img-google')?.addEventListener('click', () => {
+    const kw = buildWebSearchQuery();
+    if (!kw) { setImgStatus('상품명 또는 바코드를 먼저 입력해 주세요.', true); return; }
+    window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(kw)}`, '_blank', 'noopener,noreferrer');
+  });
+  container.querySelector('#btn-web-img-naver')?.addEventListener('click', () => {
+    const kw = buildWebSearchQuery();
+    if (!kw) { setImgStatus('상품명 또는 바코드를 먼저 입력해 주세요.', true); return; }
+    window.open(`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(kw)}`, '_blank', 'noopener,noreferrer');
+  });
+  container.querySelector('#btn-mp-img-url')?.addEventListener('click', async () => {
+    const url = container.querySelector('#mp-img-url')?.value?.trim() || '';
+    if (!/^https?:\/\//i.test(url)) {
+      setImgStatus('http:// 또는 https://로 시작하는 이미지 주소를 입력해 주세요.', true);
+      return;
     }
+    try {
+      setImgStatus('외부 이미지 가져오는 중...');
+      const nm = container.querySelector('#mp-name')?.value?.trim() || 'product';
+      const up = await martApi.importHaccpImage({ image_url: url, original_name: `${nm}.jpg` });
+      draftMedia = { media_id: up.media_id, image_url: up.image_url };
+      setImgPreview(up.image_url);
+      setImgStatus('가져오기 완료 (매장 전용 저장소에 보관됨)');
+    } catch (err) {
+      setImgStatus(`가져오기 실패: ${err.message}`, true);
+    }
+  });
+  container.querySelector('#form-mart-add')?.addEventListener('paste', async (e) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const imgItem = items.find(it => it.type && it.type.startsWith('image/'));
+    if (!imgItem) return;
+    e.preventDefault();
+    const file = imgItem.getAsFile();
+    if (file) await uploadProductImageFile(file);
   });
 
   // 드로어 내 원가 <-> 기준 판매가 실시간 마진율 미리보기

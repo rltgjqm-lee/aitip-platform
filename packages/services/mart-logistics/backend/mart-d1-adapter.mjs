@@ -82,9 +82,9 @@ export class MartD1Adapter {
     if (!name || name === '-') return false;
 
     const rawImg = String(p?.image_url || '').trim();
-    const r2Key = rawImg.startsWith('/api/mart/media/public/')
-      ? rawImg.slice('/api/mart/media/public/'.length)
-      : (p?.image_r2_key || null);
+    const isSharedImg = rawImg.startsWith('/api/mart/media/public/shared/');
+    const r2Key = isSharedImg ? rawImg.slice('/api/mart/media/public/'.length) : null;
+    const sharedImgUrl = isSharedImg ? rawImg : null;
     const now = Date.now();
     const id = generateBarcodeCatalogId();
 
@@ -100,7 +100,7 @@ export class MartD1Adapter {
       String(p?.spec || p?.standard_spec || '').trim() || null,
       String(p?.category_path || p?.category_name || '').trim() || null,
       String(p?.allergy || p?.allergens_text || '').trim() || null,
-      r2Key, rawImg || null, now, now
+      r2Key, sharedImgUrl, now, now
     ).run();
     return true;
   }
