@@ -4,12 +4,15 @@
  */
 
 export class MartD1Adapter {
-  constructor(db, martId = 'MRT-11-650-01-47121-0001') {
+  constructor(dbOrEnv, martId = 'MRT-11-650-01-47121-0001') {
+    const db = (dbOrEnv && typeof dbOrEnv.prepare === 'function')
+      ? dbOrEnv
+      : (dbOrEnv?.MART_DB || dbOrEnv?.DB);
     if (!db || typeof db.prepare !== 'function') {
-      throw new Error('유효한 Cloudflare D1 바인딩(env.DB)이 필요합니다.');
+      throw new Error('유효한 Cloudflare D1 바인딩(env.MART_DB 또는 env.DB)이 필요합니다.');
     }
     this.db = db;
-    this.martId = martId;
+    this.martId = martId || dbOrEnv?.DEFAULT_MART_ID || 'MRT-11-650-01-47121-0001';
   }
 
   async getCatalog() {

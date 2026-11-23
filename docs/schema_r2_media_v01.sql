@@ -22,7 +22,9 @@ CREATE TABLE IF NOT EXISTS media_objects (
     variant_type TEXT NOT NULL DEFAULT 'ORIGINAL',
     parent_media_id TEXT,
     cdn_url TEXT NOT NULL,
+    access_scope TEXT NOT NULL DEFAULT 'PUBLIC',
     upload_status TEXT NOT NULL DEFAULT 'COMPLETED',
+    expires_at TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     deleted_at TEXT,
 
@@ -35,7 +37,12 @@ CREATE TABLE IF NOT EXISTS media_objects (
 
     -- 소유자 엔티티 도메인 제한
     CONSTRAINT chk_media_owner_type CHECK (
-        owner_type IN ('STORE', 'PRODUCT', 'BANNER', 'REVIEW', 'DRIVER', 'KITCHEN')
+        owner_type IN ('STORE', 'PRODUCT', 'BANNER', 'REVIEW', 'DRIVER', 'KITCHEN', 'DELIVERY', 'CLAIM', 'RETURN')
+    ),
+
+    -- 접근 제어 (공개 상품/배너 vs 비공개 Presigned 주문·배달·클레임 증빙)
+    CONSTRAINT chk_media_access_scope CHECK (
+        access_scope IN ('PUBLIC', 'PRIVATE_SIGNED')
     ),
 
     -- R2 버킷명 제약조건

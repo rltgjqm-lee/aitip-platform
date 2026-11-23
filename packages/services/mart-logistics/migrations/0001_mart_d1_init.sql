@@ -214,3 +214,48 @@ CREATE TABLE IF NOT EXISTS mart_price_upload_batches (
     created_at     INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_price_batches_mart_created ON mart_price_upload_batches (mart_id, created_at);
+
+-- 10. R2 미디어 메타데이터 (상품·배너·주문첨부·배달증빙·클레임 사진 통합)
+CREATE TABLE IF NOT EXISTS media_objects (
+    id                 TEXT PRIMARY KEY,
+    owner_type         TEXT NOT NULL CHECK (owner_type IN ('STORE', 'PRODUCT', 'BANNER', 'REVIEW', 'DRIVER', 'KITCHEN', 'DELIVERY', 'CLAIM', 'RETURN')),
+    owner_id           TEXT NOT NULL,
+    r2_bucket_name     TEXT NOT NULL,
+    r2_object_key      TEXT NOT NULL UNIQUE,
+    original_file_name TEXT NOT NULL,
+    content_type       TEXT NOT NULL DEFAULT 'image/webp',
+    file_size_bytes    INTEGER NOT NULL,
+    sha256_hash        TEXT,
+    cdn_url            TEXT NOT NULL,
+    access_scope       TEXT NOT NULL DEFAULT 'PUBLIC' CHECK (access_scope IN ('PUBLIC', 'PRIVATE_SIGNED')),
+    upload_status      TEXT NOT NULL DEFAULT 'COMPLETED',
+    expires_at         TEXT,
+    created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE INDEX IF NOT EXISTS idx_media_owner ON media_objects (owner_type, owner_id);
+
+-- 11. 배달 증빙 & 클레임 사진
+CREATE TABLE IF NOT EXISTS delivery_sessions (
+    id                     TEXT PRIMARY KEY,
+    mart_id                TEXT NOT NULL REFERENCES mart_suppliers(id),
+    order_id               TEXT NOT NULL REFERENCES orders(id),
+    delivery_status        TEXT NOT NULL DEFAULT 'ASSIGNED',
+    proof_type             TEXT NOT NULL DEFAULT 'DOORSTEP_PHOTO' CHECK (proof_type IN ('DOORSTEP_PHOTO', 'DIRECT_HANDOVER', 'SECURITY_OFFICE')),
+    proof_photo_object_key TEXT,
+    proof_latitude         REAL,
+    proof_longitude        REAL,
+    completed_at           INTEGER,
+    created_at             INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mart_delivery_order ON delivery_sessions (order_id);
+
+CREATE TABLE IF NOT EXISTS delivery_claims (
+    id                TEXT PRIMARY KEY,
+    mart_id           TEXT NOT NULL REFERENCES mart_suppliers(id),
+    order_id          TEXT NOT NULL REFERENCES orders(id),
+    claim_type        TEXT NOT NULL,
+    claim_photos_json TEXT,
+    claim_status      TEXT NOT NULL DEFAULT 'OPEN',
+    created_at        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mart_claims_order ON delivery_claims (order_id);

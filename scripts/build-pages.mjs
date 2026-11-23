@@ -73,6 +73,12 @@ copyDirSync(
   path.join(DIST_DIR, 'mart', 'b2b')
 );
 
+console.log('[Build] Copying core shared modules to dist/core/shared...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'core', 'shared'),
+  path.join(DIST_DIR, 'core', 'shared')
+);
+
 console.log('[Build] Copying mart media assets to dist/mart/media...');
 copyDirSync(
   path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'backend', 'media'),

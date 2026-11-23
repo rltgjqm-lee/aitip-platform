@@ -5,7 +5,8 @@
  */
 
 import { martB2bApi } from './b2b-api.js';
-import { getL1List, getL2List, inferCategoryFromProduct } from '../../js/utils/mart-categories.js';
+import { getL1List, getL2List, inferCategoryFromProduct } from '/core/shared/mart-categories.js';
+import { showToast } from '/core/shared/html.js';
 
 const SESSION_KEY = 'aitip_mart_b2b_facility';
 const FACILITY_TYPE_KO = {
@@ -30,23 +31,6 @@ let searchQuery = '';
 let detailProductId = '';
 let detailOrderId = '';
 let authBanner = null; // { text, tone }
-
-function showB2bToast(message, tone = 'info') {
-  const prev = document.getElementById('mart-b2b-toast');
-  if (prev) prev.remove();
-  const colors = {
-    success: { bg: '#065f46', border: '#10b981' },
-    error:   { bg: '#991b1b', border: '#f87171' },
-    info:    { bg: '#0f172a', border: '#38bdf8' }
-  };
-  const c = colors[tone] || colors.info;
-  const el = document.createElement('div');
-  el.id = 'mart-b2b-toast';
-  el.style.cssText = `position:fixed;top:16px;right:16px;z-index:2000;background:${c.bg};color:#fff;padding:11px 16px;border-radius:10px;border-left:4px solid ${c.border};box-shadow:0 10px 25px rgba(15,23,42,0.25);font-size:13px;font-weight:600;max-width:340px;line-height:1.45;`;
-  el.textContent = String(message || '');
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
 let cartOpen = false;
 let paymentMethod = 'FACILITY_POSTPAY';
 const cart = new Map(); // product_id -> { product, qty }
@@ -611,7 +595,7 @@ async function render() {
   root.querySelectorAll('.btn-b2b-join-gb').forEach(btn => {
     btn.addEventListener('click', async () => {
       const res = await martB2bApi.joinGroupBuy({ campaign_id: btn.dataset.cid, qty: 1 });
-      showB2bToast(`기관 공구 참여 완료 (${res.campaign.current_qty}/${res.campaign.target_qty})`, 'success');
+      showToast(`기관 공구 참여 완료 (${res.campaign.current_qty}/${res.campaign.target_qty})`, 'success');
       render();
     });
   });
@@ -702,7 +686,7 @@ async function render() {
     cart.clear();
     cartOpen = false;
     activeTab = 'ORDERS';
-    showB2bToast('기관 B2B 발주가 정상 접수되었습니다.', 'success');
+    showToast('기관 B2B 발주가 정상 접수되었습니다.', 'success');
     render();
   });
 }
