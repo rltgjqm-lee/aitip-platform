@@ -669,11 +669,14 @@ function showPwaToast(message, tone = 'info') {
 }
 
 function connectMartPwaRealtime() {
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return;
   let pingTimer = null;
+  let opened = false;
   try {
     const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
     ws.addEventListener('open', () => {
+      opened = true;
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/pwa-config' }));
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/catalog' }));
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/orders' }));
@@ -693,7 +696,7 @@ function connectMartPwaRealtime() {
     });
     ws.addEventListener('close', () => {
       if (pingTimer) clearInterval(pingTimer);
-      setTimeout(connectMartPwaRealtime, 5000);
+      if (opened) setTimeout(connectMartPwaRealtime, 5000);
     });
   } catch (_) {}
 }

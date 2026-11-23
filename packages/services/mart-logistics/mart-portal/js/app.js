@@ -62,11 +62,14 @@ function showMartOrderToast(order = {}) {
 }
 
 function connectMartPortalRealtime() {
+  if (!['localhost', '127.0.0.1'].includes(location.hostname)) return;
   let pingTimer = null;
+  let opened = false;
   try {
     const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
     ws.addEventListener('open', () => {
+      opened = true;
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/orders' }));
       ws.send(JSON.stringify({ type: 'subscribe', topic: 'aitip/marts/+/catalog' }));
       pingTimer = setInterval(() => {
@@ -93,7 +96,7 @@ function connectMartPortalRealtime() {
     });
     ws.addEventListener('close', () => {
       if (pingTimer) clearInterval(pingTimer);
-      setTimeout(connectMartPortalRealtime, 5000);
+      if (opened) setTimeout(connectMartPortalRealtime, 5000);
     });
   } catch (_) {}
 }

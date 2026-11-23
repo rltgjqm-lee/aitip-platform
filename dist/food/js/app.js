@@ -98,11 +98,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // KDS 실시간 주문 및 CTI 전화 인입 동기화 (DOC-17: WebSocket/MQTT + BroadcastChannel + 폴링 폴백)
 function initKdsLiveSync() {
-  // 1) DOC-17: 실시간 MQTT / WebSocket 중추망 0.01초 직결 수신
-  try {
-    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProto}//${location.host}/ws/realtime`;
-    const socket = new WebSocket(wsUrl);
+  // 1) DOC-17: 실시간 MQTT / WebSocket 중추망 0.01초 직결 수신 (로컬 게이트웨이 환경 전용)
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+    try {
+      const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProto}//${location.host}/ws/realtime`;
+      const socket = new WebSocket(wsUrl);
     let pingTimer = null;
 
     socket.onopen = () => {
@@ -160,8 +161,9 @@ function initKdsLiveSync() {
       console.log('[KDS:Realtime] 소켓 종료 -> 5초 후 자동 재접속');
       setTimeout(() => initKdsLiveSync(), 5000);
     };
-  } catch (wsErr) {
-    console.warn('[KDS:Realtime] WebSocket 연결 실패:', wsErr);
+    } catch (wsErr) {
+      console.warn('[KDS:Realtime] WebSocket 연결 실패:', wsErr);
+    }
   }
 
   // 2) BroadcastChannel 즉시 수신 (동일 기기/브라우저 PWA 주문 1ms 즉시 연동)

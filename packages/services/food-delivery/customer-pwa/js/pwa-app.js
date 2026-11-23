@@ -1923,12 +1923,13 @@ function showSuccessReceiptModal(order) {
   // 최초 타임라인 렌더링
   renderLiveTrackTimeline(order);
 
-  // 실시간 WebSocket 상태 구독 (점주 수락 즉시 0.01초 UI 자동 갱신)
+  // 실시간 WebSocket 상태 구독 (로컬 게이트웨이 환경 전용)
   let trackWs = null;
   let trackPingTimer = null;
-  try {
-    const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    trackWs = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
+  if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+    try {
+      const wsProto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      trackWs = new WebSocket(`${wsProto}//${location.host}/ws/realtime`);
     trackWs.onopen = () => {
       trackWs.send(JSON.stringify({
         type: 'SUBSCRIBE',
@@ -1953,7 +1954,8 @@ function showSuccessReceiptModal(order) {
         }
       } catch (e) {}
     };
-  } catch (wsErr) {}
+    } catch (wsErr) {}
+  }
 
   // 모달 닫기 시 소켓 정리
   const closeOverlayAndCleanup = () => {
