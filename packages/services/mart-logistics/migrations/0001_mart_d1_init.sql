@@ -208,19 +208,23 @@ CREATE TABLE IF NOT EXISTS mart_price_upload_batches (
     total_rows     INTEGER NOT NULL DEFAULT 0,
     updated_count  INTEGER NOT NULL DEFAULT 0,
     error_count    INTEGER NOT NULL DEFAULT 0,
-    sold_out_count INTEGER NOT NULL DEFAULT 0,
-    snapshot_json  TEXT NOT NULL,
-    rolled_back    INTEGER NOT NULL DEFAULT 0 CHECK (rolled_back IN (0, 1)),
-    created_at     INTEGER NOT NULL
+    sold_out_count  INTEGER NOT NULL DEFAULT 0,
+    snapshot_r2_key TEXT,
+    snapshot_json   TEXT,
+    rolled_back     INTEGER NOT NULL DEFAULT 0 CHECK (rolled_back IN (0, 1)),
+    created_at      INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_price_batches_mart_created ON mart_price_upload_batches (mart_id, created_at);
 
--- 10. R2 미디어 메타데이터 (상품·배너·주문첨부·배달증빙·클레임 사진 통합)
+-- 10. R2 미디어 메타데이터 (상품·배너·배달증빙·클레임 사진 통합 — 도메인/지역/테넌트 논리 분리)
 CREATE TABLE IF NOT EXISTS media_objects (
     id                 TEXT PRIMARY KEY,
+    domain             TEXT NOT NULL DEFAULT 'MART' CHECK (domain IN ('MART', 'FOOD', 'SHARED', 'ADMIN')),
+    region_code        TEXT NOT NULL DEFAULT '00-000',
+    tenant_id          TEXT NOT NULL DEFAULT 'SHARED',
     owner_type         TEXT NOT NULL CHECK (owner_type IN ('STORE', 'PRODUCT', 'BANNER', 'REVIEW', 'DRIVER', 'KITCHEN', 'DELIVERY', 'CLAIM', 'RETURN')),
     owner_id           TEXT NOT NULL,
-    r2_bucket_name     TEXT NOT NULL,
+    r2_bucket_name     TEXT NOT NULL DEFAULT 'aitip-media-public' CHECK (r2_bucket_name IN ('aitip-media-public', 'aitip-media-private')),
     r2_object_key      TEXT NOT NULL UNIQUE,
     original_file_name TEXT NOT NULL,
     content_type       TEXT NOT NULL DEFAULT 'image/webp',
@@ -228,11 +232,13 @@ CREATE TABLE IF NOT EXISTS media_objects (
     sha256_hash        TEXT,
     cdn_url            TEXT NOT NULL,
     access_scope       TEXT NOT NULL DEFAULT 'PUBLIC' CHECK (access_scope IN ('PUBLIC', 'PRIVATE_SIGNED')),
-    upload_status      TEXT NOT NULL DEFAULT 'COMPLETED',
+    upload_status      TEXT NOT NULL DEFAULT 'COMPLETED' CHECK (upload_status IN ('PENDING_UPLOAD', 'PROCESSING', 'COMPLETED', 'FAILED', 'DELETED')),
     expires_at         TEXT,
+    deleted_at         TEXT,
     created_at         TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 CREATE INDEX IF NOT EXISTS idx_media_owner ON media_objects (owner_type, owner_id);
+CREATE INDEX IF NOT EXISTS idx_media_tenant ON media_objects (domain, region_code, tenant_id);
 
 -- 11. 배달 증빙 & 클레임 사진
 CREATE TABLE IF NOT EXISTS delivery_sessions (

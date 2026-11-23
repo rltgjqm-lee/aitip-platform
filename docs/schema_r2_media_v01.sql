@@ -9,6 +9,9 @@
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS media_objects (
     id TEXT PRIMARY KEY,
+    domain TEXT NOT NULL DEFAULT 'MART',
+    region_code TEXT NOT NULL DEFAULT '00-000',
+    tenant_id TEXT NOT NULL DEFAULT 'SHARED',
     owner_type TEXT NOT NULL,
     owner_id TEXT NOT NULL,
     r2_bucket_name TEXT NOT NULL,
@@ -40,14 +43,19 @@ CREATE TABLE IF NOT EXISTS media_objects (
         owner_type IN ('STORE', 'PRODUCT', 'BANNER', 'REVIEW', 'DRIVER', 'KITCHEN', 'DELIVERY', 'CLAIM', 'RETURN')
     ),
 
-    -- 접근 제어 (공개 상품/배너 vs 비공개 Presigned 주문·배달·클레임 증빙)
+    -- 도메인 논리 분리 제약
+    CONSTRAINT chk_media_domain CHECK (
+        domain IN ('MART', 'FOOD', 'SHARED', 'ADMIN')
+    ),
+
+    -- 접근 제어 (공개 상품/배너 vs 비공개 Presigned 배달·클레임 증빙)
     CONSTRAINT chk_media_access_scope CHECK (
         access_scope IN ('PUBLIC', 'PRIVATE_SIGNED')
     ),
 
-    -- R2 버킷명 제약조건
+    -- R2 버킷명 제약조건 (공개/비공개 2버킷 표준 + 레거시 호환)
     CONSTRAINT chk_media_bucket CHECK (
-        r2_bucket_name IN ('aitip-media-prod', 'aitip-media-staging', 'aitip-media-dev')
+        r2_bucket_name IN ('aitip-media-public', 'aitip-media-private', 'aitip-media-prod', 'aitip-media-staging', 'aitip-media-dev')
     ),
 
     -- 지원 MIME 타입 (WebP 표준 우선)
@@ -82,6 +90,7 @@ CREATE TABLE IF NOT EXISTS media_objects (
 
 -- 검색 성능 최적화 복합 인덱스
 CREATE INDEX IF NOT EXISTS idx_media_owner ON media_objects(owner_type, owner_id);
+CREATE INDEX IF NOT EXISTS idx_media_tenant ON media_objects(domain, region_code, tenant_id);
 CREATE INDEX IF NOT EXISTS idx_media_hash ON media_objects(sha256_hash);
 CREATE INDEX IF NOT EXISTS idx_media_parent ON media_objects(parent_media_id);
 CREATE INDEX IF NOT EXISTS idx_media_status ON media_objects(upload_status);

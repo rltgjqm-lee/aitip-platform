@@ -1198,9 +1198,10 @@ CREATE TABLE IF NOT EXISTS mart_price_upload_batches (
     total_rows     INTEGER NOT NULL DEFAULT 0,
     updated_count  INTEGER NOT NULL DEFAULT 0,
     error_count    INTEGER NOT NULL DEFAULT 0,
-    sold_out_count INTEGER NOT NULL DEFAULT 0,
-    snapshot_json  TEXT NOT NULL,
-    rolled_back    INTEGER NOT NULL DEFAULT 0 CHECK (rolled_back IN (0, 1)),
-    created_at     INTEGER NOT NULL
+    sold_out_count  INTEGER NOT NULL DEFAULT 0,
+    snapshot_r2_key TEXT,
+    snapshot_json   TEXT,
+    rolled_back     INTEGER NOT NULL DEFAULT 0 CHECK (rolled_back IN (0, 1)),
+    created_at      INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_price_batches_mart_created ON mart_price_upload_batches (mart_id, created_at);
