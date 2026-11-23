@@ -116,10 +116,12 @@ export const martApi = {
   uploadMedia(payload) {
     return request('/media/upload', { method: 'POST', body: JSON.stringify(payload) });
   },
-  searchHaccp({ q = '', barcode = '' } = {}) {
+  searchHaccp({ q = '', barcode = '', limit = 50, category_hint = '' } = {}) {
     const params = new URLSearchParams();
     if (q) params.set('q', q);
     if (barcode) params.set('barcode', barcode);
+    if (limit) params.set('limit', String(limit));
+    if (category_hint) params.set('category_hint', category_hint);
     return request(`/haccp/search?${params.toString()}`);
   },
   lookupBarcodesBatch(barcodes = []) {

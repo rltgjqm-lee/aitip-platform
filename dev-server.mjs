@@ -876,7 +876,9 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/mart/haccp/search' && method === 'GET') {
         const q = url.searchParams.get('q') || '';
         const barcode = url.searchParams.get('barcode') || '';
-        const cached = martService.lookupSharedBarcode({ q, barcode });
+        const limit = Number(url.searchParams.get('limit') || 50);
+        const categoryHint = url.searchParams.get('category_hint') || '';
+        const cached = martService.lookupSharedBarcode({ q, barcode, limit, categoryHint });
         if (cached.length > 0) return sendJson(res, 200, { success: true, source: 'shared_barcode_catalog', items: cached, item: cached[0] });
         const items = await martService.searchHaccpProducts({ q, barcode });
         return sendJson(res, 200, { success: true, source: 'haccp_live', items, item: items[0] || null });
@@ -885,7 +887,9 @@ const server = http.createServer(async (req, res) => {
         const pathBc = pathname.startsWith('/api/mart/catalog/barcode/') ? pathname.slice('/api/mart/catalog/barcode/'.length) : '';
         const barcode = pathBc || url.searchParams.get('barcode') || '';
         const q = url.searchParams.get('q') || '';
-        const items = martService.lookupSharedBarcode({ q, barcode });
+        const limit = Number(url.searchParams.get('limit') || 50);
+        const categoryHint = url.searchParams.get('category_hint') || '';
+        const items = martService.lookupSharedBarcode({ q, barcode, limit, categoryHint });
         return sendJson(res, 200, { success: true, source: 'shared_barcode_catalog', items, item: items[0] || null });
       }
       if (pathname === '/api/mart/catalog/barcodes/lookup' && method === 'POST') {

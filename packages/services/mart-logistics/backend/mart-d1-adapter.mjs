@@ -387,31 +387,57 @@ export class MartD1Adapter {
     return meta;
   }
 
-  async lookupSharedBarcode({ barcode = '', q = '', limit = 20 } = {}) {
+  async lookupSharedBarcode({ barcode = '', q = '', limit = 50, categoryHint = '' } = {}) {
     const cleanBc = String(barcode || '').replace(/[^0-9]/g, '');
     const cleanQ = String(q || '').trim();
-    const safeLimit = Math.min(Math.max(1, Number(limit || 20)), 50);
+    const hint = String(categoryHint || '').trim();
+    const safeLimit = Math.min(Math.max(1, Number(limit || 50)), 100);
     let res;
     if (cleanBc) {
       res = await this.db.prepare(
         'SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE barcode = ? LIMIT 1'
       ).bind(cleanBc).all();
     } else if (cleanQ) {
+      const fetchLimit = Math.min(safeLimit * 3, 180);
       res = await this.db.prepare(
-        'SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE product_name LIKE ? ORDER BY updated_at DESC LIMIT ?'
-      ).bind(`%${cleanQ}%`, safeLimit).all();
+        'SELECT id, barcode, product_name, manufacturer, standard_spec, category_name, allergens_text, image_r2_key, image_url, source_type FROM shared_barcode_catalog WHERE product_name LIKE ? ORDER BY (image_r2_key IS NOT NULL) DESC, CASE WHEN product_name LIKE ? THEN 0 ELSE 1 END ASC, updated_at DESC LIMIT ?'
+      ).bind(`%${cleanQ}%`, `${cleanQ}%`, fetchLimit).all();
     } else {
       return [];
     }
-    return (res?.results || []).map(r => ({
-      ...r,
-      name: r.product_name,
-      spec: r.standard_spec || '-',
-      manufacture: r.manufacturer || '',
-      prdkind: r.category_name || '',
-      allergy: r.allergens_text || '',
-      image_url: r.image_r2_key ? `/api/mart/media/public/${r.image_r2_key}` : (r.image_url || '')
-    }));
+    const hintTokens = hint.split(/[\s·,/()]+/).map(t => t.trim()).filter(t => t.length >= 2);
+    if (hint.includes('라면')) hintTokens.push('유탕면', '국수', '면류');
+    const qLower = cleanQ.toLowerCase();
+    const mapped = (res?.results || []).map(r => {
+      const hasImg = Boolean(r.image_r2_key || r.image_url);
+      const nameLower = String(r.product_name || '').toLowerCase();
+      const catText = `${r.category_name || ''} ${r.product_name || ''}`;
+      const catMatch = hintTokens.some(t => catText.includes(t)) ? 1 : 0;
+      const prefixMatch = qLower && nameLower.startsWith(qLower) ? 1 : 0;
+      const score = (hasImg ? 100 : 0) + (catMatch * 20) + (prefixMatch * 10);
+      return {
+        ...r,
+        _score: score,
+        name: r.product_name,
+        spec: r.standard_spec || '-',
+        manufacture: r.manufacturer || '',
+        prdkind: r.category_name || '',
+        allergy: r.allergens_text || '',
+        image_url: r.image_r2_key ? `/api/mart/media/public/${r.image_r2_key}` : (r.image_url || '')
+      };
+    });
+    mapped.sort((a, b) => b._score - a._score);
+    const deduped = [];
+    const seen = new Set();
+    for (const item of mapped) {
+      const key = `${String(item.product_name || '').replace(/\s+/g, '').toLowerCase()}|${String(item.manufacturer || '').replace(/\s+/g, '').toLowerCase()}`;
+      if (!cleanBc && seen.has(key)) continue;
+      seen.add(key);
+      const { _score, ...cleanItem } = item;
+      deduped.push(cleanItem);
+      if (deduped.length >= safeLimit) break;
+    }
+    return deduped;
   }
 
   async lookupSharedBarcodesBatch(barcodes = []) {

@@ -285,10 +285,12 @@ export async function onRequest(context) {
     const pathBc = subPath.startsWith('catalog/barcode/') ? subPath.slice('catalog/barcode/'.length) : '';
     const barcode = pathBc || urlObj.searchParams.get('barcode') || '';
     const q = urlObj.searchParams.get('q') || '';
-    const d1Items = d1 ? await d1.lookupSharedBarcode({ barcode, q }) : [];
+    const limit = Number(urlObj.searchParams.get('limit') || 50);
+    const categoryHint = urlObj.searchParams.get('category_hint') || '';
+    const d1Items = d1 ? await d1.lookupSharedBarcode({ barcode, q, limit, categoryHint }) : [];
     let items = [...d1Items];
 
-    if (subPath === 'haccp/search' && env?.HACCP_API_KEY && (q.trim() || (barcode.trim() && d1Items.length === 0))) {
+    if (subPath === 'haccp/search' && env?.HACCP_API_KEY && ((q.trim() && d1Items.length < 15) || (barcode.trim() && d1Items.length === 0))) {
       try {
         const qs = [`serviceKey=${env.HACCP_API_KEY}`, 'returnType=json', 'pageNo=1', 'numOfRows=15'];
         if (barcode.trim()) qs.push(`barcode=${encodeURIComponent(barcode.trim())}`);

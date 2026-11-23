@@ -1291,20 +1291,41 @@ class MartService {
     };
   }
 
-  lookupSharedBarcode({ barcode = '', q = '', limit = 20 } = {}) {
+  lookupSharedBarcode({ barcode = '', q = '', limit = 50, categoryHint = '' } = {}) {
     const pool = this._loadSharedBarcodePool();
     const cleanBc = String(barcode || '').replace(/[^0-9]/g, '');
     const cleanQ = String(q || '').trim().toLowerCase();
-    const safeLimit = Math.min(Math.max(1, Number(limit || 20)), 50);
+    const hint = String(categoryHint || '').trim();
+    const safeLimit = Math.min(Math.max(1, Number(limit || 50)), 100);
     if (cleanBc) {
       const hit = pool.find(r => r.barcode === cleanBc);
       return hit ? [this._formatSharedCatalogRow(hit)] : [];
     }
     if (cleanQ) {
-      return pool
+      const hintTokens = hint.split(/[\s·,/()]+/).map(t => t.trim()).filter(t => t.length >= 2);
+      if (hint.includes('라면')) hintTokens.push('유탕면', '국수', '면류');
+      const matches = pool
         .filter(r => String(r.product_name || '').toLowerCase().includes(cleanQ))
-        .slice(0, safeLimit)
-        .map(r => this._formatSharedCatalogRow(r));
+        .map(r => this._formatSharedCatalogRow(r))
+        .map(item => {
+          const catText = `${item.category_name || ''} ${item.product_name || ''}`;
+          const catMatch = hintTokens.some(t => catText.includes(t)) ? 1 : 0;
+          const prefixMatch = String(item.product_name || '').toLowerCase().startsWith(cleanQ) ? 1 : 0;
+          const score = (item.image_url ? 100 : 0) + (catMatch * 20) + (prefixMatch * 10);
+          return { ...item, _score: score };
+        });
+      matches.sort((a, b) => b._score - a._score);
+      const deduped = [];
+      const seen = new Set();
+      for (const item of matches) {
+        const key = `${String(item.product_name || '').replace(/\s+/g, '').toLowerCase()}|${String(item.manufacturer || '').replace(/\s+/g, '').toLowerCase()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const { _score, ...cleanItem } = item;
+        deduped.push(cleanItem);
+        if (deduped.length >= safeLimit) break;
+      }
+      return deduped;
     }
     return [];
   }
