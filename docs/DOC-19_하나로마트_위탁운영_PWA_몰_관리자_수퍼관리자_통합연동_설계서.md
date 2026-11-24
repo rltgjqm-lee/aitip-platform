@@ -310,5 +310,12 @@
    - `daily-price.js`: `martApi.getUploadHistory()` 오호출(`TypeError`)을 `martApi.getPriceUploadHistory()`로 수정하고, `mart.css`에 `.mc-tabs`, `.mc-tab`, `.mc-tab.active` 스타일을 추가해 서브탭 깨짐을 복구했다.
 3. **일반고객(B2C) · 기관(B2B) 분리 및 결제 방법 조회 (`settlement.js`)**
    - `settlement.js`: 백엔드 `getSettlementSummary()`가 반환하는 `customer_type` 및 `payment_method`를 UI에 연동하여, 상단 `.mc-tabs`(`전체 내역` / `일반고객 결제 (B2C)` / `기관·경로당 정산 (B2B)`), 결제 수단 필터(`#stl-pay-method`: 카드·간편결제, 기관 월말 후불, 지자체 바우처, 현금), 테이블 `구분` · `결제 방법` 컬럼 및 `결제 · 정산 상세` 모달(`고객 구분`, `결제 방법`, `정산 방식`, `정산 공제`)을 추가했다. 선택한 탭·필터 기준에 맞춰 상단 5대 KPI 합계도 함께 재계산된다.
+4. **외부 이미지 프록시 · 브라우저 WebP 변환 · `SHARED` 공용 풀 UID/검색 (`functions/api/mart/[[path]].js`, `dev-server.mjs`, `mart-d1-adapter.mjs`, `catalog.js`, `api.js`)**
+   - `GET /api/mart/haccp/proxy-image?url=...` 프록시 엔드포인트(`fetch` 예외 시 `502` JSON, `image/*` 검증)를 추가하고, `catalog.js`의 `URL 가져오기` 및 HACCP 이미지 가져오기가 `martApi.fetchExternalImageBlob()`(`BASE_URL` 기준) ➔ `fileToWebpDataUrl()`(최대 800px 리사이즈 + `image/webp` 0.82 변환) ➔ `POST /api/mart/media/upload`(`scope: 'SHARED'`) 순으로 실제 WebP만 R2에 저장하도록 전환했다.
+   - `POST /api/mart/media/upload`: `scope === 'SHARED'`일 때 `media_objects`를 `domain: 'SHARED'`, `region_code: '00-000'`, `tenant_id: 'SHARED'`, `owner_type: 'PRODUCT'`로 기록하고, 표준 바코드(`8~14자리`, `2` 시작 매장코드 제외)는 `shared/barcode/{barcode}.webp`, 바코드 없는 다규격·신선 품목(`대파 5단`, `대파 10단` 등)은 `shared/common-pool/{mediaId}.webp`(`original_file_name: "{상품명} {규격}.webp"`)로 저장해 `/api/mart/media/public/{r2Key}` URL을 반환한다. (`haccp/import-image`의 `owner_type: 'MART_PRODUCT'` D1 `CHECK` 제약 위반도 `'PRODUCT'`로 수정했다.)
+   - `GET /api/mart/media/shared?q=...` (`mart-d1-adapter.mjs` `searchSharedMedia()`): `media_objects`(`domain = 'SHARED'`)와 `shared_barcode_catalog`를 통합 검색하고, `catalog.js`에 `[공용 이미지 검색]`(`#btn-shared-img-search`)을 추가해 동일 품목·다규격 이미지를 재업로드 없이 연결할 수 있도록 구현했다.
+5. **D1 상품 수정 시 `cost_price` 및 마스터 컬럼 정합성 보완 (`mart-d1-adapter.mjs`)**
+   - `upsertProduct()`에서 `p.id`가 존재할 경우 기존 행(`SELECT * FROM products WHERE id = ?`)을 먼저 조회·병합하여 부분 수정 시 미전달 필드(`channel_scope`, `online_publish_status`, `applied_promo_id` 등)가 초기화되지 않도록 보호하고, `ON CONFLICT(id) DO UPDATE SET` 절에 `cost_price`, `barcode_sku`, `category_type`, `category_path`, `spec`, `uom`, `tax_type`, `is_prep`, `storage_temp`, `safety_stock`를 포함했다.
+
 
 
