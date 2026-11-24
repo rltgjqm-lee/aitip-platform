@@ -5,6 +5,17 @@
 
 const CROCKFORD = '0123456789abcdefghjkmnpqrstvwxyz';
 
+function cleanCatalogText(val = '') {
+  const s = String(val || '').trim();
+  return (!s || s === '알수없음' || s === 'null' || s === 'undefined') ? '' : s;
+}
+
+function cleanManufacturerText(val = '') {
+  const s = cleanCatalogText(val);
+  if (!s) return '';
+  return s.split(/[_\n]/)[0].split('/')[0].trim();
+}
+
 function generateBarcodeCatalogId() {
   const ts = Date.now().toString(32).toLowerCase().padStart(10, '0').slice(-10);
   let tail = '';
@@ -415,14 +426,17 @@ export class MartD1Adapter {
       const catMatch = hintTokens.some(t => catText.includes(t)) ? 1 : 0;
       const prefixMatch = qLower && nameLower.startsWith(qLower) ? 1 : 0;
       const score = (hasImg ? 100 : 0) + (catMatch * 20) + (prefixMatch * 10);
+      const specClean = cleanCatalogText(r.standard_spec);
+      const makerClean = cleanManufacturerText(r.manufacturer);
+      const allergyClean = cleanCatalogText(r.allergens_text);
       return {
         ...r,
         _score: score,
         name: r.product_name,
-        spec: r.standard_spec || '-',
-        manufacture: r.manufacturer || '',
-        prdkind: r.category_name || '',
-        allergy: r.allergens_text || '',
+        spec: specClean || '-',
+        manufacture: makerClean,
+        prdkind: cleanCatalogText(r.category_name),
+        allergy: allergyClean,
         image_url: r.image_r2_key ? `/api/mart/media/public/${r.image_r2_key}` : (r.image_url || '')
       };
     });

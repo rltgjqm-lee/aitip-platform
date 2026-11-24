@@ -162,13 +162,17 @@ function collectHaccpItems(items, tag, byBarcode, rejected, reasonCounts) {
       continue;
     }
     if (!byBarcode.has(bc)) {
+      const cleanVal = (v = '') => {
+        const s = String(v || '').trim();
+        return (!s || s === '알수없음') ? '' : s;
+      };
       byBarcode.set(bc, {
         barcode: bc,
         product_name: name,
-        manufacturer: String(it.manufacture || '').trim(),
-        standard_spec: String(it.capacity || '').trim(),
-        category_name: String(it.prdkind || '').trim(),
-        allergens_text: String(it.allergy || '').trim(),
+        manufacturer: cleanVal(it.manufacture),
+        standard_spec: cleanVal(it.capacity),
+        category_name: cleanVal(it.prdkind),
+        allergens_text: cleanVal(it.allergy),
         source_image_url: img,
         r2_object_key: buildSharedMediaKey({ kind: 'barcode', key: bc, ext: 'webp' })
       });

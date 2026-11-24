@@ -1270,21 +1270,31 @@ class MartService {
   }
 
   _formatSharedCatalogRow(r) {
+    const cleanText = (v = '') => {
+      const s = String(v || '').trim();
+      return (!s || s === '알수없음' || s === 'null' || s === 'undefined') ? '' : s;
+    };
+    const cleanMaker = (v = '') => {
+      const s = cleanText(v);
+      return s ? s.split(/[_\n]/)[0].split('/')[0].trim() : '';
+    };
     const r2Key = `shared/barcode/${r.barcode}.webp`;
     const localWebp = path.resolve(__dirname, '../../../../scratch/haccp_webp', `${r.barcode}.webp`);
     const hasLocalWebp = fs.existsSync(localWebp);
+    const spec = cleanText(r.standard_spec) || '-';
+    const maker = cleanMaker(r.manufacturer);
     return {
       barcode: r.barcode,
       product_name: r.product_name,
       name: r.product_name,
-      manufacturer: r.manufacturer || '',
-      manufacture: r.manufacturer || '',
-      standard_spec: r.standard_spec || '-',
-      spec: r.standard_spec || '-',
-      category_name: r.category_name || '',
-      prdkind: r.category_name || '',
-      allergens_text: r.allergens_text || '',
-      allergy: r.allergens_text || '',
+      manufacturer: maker,
+      manufacture: maker,
+      standard_spec: spec,
+      spec,
+      category_name: cleanText(r.category_name),
+      prdkind: cleanText(r.category_name),
+      allergens_text: cleanText(r.allergens_text),
+      allergy: cleanText(r.allergens_text),
       image_r2_key: r2Key,
       image_url: hasLocalWebp ? `/api/mart/media/public/${r2Key}` : (r.source_image_url || ''),
       source_type: 'HACCP'

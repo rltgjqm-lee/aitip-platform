@@ -879,13 +879,19 @@ export async function renderMartCatalogView(container, opts = {}) {
       }
     });
   });
+  const cleanHaccpVal = (v = '') => {
+    const s = String(v || '').trim();
+    return (!s || s === '-' || s === '알수없음' || s === 'null' || s === 'undefined') ? '' : s;
+  };
+
   const applyPickedHaccpItem = async (picked) => {
     if (!picked) return;
     const nameEl = container.querySelector('#mp-name');
     const specEl = container.querySelector('#mp-spec');
     const bcEl = container.querySelector('#mp-barcode');
     if (nameEl) nameEl.value = picked.name;
-    if (specEl && picked.spec && picked.spec !== '-') specEl.value = picked.spec;
+    const cleanSpec = cleanHaccpVal(picked.spec);
+    if (specEl && cleanSpec) specEl.value = cleanSpec;
     if (bcEl && picked.barcode) bcEl.value = picked.barcode;
     if (picked.image_url) {
       if (picked.image_url.startsWith('/api/mart/media/public/')) {
@@ -990,11 +996,17 @@ export async function renderMartCatalogView(container, opts = {}) {
   };
 
   haccpLookupBtn?.addEventListener('click', async () => {
+    const l1Val = mpL1?.value || '';
     const q = container.querySelector('#mp-name')?.value?.trim() || '';
     const barcode = container.querySelector('#mp-barcode')?.value?.trim() || '';
     const category_hint = mpL2?.selectedOptions?.[0]?.textContent?.trim() || '';
     const box = container.querySelector('#haccp-lookup-box');
     if (!box) return;
+    if (['01', '02', '03'].includes(l1Val)) {
+      box.style.display = 'block';
+      box.innerHTML = '<div style="font-size:12px;color:#b45309;">신선 농·축·수산물은 가공식품 바코드/HACCP 조회 대상이 아닙니다. 아래 이미지 검색(구글/네이버) 또는 직접 업로드를 이용해 주세요.</div>';
+      return;
+    }
     if (!q && !barcode) {
       box.style.display = 'block';
       box.innerHTML = '<div style="font-size:12px;color:#b45309;">상품명 또는 바코드를 먼저 입력한 뒤 조회하세요.</div>';
@@ -1016,18 +1028,20 @@ export async function renderMartCatalogView(container, opts = {}) {
              <button type="button" id="btn-haccp-open-modal" class="mc-btn-secondary" style="height:24px;padding:0 8px;font-size:11px;">넓은 창에서 전체 ${list.length}건 보기</button>
            </div>`
         : '';
-      box.innerHTML = headerBar + previewList.map((it, idx) => `
+      box.innerHTML = headerBar + previewList.map((it, idx) => {
+        const metaLine = [cleanHaccpVal(it.spec), cleanHaccpVal(it.manufacture), it.barcode].filter(Boolean).join(' · ');
+        return `
         <div class="haccp-pick-row" data-idx="${idx}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;">
           <div style="display:flex;align-items:center;gap:8px;min-width:0;">
             ${it.image_url ? `<img src="${escapeHtml(it.image_url)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;flex-shrink:0;" />` : `<div style="width:36px;height:36px;border-radius:6px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;flex-shrink:0;">없음</div>`}
             <div style="min-width:0;">
               <div style="font-size:12.5px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.name)}</div>
-              <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.spec)} · ${escapeHtml(it.manufacture || '-')} ${it.barcode ? `· ${escapeHtml(it.barcode)}` : ''}</div>
+              <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(metaLine || '-')}</div>
             </div>
           </div>
           <span class="mc-pill mc-pill-green">선택</span>
-        </div>
-      `).join('');
+        </div>`;
+      }).join('');
       box.querySelector('#btn-haccp-open-modal')?.addEventListener('click', () => openHaccpWideModal(list, q || barcode));
       box.querySelectorAll('.haccp-pick-row').forEach(row => {
         row.addEventListener('click', () => {
