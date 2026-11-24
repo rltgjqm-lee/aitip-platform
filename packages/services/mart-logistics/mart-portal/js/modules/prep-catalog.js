@@ -178,13 +178,14 @@ export async function renderMartPrepView(container, opts = {}) {
 
       ${drawerMode === 'EDIT' ? `
         <div class="mc-drawer-backdrop" id="mc-prep-backdrop">
-          <form class="mc-drawer" id="form-prep-add">
+          <form class="mc-drawer mc-drawer--wide" id="form-prep-add">
             <div class="mc-drawer-header">
               <h2>${editingProduct ? '전처리 품목 수정' : '새 전처리 품목 등록'}</h2>
               <button type="button" class="mc-drawer-close" id="btn-close-prep-drawer">×</button>
             </div>
-            <div class="mc-drawer-body">
-              <div class="mc-drawer-section">
+            <div class="mc-drawer-body mc-drawer-grid-2">
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">1. 표준 상품분류 (대 · 중 · 소) · 과면세</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div>
@@ -242,7 +243,9 @@ export async function renderMartPrepView(container, opts = {}) {
                   </div>
                 </div>
               </div>
+              </div>
 
+              <div style="display: flex; flex-direction: column; gap: 16px;">
               <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">3. 등급 · 단위 · 보관 · 단가</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -304,6 +307,7 @@ export async function renderMartPrepView(container, opts = {}) {
                     <span style="font-size: 11.5px; color: #64748b;">JPG/PNG 선택 시 입력값 유지 상태로 WebP 변환 저장됩니다.</span>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
             <div class="mc-drawer-footer">

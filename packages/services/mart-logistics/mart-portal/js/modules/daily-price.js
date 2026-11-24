@@ -27,7 +27,7 @@ export async function renderMartDailyPriceView(container) {
   if (!container) return;
   const [catRes, histRes] = await Promise.all([
     martApi.getCatalog(),
-    martApi.getUploadHistory()
+    martApi.getPriceUploadHistory()
   ]);
   const products = catRes.products || [];
   const uploadHistory = histRes.history || [];

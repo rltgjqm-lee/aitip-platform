@@ -59,9 +59,8 @@ export async function renderMartChannelAssignView(container) {
             <span class="mc-count-pill">등록 상품 ${products.length}종</span>
           </div>
           <div class="mc-header-actions" style="flex-wrap: wrap;">
-            <button type="button" class="mc-btn-secondary" id="btn-ca-open-history">업로드 이력 · 롤백</button>
-            <button type="button" class="mc-btn-secondary" id="btn-ca-dl-daily">당일 시세 양식(현재가) 다운로드</button>
-            <button type="button" class="mc-btn-primary" id="btn-ca-open-daily">당일 신선 시세 CSV 업로드</button>
+            <button type="button" class="mc-btn-secondary" id="btn-ca-dl-assign">현재 배정 목록 엑셀 다운로드</button>
+            <button type="button" class="mc-btn-primary" id="btn-ca-go-daily">당일 시세 · 변동 바로가기</button>
           </div>
         </div>
 
@@ -483,14 +482,12 @@ export async function renderMartChannelAssignView(container) {
       }
     };
 
-    container.querySelector('#btn-ca-dl-daily')?.addEventListener('click', () => {
+    container.querySelector('#btn-ca-dl-assign')?.addEventListener('click', () => {
       const exportList = filtered.length > 0 ? filtered : products;
-      exportPriceCsv(exportList, `mart_daily_price_${new Date().toISOString().slice(0, 10)}.csv`);
+      exportPriceCsv(exportList, `mart_channel_assign_${new Date().toISOString().slice(0, 10)}.csv`);
     });
-    container.querySelector('#btn-ca-open-daily')?.addEventListener('click', () => {
-      priceBatchResult = null;
-      priceDrawerOpen = true;
-      render();
+    container.querySelector('#btn-ca-go-daily')?.addEventListener('click', () => {
+      window.location.hash = '#daily-price';
     });
     const closeDaily = () => { priceDrawerOpen = false; priceBatchResult = null; render(); };
     container.querySelector('#btn-ca-close-daily')?.addEventListener('click', closeDaily);

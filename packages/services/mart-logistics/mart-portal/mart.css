@@ -820,6 +820,35 @@ body {
   background: #005f3a;
 }
 
+.mc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mc-tab {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.mc-tab:hover {
+  background: #f8fafc;
+  border-color: #9ca3af;
+}
+.mc-tab.active {
+  background: #007749;
+  border-color: #007749;
+  color: #ffffff;
+  font-weight: 700;
+}
+
 .mc-surface {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -1008,23 +1037,44 @@ body {
   background: #f0fdf4;
 }
 
-/* 우측 슬라이드 드로어 */
+/* 중앙 통합 모달 (.mc-drawer 전사 통일) */
 .mc-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(15, 23, 42, 0.45);
   z-index: 300;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
 }
 .mc-drawer {
-  width: 520px;
-  max-width: 100vw;
-  height: 100vh;
+  width: min(640px, 95vw);
+  max-width: 100%;
+  height: auto;
+  max-height: 90vh;
   background: #ffffff;
-  box-shadow: -8px 0 28px rgba(15, 23, 42, 0.14);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
   display: flex;
   flex-direction: column;
+}
+.mc-drawer--wide {
+  width: min(980px, 96vw);
+}
+.mc-drawer-body.mc-drawer-grid-2,
+.mc-drawer-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .mc-drawer-body.mc-drawer-grid-2,
+  .mc-drawer-grid-2 {
+    grid-template-columns: 1fr;
+  }
 }
 .mc-drawer-header {
   padding: 18px 22px;

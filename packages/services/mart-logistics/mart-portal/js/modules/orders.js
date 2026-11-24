@@ -270,12 +270,12 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
 
       ${drawerMode === 'CREATE_OFFLINE' ? `
         <div class="mc-drawer-backdrop" id="mc-ord-backdrop">
-          <div class="mc-drawer" style="width: 560px;">
+          <div class="mc-drawer mc-drawer--wide">
             <div class="mc-drawer-header">
               <h2>오프라인 다품목 주문 입력</h2>
               <button type="button" class="mc-drawer-close" id="btn-close-ord-drawer">×</button>
             </div>
-            <div class="mc-drawer-body">
+            <div class="mc-drawer-body mc-drawer-grid-2">
               <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">수요처 · 결제 · 배송</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -341,7 +341,7 @@ export async function renderMartOrdersView(container, channel = 'ONLINE', opts =
                   <button type="button" id="btn-add-draft-item" class="mc-btn-secondary" style="height: 36px;">+ 담기</button>
                 </div>
 
-                <div id="mo-draft-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div id="mo-draft-list" style="margin-top: 12px; display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto;">
                   ${draftItems.map((it, idx) => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12.5px;">
                       <span><strong>${esc(it.name)}</strong> × ${it.qty}${esc(it.uom)} (@${Number(it.unit_price).toLocaleString()}원)</span>

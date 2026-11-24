@@ -344,13 +344,14 @@ export async function renderMartCatalogView(container, opts = {}) {
 
       ${drawerMode === 'EDIT' ? `
         <div class="mc-drawer-backdrop" id="mc-drawer-backdrop">
-          <form class="mc-drawer" id="form-mart-add">
+          <form class="mc-drawer mc-drawer--wide" id="form-mart-add">
             <div class="mc-drawer-header">
               <h2>${editingProduct ? '상품 정보 수정' : '새 상품 등록'}</h2>
               <button type="button" class="mc-drawer-close" id="btn-close-drawer">×</button>
             </div>
-            <div class="mc-drawer-body">
-              <div class="mc-drawer-section">
+            <div class="mc-drawer-body mc-drawer-grid-2">
+              <div style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="mc-drawer-section">
                 <div class="mc-drawer-section-title">1. 표준 상품분류 (대 · 중 · 소) · 과면세</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div>
@@ -415,6 +416,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                     </select>
                   </div>
                 </div>
+              </div>
               </div>
 
               <div class="mc-drawer-section">
