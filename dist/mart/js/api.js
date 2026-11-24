@@ -130,6 +130,20 @@ export const martApi = {
   importHaccpImage(payload) {
     return request('/haccp/import-image', { method: 'POST', body: JSON.stringify(payload) });
   },
+  searchSharedMedia(q = '', limit = 40) {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (limit) params.set('limit', String(limit));
+    return request(`/media/shared?${params.toString()}`);
+  },
+  async fetchExternalImageBlob(imageUrl) {
+    const res = await fetch(`${BASE}/haccp/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `외부 이미지 다운로드 실패 (HTTP ${res.status})`);
+    }
+    return res.blob();
+  },
   getFacilities() {
     return request('/facilities');
   },

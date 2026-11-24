@@ -873,6 +873,38 @@ const server = http.createServer(async (req, res) => {
         const media = martService.saveMediaWebp(body || {});
         return sendJson(res, 201, { success: true, ...media });
       }
+      if (pathname === '/api/mart/media/shared' && method === 'GET') {
+        const q = (url.searchParams.get('q') || '').trim().toLowerCase();
+        const limit = Math.min(Math.max(1, Number(url.searchParams.get('limit') || 40)), 100);
+        const items = [];
+        const seen = new Set();
+        const pushItem = (it) => {
+          if (!it.image_url || seen.has(it.image_url)) return;
+          seen.add(it.image_url);
+          items.push(it);
+        };
+        for (const m of (martService.data?.media_objects || [])) {
+          const name = String(m.original_file_name || '').replace(/\.[^.]+$/, '');
+          if (!q || name.toLowerCase().includes(q)) {
+            pushItem({ media_id: m.id, image_url: m.cdn_url, label: name || '공용 이미지', source: 'SHARED_POOL' });
+          }
+        }
+        for (const p of (martService.data?.products || [])) {
+          if (!p.image_url) continue;
+          const label = [p.name, p.spec && p.spec !== '-' ? p.spec : ''].filter(Boolean).join(' ');
+          if (!q || label.toLowerCase().includes(q)) {
+            pushItem({ media_id: p.media_id || '', image_url: p.image_url, label, source: 'MART_PRODUCT' });
+          }
+        }
+        if (q) {
+          for (const b of martService.lookupSharedBarcode({ q, limit })) {
+            if (!b.image_url) continue;
+            const spec = b.spec && b.spec !== '-' ? ` (${b.spec})` : '';
+            pushItem({ media_id: b.id || '', image_url: b.image_url, label: `${b.name}${spec}`, barcode: b.barcode, source: 'SHARED_BARCODE' });
+          }
+        }
+        return sendJson(res, 200, { success: true, items: items.slice(0, limit) });
+      }
       if (pathname === '/api/mart/haccp/search' && method === 'GET') {
         const q = url.searchParams.get('q') || '';
         const barcode = url.searchParams.get('barcode') || '';
@@ -901,6 +933,25 @@ const server = http.createServer(async (req, res) => {
         const filename = path.basename(pathname);
         const filePath = path.join(__dirname, 'scratch', 'haccp_webp', filename);
         serveStatic(filePath, res);
+        return;
+      }
+      if (pathname === '/api/mart/haccp/proxy-image' && method === 'GET') {
+        const src = String(url.searchParams.get('url') || '').trim();
+        if (!/^https?:\/\//i.test(src)) return sendJson(res, 400, { success: false, error: '유효한 외부 이미지 URL이 필요합니다.' });
+        let imgRes;
+        try {
+          imgRes = await fetch(src, { signal: AbortSignal.timeout(8000) });
+        } catch (err) {
+          return sendJson(res, 502, { success: false, error: `외부 이미지 서버 연결 실패: ${err?.message || 'timeout'}` });
+        }
+        if (!imgRes.ok) return sendJson(res, 502, { success: false, error: `외부 이미지 다운로드 실패 (${imgRes.status})` });
+        const contentType = String(imgRes.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+        if (!contentType.startsWith('image/')) {
+          return sendJson(res, 400, { success: false, error: "이미지 파일 주소가 아닙니다. '링크 주소 복사'가 아니라 사진 위 우클릭 -> '이미지 주소 복사'를 사용하거나 '이미지 복사' 후 Ctrl+V를 눌러 주세요." });
+        }
+        const buf = Buffer.from(await imgRes.arrayBuffer());
+        res.writeHead(200, { 'Content-Type': contentType, 'Cache-Control': 'no-store' });
+        res.end(buf);
         return;
       }
       if (pathname === '/api/mart/haccp/import-image' && method === 'POST') {

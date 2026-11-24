@@ -482,4 +482,59 @@ export class MartD1Adapter {
     }
     return map;
   }
+
+  async searchSharedMedia({ q = '', limit = 40 } = {}) {
+    const cleanQ = String(q || '').trim();
+    const safeLimit = Math.min(Math.max(1, Number(limit || 40)), 100);
+    const items = [];
+    const seen = new Set();
+    const pushItem = (it) => {
+      if (!it.image_url || seen.has(it.image_url)) return;
+      seen.add(it.image_url);
+      items.push(it);
+    };
+
+    if (cleanQ) {
+      const mediaRes = await this.db.prepare(`
+        SELECT id, original_file_name, cdn_url, r2_object_key, created_at
+        FROM media_objects
+        WHERE domain = 'SHARED' AND deleted_at IS NULL AND upload_status = 'COMPLETED'
+          AND original_file_name LIKE ?
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).bind(`%${cleanQ}%`, safeLimit).all();
+      for (const m of (mediaRes?.results || [])) {
+        const url = m.r2_object_key ? `/api/mart/media/public/${m.r2_object_key}` : (m.cdn_url || '');
+        const label = String(m.original_file_name || '').replace(/\.[^.]+$/, '') || '공용 이미지';
+        pushItem({ media_id: m.id, image_url: url, label, source: 'SHARED_POOL' });
+      }
+
+      const bcRes = await this.db.prepare(`
+        SELECT id, barcode, product_name, standard_spec, image_r2_key, image_url
+        FROM shared_barcode_catalog
+        WHERE product_name LIKE ? AND (image_r2_key IS NOT NULL OR image_url IS NOT NULL)
+        ORDER BY (image_r2_key IS NOT NULL) DESC, updated_at DESC
+        LIMIT ?
+      `).bind(`%${cleanQ}%`, safeLimit).all();
+      for (const b of (bcRes?.results || [])) {
+        const url = b.image_r2_key ? `/api/mart/media/public/${b.image_r2_key}` : (b.image_url || '');
+        const spec = b.standard_spec && b.standard_spec !== '-' ? ` (${b.standard_spec})` : '';
+        pushItem({ media_id: b.id, image_url: url, label: `${b.product_name}${spec}`, barcode: b.barcode, source: 'SHARED_BARCODE' });
+      }
+    } else {
+      const mediaRes = await this.db.prepare(`
+        SELECT id, original_file_name, cdn_url, r2_object_key, created_at
+        FROM media_objects
+        WHERE domain = 'SHARED' AND deleted_at IS NULL AND upload_status = 'COMPLETED'
+        ORDER BY created_at DESC
+        LIMIT ?
+      `).bind(safeLimit).all();
+      for (const m of (mediaRes?.results || [])) {
+        const url = m.r2_object_key ? `/api/mart/media/public/${m.r2_object_key}` : (m.cdn_url || '');
+        const label = String(m.original_file_name || '').replace(/\.[^.]+$/, '') || '공용 이미지';
+        pushItem({ media_id: m.id, image_url: url, label, source: 'SHARED_POOL' });
+      }
+    }
+    return items.slice(0, safeLimit);
+  }
 }

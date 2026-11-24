@@ -1,7 +1,7 @@
 // Cloudflare Pages Serverless Function for /api/mart/*
 import martData from './mart_data.json';
 import { MartD1Adapter } from '../../../packages/services/mart-logistics/backend/mart-d1-adapter.mjs';
-import { buildPublicMediaKey, buildPrivateEvidenceKey, extractRegionCodeFromUid } from '../../../packages/core/shared/r2-key-builder.js';
+import { buildPublicMediaKey, buildSharedMediaKey, buildPrivateEvidenceKey, extractRegionCodeFromUid } from '../../../packages/core/shared/r2-key-builder.js';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -240,32 +240,45 @@ export async function onRequest(context) {
     const mediaId = `med_0${Date.now().toString(32).padStart(10, '0')}`.padEnd(30, '0').slice(0, 30);
     const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';
     const isPrivate = ['DELIVERY', 'CLAIM', 'RETURN'].includes(String(body.owner_type || '').toUpperCase());
+    const isShared = !isPrivate && String(body.scope || body.domain || '').toUpperCase() === 'SHARED';
+    const cleanBc = String(body.barcode || '').replace(/[^0-9]/g, '');
+    const isStdBarcode = /^\d{8,14}$/.test(cleanBc) && !/^2\d{12}$/.test(cleanBc);
     const r2Key = isPrivate
       ? buildPrivateEvidenceKey({ domain: 'MART', tenantUid: martId, evidenceType: String(body.owner_type).toLowerCase(), mediaId })
-      : buildPublicMediaKey({ domain: 'MART', tenantUid: martId, itemType: body.item_type || 'products', mediaId, variant: 'orig' });
+      : isShared
+        ? buildSharedMediaKey({ kind: isStdBarcode ? 'barcode' : 'common-pool', key: isStdBarcode ? cleanBc : mediaId })
+        : buildPublicMediaKey({ domain: 'MART', tenantUid: martId, itemType: body.item_type || 'products', mediaId, variant: 'orig' });
     const bucket = isPrivate ? env?.MEDIA_PRIVATE : env?.MEDIA_PUBLIC;
     const bucketName = isPrivate ? 'aitip-media-private' : 'aitip-media-public';
     if (bucket) {
       await bucket.put(r2Key, bytes, { httpMetadata: { contentType } });
     }
+    const publicUrl = isPrivate ? `/mart/media/${r2Key}` : `/api/mart/media/public/${r2Key}`;
     if (d1) {
       await d1.recordMediaObject({
         id: mediaId,
-        domain: 'MART',
-        region_code: extractRegionCodeFromUid(martId),
-        tenant_id: martId,
+        domain: isShared ? 'SHARED' : 'MART',
+        region_code: isShared ? '00-000' : extractRegionCodeFromUid(martId),
+        tenant_id: isShared ? 'SHARED' : martId,
         owner_type: body.owner_type || 'PRODUCT',
-        owner_id: body.owner_id || martId,
+        owner_id: body.owner_id || (isShared && isStdBarcode ? cleanBc : martId),
         r2_bucket_name: bucketName,
         r2_object_key: r2Key,
         original_file_name: body.original_name || 'upload.webp',
         content_type: contentType,
         file_size_bytes: bytes.byteLength,
-        cdn_url: `/mart/media/${r2Key}`,
+        cdn_url: publicUrl,
         access_scope: isPrivate ? 'PRIVATE_SIGNED' : 'PUBLIC'
       });
     }
-    return jsonRes({ success: true, media_id: mediaId, r2_object_key: r2Key, image_url: `/mart/media/${r2Key}` });
+    return jsonRes({ success: true, media_id: mediaId, r2_object_key: r2Key, image_url: publicUrl });
+  }
+  if (method === 'GET' && subPath === 'media/shared') {
+    const url = new URL(request.url);
+    const q = url.searchParams.get('q') || '';
+    const limit = Number(url.searchParams.get('limit') || 40);
+    const items = d1 ? await d1.searchSharedMedia({ q, limit }) : [];
+    return jsonRes({ success: true, items });
   }
   if (method === 'GET' && subPath.startsWith('media/public/')) {
     const r2Key = subPath.slice('media/public/'.length);
@@ -330,10 +343,36 @@ export async function onRequest(context) {
     }
     return jsonRes({ success: true, source: d1Items.length ? 'shared_barcode_catalog' : 'haccp_live', items, item: items[0] || null });
   }
+  if (method === 'GET' && subPath === 'haccp/proxy-image') {
+    const reqUrl = new URL(request.url);
+    const src = String(reqUrl.searchParams.get('url') || '').trim();
+    if (!/^https?:\/\//i.test(src)) return jsonRes({ success: false, error: '유효한 외부 이미지 URL이 필요합니다.' }, 400);
+    let imgRes;
+    try {
+      imgRes = await fetch(src, { signal: AbortSignal.timeout(8000) });
+    } catch (err) {
+      return jsonRes({ success: false, error: `외부 이미지 서버 연결 실패: ${err?.message || 'timeout'}` }, 502);
+    }
+    if (!imgRes.ok) return jsonRes({ success: false, error: `외부 이미지 다운로드 실패 (${imgRes.status})` }, 502);
+    const contentType = String(imgRes.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!contentType.startsWith('image/')) {
+      return jsonRes({ success: false, error: "이미지 파일 주소가 아닙니다. '링크 주소 복사'가 아니라 사진 위 우클릭 -> '이미지 주소 복사'를 사용하거나 '이미지 복사' 후 Ctrl+V를 눌러 주세요." }, 400);
+    }
+    const headers = new Headers();
+    headers.set('Content-Type', contentType);
+    headers.set('Cache-Control', 'no-store');
+    headers.set('Access-Control-Allow-Origin', '*');
+    return new Response(imgRes.body, { status: 200, headers });
+  }
   if (method === 'POST' && subPath === 'haccp/import-image') {
     const src = String(body?.image_url || '').trim();
     if (!/^https?:\/\//i.test(src)) return jsonRes({ success: false, error: '유효한 외부 이미지 URL이 필요합니다.' }, 400);
-    const imgRes = await fetch(src, { signal: AbortSignal.timeout(5000) });
+    let imgRes;
+    try {
+      imgRes = await fetch(src, { signal: AbortSignal.timeout(8000) });
+    } catch (err) {
+      return jsonRes({ success: false, error: `외부 이미지 서버 연결 실패: ${err?.message || 'timeout'}` }, 502);
+    }
     if (!imgRes.ok) return jsonRes({ success: false, error: `외부 이미지 다운로드 실패 (${imgRes.status})` }, 502);
     const contentType = String(imgRes.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     if (!contentType.startsWith('image/')) {
@@ -352,7 +391,7 @@ export async function onRequest(context) {
         domain: 'MART',
         region_code: extractRegionCodeFromUid(martId),
         tenant_id: martId,
-        owner_type: 'MART_PRODUCT',
+        owner_type: 'PRODUCT',
         owner_id: martId,
         r2_bucket_name: 'aitip-media-public',
         r2_object_key: r2Key,

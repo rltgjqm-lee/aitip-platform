@@ -460,6 +460,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                         이미지 파일 선택 (WebP)
                         <input id="mp-img-file" type="file" accept="image/*" style="display: none;" />
                       </label>
+                      <button type="button" id="btn-shared-img-search" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-color: #007749; color: #007749;">공용 이미지 검색</button>
                       <button type="button" id="btn-web-img-google" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px;">구글 이미지 검색</button>
                       <button type="button" id="btn-web-img-naver" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px;">네이버 쇼핑 검색</button>
                     </div>
@@ -468,6 +469,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                       <button type="button" id="btn-mp-img-url" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; white-space: nowrap;">URL 가져오기</button>
                     </div>
                     <span id="mp-img-status" style="font-size: 11px; color: #64748b;">타사 워터마크·연출컷 금지 / 사진 위 우클릭 '이미지 복사' 후 Ctrl+V 또는 '이미지 주소 복사'(링크 주소 복사 아님) 사용</span>
+                    <div id="shared-img-box" style="display: none; margin-top: 4px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; max-height: 180px; overflow-y: auto;"></div>
                   </div>
                 </div>
               </div>
@@ -775,14 +777,33 @@ export async function renderMartCatalogView(container, opts = {}) {
     const box = container.querySelector('#mp-img-preview-box');
     if (box) box.innerHTML = `<img src="${escapeHtml(url)}" alt="상품 이미지" style="width: 100%; height: 100%; object-fit: cover;" />`;
   };
+  const buildSharedImgName = (fallback = 'product') => {
+    const nm = container.querySelector('#mp-name')?.value?.trim() || '';
+    const sp = container.querySelector('#mp-spec')?.value?.trim() || '';
+    const base = [nm, sp && sp !== '-' ? sp : ''].filter(Boolean).join(' ').trim() || String(fallback || 'product').replace(/\.[^.]+$/, '');
+    return `${base}.webp`;
+  };
+  const uploadWebpBlobToShared = async (blobOrFile, originalName, barcode = '') => {
+    const webpDataUrl = await fileToWebpDataUrl(blobOrFile);
+    const bc = barcode || container.querySelector('#mp-barcode')?.value?.trim() || '';
+    return martApi.uploadMedia({
+      data_url: webpDataUrl,
+      original_name: originalName || buildSharedImgName(blobOrFile?.name),
+      scope: 'SHARED',
+      barcode: bc
+    });
+  };
+  const importExternalUrlAsWebp = async (url, fallbackName = 'product', barcode = '') => {
+    const blob = await martApi.fetchExternalImageBlob(url);
+    return uploadWebpBlobToShared(blob, buildSharedImgName(fallbackName), barcode);
+  };
   const uploadProductImageFile = async (file) => {
     if (!file) return;
-    setImgStatus('WebP 변환 및 업로드 중...');
-    const webpDataUrl = await fileToWebpDataUrl(file);
-    const uploaded = await martApi.uploadMedia({ data_url: webpDataUrl, original_name: file.name || 'paste.webp' });
+    setImgStatus('WebP 변환 및 공용 저장소 업로드 중...');
+    const uploaded = await uploadWebpBlobToShared(file, buildSharedImgName(file.name));
     draftMedia = { media_id: uploaded.media_id, image_url: uploaded.image_url };
     setImgPreview(uploaded.image_url);
-    setImgStatus('WebP 변환 및 매장 전용 이미지 저장 완료');
+    setImgStatus('WebP 변환 및 공용 이미지 저장 완료');
   };
 
   container.querySelector('#mp-img-file')?.addEventListener('change', async (e) => {
@@ -795,6 +816,49 @@ export async function renderMartCatalogView(container, opts = {}) {
     const bc = container.querySelector('#mp-barcode')?.value?.trim() || '';
     return [nm, bc].filter(Boolean).join(' ').trim();
   };
+  container.querySelector('#btn-shared-img-search')?.addEventListener('click', async () => {
+    const kw = container.querySelector('#mp-name')?.value?.trim() || '';
+    const box = container.querySelector('#shared-img-box');
+    if (!kw) { setImgStatus('상품명(예: 대파)을 먼저 입력해 주세요.', true); return; }
+    if (!box) return;
+    box.style.display = 'block';
+    box.innerHTML = '<div style="font-size: 11.5px; color: #475569;">공용 이미지 풀 검색 중...</div>';
+    try {
+      const res = await martApi.searchSharedMedia(kw, 40);
+      const list = res.items || [];
+      if (list.length === 0) {
+        box.innerHTML = `<div style="font-size: 11.5px; color: #64748b;">'${escapeHtml(kw)}' 관련 공용 이미지가 아직 없습니다. 아래 URL 가져오기 또는 파일 업로드로 등록하면 이후 공용으로 재사용됩니다.</div>`;
+        return;
+      }
+      box.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 11px; font-weight: 700; color: #007749;">공용 이미지 ${list.length}건 (클릭 시 재업로드 없이 연결)</span>
+          <button type="button" id="btn-close-shared-img" style="border: 0; background: none; font-size: 12px; cursor: pointer; color: #64748b;">닫기</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;">
+          ${list.map((it, idx) => `
+            <button type="button" class="shared-img-pick" data-idx="${idx}" style="border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; padding: 4px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 4px;">
+              <img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.label)}" style="width: 100%; height: 64px; object-fit: cover; border-radius: 4px; background: #f1f5f9;" />
+              <span style="font-size: 10.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${escapeHtml(it.label)}">${escapeHtml(it.label)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+      box.querySelector('#btn-close-shared-img')?.addEventListener('click', () => { box.style.display = 'none'; });
+      box.querySelectorAll('.shared-img-pick').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const picked = list[Number(btn.dataset.idx)];
+          if (!picked) return;
+          draftMedia = { media_id: picked.media_id || null, image_url: picked.image_url };
+          setImgPreview(picked.image_url);
+          setImgStatus(`공용 이미지 연결 완료 (${picked.label})`);
+          box.style.display = 'none';
+        });
+      });
+    } catch (err) {
+      box.innerHTML = `<div style="font-size: 11.5px; color: #b91c1c;">공용 이미지 조회 실패: ${escapeHtml(err.message)}</div>`;
+    }
+  });
   container.querySelector('#btn-web-img-google')?.addEventListener('click', () => {
     const kw = buildWebSearchQuery();
     if (!kw) { setImgStatus('상품명 또는 바코드를 먼저 입력해 주세요.', true); return; }
@@ -812,12 +876,12 @@ export async function renderMartCatalogView(container, opts = {}) {
       return;
     }
     try {
-      setImgStatus('외부 이미지 가져오는 중...');
+      setImgStatus('외부 이미지 다운로드 후 WebP 변환 중...');
       const nm = container.querySelector('#mp-name')?.value?.trim() || 'product';
-      const up = await martApi.importHaccpImage({ image_url: url, original_name: `${nm}.jpg` });
+      const up = await importExternalUrlAsWebp(url, nm);
       draftMedia = { media_id: up.media_id, image_url: up.image_url };
       setImgPreview(up.image_url);
-      setImgStatus('가져오기 완료 (매장 전용 저장소에 보관됨)');
+      setImgStatus('WebP 변환 및 공용 이미지 저장 완료');
     } catch (err) {
       setImgStatus(`가져오기 실패: ${err.message}`, true);
     }
@@ -899,7 +963,7 @@ export async function renderMartCatalogView(container, opts = {}) {
       if (picked.image_url.startsWith('/api/mart/media/public/')) {
         draftMedia = { media_id: picked.id || null, image_url: picked.image_url };
       } else {
-        const up = await martApi.importHaccpImage({ image_url: picked.image_url, original_name: `${picked.name}.jpg` });
+        const up = await importExternalUrlAsWebp(picked.image_url, picked.name, picked.barcode || '');
         draftMedia = { media_id: up.media_id, image_url: up.image_url };
       }
       const imgBox = container.querySelector('#mp-img-preview-box');
