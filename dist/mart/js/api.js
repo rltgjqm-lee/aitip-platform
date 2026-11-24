@@ -137,7 +137,7 @@ export const martApi = {
     return request(`/media/shared?${params.toString()}`);
   },
   async fetchExternalImageBlob(imageUrl) {
-    const res = await fetch(`${BASE}/haccp/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+    const res = await fetch(`${BASE_URL}/haccp/proxy-image?url=${encodeURIComponent(imageUrl)}`);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || `외부 이미지 다운로드 실패 (HTTP ${res.status})`);
