@@ -52,6 +52,14 @@ export class MartD1Adapter {
 
   async upsertProduct(p) {
     const now = Date.now();
+    const existing = p?.id
+      ? await this.db.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(p.id).first().catch(() => null)
+      : null;
+    const merged = { ...(existing || {}) };
+    for (const [k, v] of Object.entries(p || {})) {
+      if (v !== undefined) merged[k] = v;
+    }
+    const catType = merged.category_type || 'B2B_INDUSTRIAL';
     await this.db.prepare(`
       INSERT INTO products (
         id, mart_id, barcode_sku, name, category_type, category_path, spec, uom, tax_type,
@@ -60,7 +68,14 @@ export class MartD1Adapter {
         is_prep, storage_temp, stock_qty, safety_stock, image_url, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        barcode_sku = excluded.barcode_sku,
         name = excluded.name,
+        category_type = excluded.category_type,
+        category_path = excluded.category_path,
+        spec = excluded.spec,
+        uom = excluded.uom,
+        tax_type = excluded.tax_type,
+        cost_price = excluded.cost_price,
         regular_price = excluded.regular_price,
         sale_price = excluded.sale_price,
         discount_pct = excluded.discount_pct,
@@ -68,22 +83,26 @@ export class MartD1Adapter {
         channel_scope = excluded.channel_scope,
         online_publish_status = excluded.online_publish_status,
         mart_approval_status = excluded.mart_approval_status,
+        is_prep = excluded.is_prep,
+        storage_temp = excluded.storage_temp,
         stock_qty = excluded.stock_qty,
+        safety_stock = excluded.safety_stock,
         image_url = excluded.image_url,
         updated_at = excluded.updated_at
     `).bind(
-      p.id, this.martId, p.barcode || null, p.name, p.category_type || 'B2B_INDUSTRIAL',
-      p.category_path || '-', p.spec || '-', p.uom || '개', p.tax_type || 'TAXABLE',
-      Number(p.cost_price || 0), Number(p.regular_price || 0), Number(p.sale_price || 0),
-      Number(p.discount_pct || 0), p.applied_promo_id || null,
-      p.channel_scope || 'ALL_CHANNELS', p.online_publish_status || 'PUBLISHED_FEED',
-      p.shared_catalog_scope || 'LOCAL_ONLY', p.mart_approval_status || null,
-      p.category_type === 'PREP_PROCESSED' ? 1 : 0, p.storage_temp || 'AMBIENT',
-      Number(p.stock_qty ?? 50), Number(p.safety_stock ?? 5), p.image_url || null,
-      now, now
+      merged.id, this.martId, (p?.barcode !== undefined ? (p.barcode || null) : (merged.barcode_sku ?? merged.barcode ?? null)),
+      merged.name, catType,
+      merged.category_path || '-', merged.spec || '-', merged.uom || '개', merged.tax_type || 'TAXABLE',
+      Number(merged.cost_price ?? 0), Number(merged.regular_price ?? 0), Number(merged.sale_price ?? 0),
+      Number(merged.discount_pct ?? 0), merged.applied_promo_id || null,
+      merged.channel_scope || 'ALL_CHANNELS', merged.online_publish_status || 'PUBLISHED_FEED',
+      merged.shared_catalog_scope || 'LOCAL_ONLY', merged.mart_approval_status || null,
+      catType === 'PREP_PROCESSED' ? 1 : Number(merged.is_prep ?? 0), merged.storage_temp || 'AMBIENT',
+      Number(merged.stock_qty ?? 50), Number(merged.safety_stock ?? 5), merged.image_url || null,
+      Number(existing?.created_at || now), now
     ).run();
-    await this.contributeSharedBarcode(p).catch(() => {});
-    return p;
+    await this.contributeSharedBarcode(merged).catch(() => {});
+    return merged;
   }
 
   async contributeSharedBarcode(p) {
