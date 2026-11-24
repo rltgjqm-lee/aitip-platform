@@ -1120,7 +1120,10 @@ class MartService {
     if (!src || !/^https?:\/\//i.test(src)) throw new Error('유효한 외부 이미지 URL이 아닙니다.');
     const res = await fetch(src);
     if (!res.ok) throw new Error(`외부 이미지 다운로드 실패 (${res.status})`);
-    const ctype = String(res.headers.get('content-type') || 'image/jpeg').toLowerCase();
+    const ctype = String(res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!ctype.startsWith('image/')) {
+      throw new Error("이미지 파일 주소가 아닙니다. '링크 주소 복사'가 아니라 사진 위 우클릭 -> '이미지 주소 복사'를 사용하거나 '이미지 복사' 후 Ctrl+V를 눌러 주세요.");
+    }
     const ext = ctype.includes('png') ? 'png' : ctype.includes('webp') ? 'webp' : 'jpg';
     const buf = Buffer.from(await res.arrayBuffer());
     const medId = generateMediaTypeId();

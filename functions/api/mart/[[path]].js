@@ -335,7 +335,10 @@ export async function onRequest(context) {
     if (!/^https?:\/\//i.test(src)) return jsonRes({ success: false, error: '유효한 외부 이미지 URL이 필요합니다.' }, 400);
     const imgRes = await fetch(src, { signal: AbortSignal.timeout(5000) });
     if (!imgRes.ok) return jsonRes({ success: false, error: `외부 이미지 다운로드 실패 (${imgRes.status})` }, 502);
-    const contentType = String(imgRes.headers.get('content-type') || 'image/jpeg').split(';')[0].trim();
+    const contentType = String(imgRes.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!contentType.startsWith('image/')) {
+      return jsonRes({ success: false, error: "이미지 파일 주소가 아닙니다. '링크 주소 복사'가 아니라 사진 위 우클릭 -> '이미지 주소 복사'를 사용하거나 '이미지 복사' 후 Ctrl+V를 눌러 주세요." }, 400);
+    }
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
     const mediaId = `med_0${Date.now().toString(32).padStart(10, '0')}`.padEnd(30, '0').slice(0, 30);
     const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';

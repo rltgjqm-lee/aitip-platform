@@ -462,10 +462,10 @@ export async function renderMartCatalogView(container, opts = {}) {
                       <button type="button" id="btn-web-img-naver" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px;">네이버 쇼핑 검색</button>
                     </div>
                     <div style="display: flex; gap: 6px;">
-                      <input id="mp-img-url" type="url" class="erp-input" style="height: 28px; font-size: 11.5px; flex: 1;" placeholder="이미지 주소(https://...) 붙여넣기 또는 화면에서 Ctrl+V" />
+                      <input id="mp-img-url" type="url" class="erp-input" style="height: 28px; font-size: 11.5px; flex: 1;" placeholder="사진 우클릭 '이미지 주소 복사'(링크 주소 복사 X) 붙여넣기" />
                       <button type="button" id="btn-mp-img-url" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; white-space: nowrap;">URL 가져오기</button>
                     </div>
-                    <span id="mp-img-status" style="font-size: 11px; color: #64748b;">타사 워터마크·연출컷 사용 금지 / 제조사 공식 단품 또는 직접 촬영 사진만 등록 (Ctrl+V 붙여넣기 지원)</span>
+                    <span id="mp-img-status" style="font-size: 11px; color: #64748b;">타사 워터마크·연출컷 금지 / 사진 위 우클릭 '이미지 복사' 후 Ctrl+V 또는 '이미지 주소 복사'(링크 주소 복사 아님) 사용</span>
                   </div>
                 </div>
               </div>
