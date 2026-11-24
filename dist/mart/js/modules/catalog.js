@@ -1119,6 +1119,8 @@ export async function renderMartCatalogView(container, opts = {}) {
       payload.sale_price = regPrice;
       payload.sales_target = 'BOTH';
       payload.online_publish_status = 'PUBLISHED_FEED';
+    } else if (!editingProduct?.applied_promo_id) {
+      payload.sale_price = regPrice;
     }
     if (editingProductId) await martApi.updateProduct(payload);
     else await martApi.addProduct(payload);

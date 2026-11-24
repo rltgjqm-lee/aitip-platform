@@ -197,7 +197,10 @@ class MartService {
     if (idx < 0) throw new Error('상품을 찾을 수 없습니다.');
     const cur = this.data.products[idx];
     const reg = payload.regular_price !== undefined ? Math.max(0, Number(payload.regular_price)) : Number(cur.regular_price || 0);
-    const sale = payload.sale_price !== undefined ? Math.max(0, Number(payload.sale_price)) : Number(cur.sale_price ?? reg);
+    let sale = payload.sale_price !== undefined
+      ? Math.max(0, Number(payload.sale_price))
+      : (!cur.applied_promo_id && payload.regular_price !== undefined ? reg : Number(cur.sale_price ?? reg));
+    if (reg > 0 && sale > reg) sale = reg;
     this.data.products[idx] = {
       ...cur,
       ...payload,
