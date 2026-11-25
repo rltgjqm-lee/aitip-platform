@@ -239,6 +239,7 @@ CREATE TABLE IF NOT EXISTS media_objects (
 );
 CREATE INDEX IF NOT EXISTS idx_media_owner ON media_objects (owner_type, owner_id);
 CREATE INDEX IF NOT EXISTS idx_media_tenant ON media_objects (domain, region_code, tenant_id);
+CREATE INDEX IF NOT EXISTS idx_media_shared_lookup ON media_objects (domain, deleted_at, upload_status, created_at);
 
 -- 11. 배달 증빙 & 클레임 사진
 CREATE TABLE IF NOT EXISTS delivery_sessions (

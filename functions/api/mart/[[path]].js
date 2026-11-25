@@ -3,6 +3,7 @@ import martData from './mart_data.json';
 import { MartD1Adapter } from '../../../packages/services/mart-logistics/backend/mart-d1-adapter.mjs';
 import { nextMonotonicId, applyDailyPriceBatchToData } from '../../../packages/services/mart-logistics/backend/mart-price-batch.mjs';
 import { buildPickingSummary, buildBoxingManifest, buildSettlementSummary } from '../../../packages/services/mart-logistics/backend/mart-fulfillment-calc.mjs';
+import { parseMartFlyerText, parseMartPosCsv, parseMartPrepSheet } from '../../../packages/core/merchant-meta/mart-catalog-parser.mjs';
 import { buildPublicMediaKey, buildSharedMediaKey, buildPrivateEvidenceKey, extractRegionCodeFromUid } from '../../../packages/core/shared/r2-key-builder.js';
 
 const corsHeaders = {
@@ -91,6 +92,65 @@ export async function onRequest(context) {
     }
     return jsonRes({ success: true, updated_count: updatedCount });
   }
+  if (subPath === 'import/preview' || subPath === 'import') {
+    const mode = String(body?.mode || 'FLYER').toUpperCase();
+    const rawText = String(body?.raw_text || '');
+    const parsed = mode === 'POS_CSV'
+      ? parseMartPosCsv(rawText)
+      : mode === 'PREP_SHEET'
+        ? parseMartPrepSheet(rawText)
+        : parseMartFlyerText(rawText);
+    const cat = d1 ? await d1.getCatalog() : { products: martData.products || [] };
+    const existingList = (cat.products || []).map(p => ({ ...p, barcode: p.barcode || p.barcode_sku || '' }));
+    const norm = (s = '') => String(s || '').replace(/\s+/g, '').toLowerCase();
+    const findMatch = (p) => existingList.find(x =>
+      (p.barcode && x.barcode && x.barcode === p.barcode)
+      || (p.name && norm(x.name) === norm(p.name))
+    );
+
+    if (subPath === 'import/preview') {
+      const previewItems = (parsed.items || []).map(p => {
+        const hit = findMatch(p);
+        return {
+          ...p,
+          match_status: hit ? 'MATCHED_EXISTING' : 'NEW_PRODUCT',
+          matched_product_id: hit ? hit.id : '',
+          matched_product_name: hit ? hit.name : ''
+        };
+      });
+      return jsonRes({
+        success: true,
+        promo_start: parsed.promo_start,
+        promo_end: parsed.promo_end,
+        items: previewItems,
+        promotions: parsed.promotions || []
+      });
+    }
+
+    const addedProducts = [];
+    for (const p of (parsed.items || [])) {
+      const hit = findMatch(p);
+      const record = hit
+        ? { ...hit, ...p, id: hit.id, status: 'ACTIVE' }
+        : { ...p, id: p.id || nextMonotonicId('mrt_sku'), status: 'ACTIVE' };
+      if (d1) await d1.upsertProduct(record);
+      addedProducts.push(record);
+    }
+    const addedPromos = [];
+    for (const pr of (parsed.promotions || [])) {
+      const promoRec = { ...pr, id: pr.id || nextMonotonicId('mpr') };
+      if (d1) await d1.createPromotion(promoRec);
+      addedPromos.push(promoRec);
+    }
+    return jsonRes({
+      success: true,
+      mode,
+      imported_products: addedProducts.length,
+      imported_promotions: addedPromos.length,
+      products: addedProducts,
+      promotions: addedPromos
+    }, 201);
+  }
   if (subPath === 'promotions') {
     if (d1) {
       if (method === 'POST') {
@@ -145,13 +205,13 @@ export async function onRequest(context) {
   }
   if (subPath === 'picking' || subPath === 'boxing' || subPath === 'settlements') {
     const url = new URL(request.url);
-    const reqDate = url.searchParams.get('date') || '';
+    const reqDate = url.searchParams.get('delivery_date') || url.searchParams.get('date') || '';
     const d1Orders = d1 ? await d1.getOrders() : [];
     const allOrders = d1Orders.length ? d1Orders : (martData.orders || []);
-    if (subPath === 'picking') return jsonRes({ success: true, ...buildPickingSummary(allOrders, reqDate) });
-    if (subPath === 'boxing') return jsonRes({ success: true, ...buildBoxingManifest(allOrders, reqDate) });
     const cat = d1 ? await d1.getCatalog() : { products: martData.products || [], mart: martData.mart || {} };
     const products = cat.products?.length ? cat.products : (martData.products || []);
+    if (subPath === 'picking') return jsonRes({ success: true, ...buildPickingSummary(allOrders, products, reqDate) });
+    if (subPath === 'boxing') return jsonRes({ success: true, ...buildBoxingManifest(allOrders, products, reqDate) });
     const martInfo = { ...(martData.mart || {}), ...(cat.mart || {}) };
     return jsonRes({ success: true, ...buildSettlementSummary(allOrders, products, martInfo) });
   }

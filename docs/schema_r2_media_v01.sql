@@ -94,3 +94,4 @@ CREATE INDEX IF NOT EXISTS idx_media_tenant ON media_objects(domain, region_code
 CREATE INDEX IF NOT EXISTS idx_media_hash ON media_objects(sha256_hash);
 CREATE INDEX IF NOT EXISTS idx_media_parent ON media_objects(parent_media_id);
 CREATE INDEX IF NOT EXISTS idx_media_status ON media_objects(upload_status);
+CREATE INDEX IF NOT EXISTS idx_media_shared_lookup ON media_objects(domain, deleted_at, upload_status, created_at);
