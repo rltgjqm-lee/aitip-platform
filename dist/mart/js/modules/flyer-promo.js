@@ -42,6 +42,7 @@ let drawerOpen = false;
 let typeMgrOpen = false;
 let editingPromoId = '';
 let cloneDraft = null;
+const expandedPromoIds = new Set();
 
 export async function renderMartFlyerView(container, opts = {}) {
   if (!container) return;
@@ -154,9 +155,17 @@ export async function renderMartFlyerView(container, opts = {}) {
                   const cards = Array.isArray(pr.card_targets) && pr.card_targets.length > 0
                     ? pr.card_targets.map(c => (CARD_LIST.find(x => x.code === c) || {}).label || c).join('·')
                     : '전체 카드·결제';
+                  const linked = allProducts.filter(p => p.applied_promo_id === pr.id);
+                  const isExpanded = expandedPromoIds.has(pr.id);
                   return `
                     <tr>
-                      <td><strong style="color: #0f172a;">${esc(pr.name)}</strong></td>
+                      <td>
+                        <button type="button" class="btn-toggle-promo-acc" data-id="${esc(pr.id)}" style="border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-align: left;">
+                          <span style="display: inline-block; width: 14px; font-size: 12px; color: #64748b;">${isExpanded ? '▾' : '▸'}</span>
+                          <strong style="color: #0f172a;">${esc(pr.name)}</strong>
+                          <span class="mc-pill ${linked.length > 0 ? 'mc-pill-green' : 'mc-pill-gray'}" style="font-size: 11px;">연결 ${linked.length}건</span>
+                        </button>
+                      </td>
                       <td><span class="mc-pill mc-pill-blue">${esc(typeLabelMap[pr.promo_type] || pr.promo_type)}</span></td>
                       <td>
                         <div><span class="mc-pill ${chPill}">${CHANNEL_LABEL[ch] || ch}</span></div>
@@ -190,6 +199,42 @@ export async function renderMartFlyerView(container, opts = {}) {
                         <button type="button" class="mc-row-edit-btn btn-del-promo" data-id="${esc(pr.id)}" style="color: #b91c1c; border-color: #fecaca;">삭제</button>
                       </td>
                     </tr>
+                    ${isExpanded ? `
+                      <tr class="mc-promo-acc-row" style="background: #f8fafc;">
+                        <td colspan="6" style="padding: 12px 18px 14px 36px; border-bottom: 1px solid #e2e8f0;">
+                          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 12px; font-weight: 700; color: #334155;">연결된 상품 (${linked.length}건) · 행사가를 바로 수정하거나 연결 해제할 수 있습니다</span>
+                            <button type="button" class="mc-btn-secondary btn-go-link-promo" data-id="${esc(pr.id)}" style="height: 28px; padding: 0 10px; font-size: 11.5px; border-color: #007749; color: #007749;">+ 이 행사에 상품 추가</button>
+                          </div>
+                          ${linked.length === 0 ? `
+                            <div style="padding: 14px; border: 1px dashed #cbd5e1; border-radius: 8px; background: #fff; font-size: 12px; color: #64748b; text-align: center;">
+                              연결된 상품이 없습니다. 우측 [+ 이 행사에 상품 추가] 버튼으로 상품을 연결하세요.
+                            </div>
+                          ` : `
+                            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto;">
+                              ${linked.map(p => `
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                  <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                    ${renderProductThumbHtml(p.image_url, p.name, 36)}
+                                    <div style="min-width: 0;">
+                                      <div style="font-size: 12.5px; font-weight: 700; color: #0f172a;">${esc(p.name)}</div>
+                                      <div style="font-size: 11px; color: #64748b;">${esc(p.spec || '-')} · 정상가 ${Number(p.regular_price || 0).toLocaleString()}원</div>
+                                    </div>
+                                  </div>
+                                  <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                    <span style="font-size: 11.5px; color: #64748b;">행사가</span>
+                                    <input type="number" min="0" class="erp-input acc-sale-input" data-pid="${esc(p.id)}" value="${Number(p.sale_price ?? p.regular_price ?? 0)}" style="width: 96px; height: 28px; text-align: right; font-size: 12px;" />
+                                    <span style="font-size: 11.5px; color: #64748b;">원</span>
+                                    <button type="button" class="mc-btn-primary btn-acc-save-price" data-pid="${esc(p.id)}" style="height: 28px; padding: 0 10px; font-size: 11.5px;">적용</button>
+                                    <button type="button" class="mc-row-edit-btn btn-unlink-promo-prod" data-id="${esc(p.id)}" style="color: #b91c1c; border-color: #fecaca;">해제</button>
+                                  </div>
+                                </div>
+                              `).join('')}
+                            </div>
+                          `}
+                        </td>
+                      </tr>
+                    ` : ''}
                   `;
                 }).join('')}
               </tbody>
@@ -560,6 +605,36 @@ export async function renderMartFlyerView(container, opts = {}) {
   container.querySelector('#promo-scope-filter')?.addEventListener('change', (e) => {
     scopeFilter = e.target.value;
     renderMartFlyerView(container);
+  });
+  container.querySelectorAll('.btn-toggle-promo-acc').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (expandedPromoIds.has(id)) expandedPromoIds.delete(id);
+      else expandedPromoIds.add(id);
+      renderMartFlyerView(container);
+    });
+  });
+  container.querySelectorAll('.btn-go-link-promo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedPromoId = btn.dataset.id || '';
+      viewTab = 'PROMO_PRODUCTS';
+      renderMartFlyerView(container);
+    });
+  });
+  container.querySelectorAll('.btn-acc-save-price').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pid = btn.dataset.pid;
+      const prod = allProducts.find(p => p.id === pid);
+      const input = container.querySelector(`.acc-sale-input[data-pid="${pid}"]`);
+      if (!prod || !input) return;
+      const sale = Math.max(0, Number(input.value ?? 0));
+      const reg = Math.max(0, Number(prod.regular_price || 0));
+      const discPct = reg > 0 && sale < reg ? Math.round((1 - sale / reg) * 100) : 0;
+      await martApi.bulkUpdateGrid([{ id: prod.id, sale_price: sale, discount_pct: discPct }]);
+      showToast(`${prod.name} 행사가(${sale.toLocaleString()}원)가 반영되었습니다.`, 'success');
+      await renderMartFlyerView(container);
+    });
   });
 
   container.querySelector('#btn-open-promo-drawer')?.addEventListener('click', () => {
