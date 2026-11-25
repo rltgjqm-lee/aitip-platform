@@ -468,7 +468,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                     </div>
                     <div style="display: flex; gap: 6px;">
                       <input id="mp-img-url" type="url" class="erp-input" style="height: 28px; font-size: 11.5px; flex: 1;" placeholder="사진 우클릭 '이미지 주소 복사'(링크 주소 복사 X) 붙여넣기" />
-                      <button type="button" id="btn-mp-img-url" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; white-space: nowrap;">URL 가져오기</button>
+                      <button type="button" id="btn-mp-img-url" class="mc-btn-secondary" style="height: 28px; padding: 0 10px; font-size: 11.5px; white-space: nowrap;">URL 붙여넣기</button>
                     </div>
                     <span id="mp-img-status" style="font-size: 11px; color: #64748b;">타사 워터마크·연출컷 금지 / 사진 위 우클릭 '이미지 복사' 후 Ctrl+V 또는 '이미지 주소 복사'(링크 주소 복사 아님) 사용</span>
                     <div id="shared-img-box" style="display: none; margin-top: 4px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; max-height: 180px; overflow-y: auto;"></div>

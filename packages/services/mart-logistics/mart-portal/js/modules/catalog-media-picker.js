@@ -117,10 +117,10 @@ export function bindCatalogMediaPicker({ container, martApi, fileToWebpDataUrl, 
     window.open(`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(kw)}`, '_blank', 'noopener,noreferrer');
   });
 
-  container.querySelector('#btn-mp-img-url')?.addEventListener('click', async () => {
-    const url = container.querySelector('#mp-img-url')?.value?.trim() || '';
+  const runImportFromUrl = async (rawUrl = '') => {
+    const url = String(rawUrl || '').trim();
     if (!/^https?:\/\//i.test(url)) {
-      setImgStatus('http:// 또는 https://로 시작하는 이미지 주소를 입력해 주세요.', true);
+      setImgStatus('http:// 또는 https://로 시작하는 이미지 주소를 붙여넣어 주세요.', true);
       return;
     }
     try {
@@ -132,6 +132,30 @@ export function bindCatalogMediaPicker({ container, martApi, fileToWebpDataUrl, 
       setImgStatus('WebP 변환 및 공용 이미지 저장 완료');
     } catch (err) {
       setImgStatus(`가져오기 실패: ${err.message}`, true);
+    }
+  };
+
+  container.querySelector('#btn-mp-img-url')?.addEventListener('click', async () => {
+    const urlInput = container.querySelector('#mp-img-url');
+    let url = urlInput?.value?.trim() || '';
+    if (!url && navigator.clipboard?.readText) {
+      try {
+        const clip = (await navigator.clipboard.readText()).trim();
+        if (clip) {
+          url = clip;
+          if (urlInput) urlInput.value = clip;
+        }
+      } catch {
+        // 클립보드 권한 거부 시 안내 메시지 표시
+      }
+    }
+    await runImportFromUrl(url);
+  });
+
+  container.querySelector('#mp-img-url')?.addEventListener('paste', (e) => {
+    const pasted = (e.clipboardData?.getData('text') || '').trim();
+    if (/^https?:\/\//i.test(pasted)) {
+      setTimeout(() => runImportFromUrl(pasted), 0);
     }
   });
 
