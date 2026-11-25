@@ -317,5 +317,19 @@
 5. **D1 상품 수정 시 `cost_price` 및 마스터 컬럼 정합성 보완 (`mart-d1-adapter.mjs`)**
    - `upsertProduct()`에서 `p.id`가 존재할 경우 기존 행(`SELECT * FROM products WHERE id = ?`)을 먼저 조회·병합하여 부분 수정 시 미전달 필드(`channel_scope`, `online_publish_status`, `applied_promo_id` 등)가 초기화되지 않도록 보호하고, `ON CONFLICT(id) DO UPDATE SET` 절에 `cost_price`, `barcode_sku`, `category_type`, `category_path`, `spec`, `uom`, `tax_type`, `is_prep`, `storage_temp`, `safety_stock`를 포함했다.
 
+---
+
+## 14. 중간점검 모듈화 리팩토링 및 Cloudflare Pages D1/R2 실연동 완결 (2026-11-26 업데이트)
+
+1. **백엔드 공통 계산 모듈 분리 및 로컬↔실서버 단일화**
+   - `packages/services/mart-logistics/backend/mart-fulfillment-calc.mjs`를 신설하여 `buildPickingSummary`, `buildBoxingManifest`, `buildSettlementSummary`를 순수 ESM으로 분리하고, 로컬 `mart-service.mjs`와 Cloudflare Pages `functions/api/mart/[[path]].js`가 동일 모듈을 `import`하도록 통일했다.
+   - `functions/api/mart/[[path]].js`에서 기존 `mart-price-batch.mjs`(`applyDailyPriceBatchToData`, `nextMonotonicId`)와 `mart-catalog-parser.mjs`(`parseMartFlyerText`, `parseMartPosCsv`, `parseMartPrepSheet`)를 재사용하여 `products/bulk-grid`, `orders/adjust`, `picking`, `boxing`, `settlements`, `import/preview`, `import`, `prices/batch`, `prices/rollback`(R2 `MEDIA_PRIVATE` 스냅샷 실복원)을 D1/R2에 실연동했다. (`seedIfEmpty` 1회 캐시화 포함)
+2. **프론트엔드 과대 모듈 SRP 분할 (`mart-portal/js/modules/`)**
+   - `catalog.js`(1,259줄 ➔ 865줄): `catalog-media-picker.js`(148줄), `catalog-haccp-modal.js`(192줄), `catalog-pos-import.js`(126줄)로 분리.
+   - `flyer-promo.js`(1,006줄 ➔ 659줄): `flyer-promo-helpers.js`(113줄), `flyer-promo-modals.js`(288줄)로 분리.
+3. **D1 공용 미디어 복합 인덱스 추가 (`0001_mart_d1_init.sql`, `schema_r2_media_v01.sql`)**
+   - 원격 `aitip-core-db`에 `idx_media_shared_lookup (domain, deleted_at, upload_status, created_at)` 생성 및 `PRAGMA index_list(media_objects)` 실측 검증 완료.
+
+
 
 

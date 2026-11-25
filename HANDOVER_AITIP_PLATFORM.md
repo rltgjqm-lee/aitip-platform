@@ -1,7 +1,7 @@
 # 🚀 AITIP-Platform 마스터 핸드오버 및 실무 개발 지침서 (HANDOVER)
 
-> **문서 번호**: AITIP-HANDOVER-2026-V33  
-> **최종 갱신 일시**: 2026-11-25 16:26 (KST)  
+> **문서 번호**: AITIP-HANDOVER-2026-V34  
+> **최종 갱신 일시**: 2026-11-26 07:07 (KST)  
 > **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V26 (전사 8대 계층형 UID & 통계청 KSIC-11 5자리 법정코드 결합, 주소 엔진 ➔ 관할 총판·대리점 자동 매핑 거버넌스, $O(1)$ 핀포인트 조회, UI 숨김 표시 및 토글 관제, 소상공인 본체 코어 & AITIP 단말기 연동, 경로당·마을 공동구매 메커니즘, 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합, 전사 이모티콘 100% 완전 박멸, 물음표 커서 영구 퇴출, 전사 테이블 1열 상호명/관리코드 전진 배치, 가맹점 상세 관제 SSOT 모달 완성, MQTT-하드웨어 기술 규격서 증보 v1.1.0 완비, MQTT 실시간 중추망 3대 파이프라인 E2E 100% 가동, 전사 8대 계층형 UID 일원화 정규화 완결, 카카오 최신 CDN t1.kakaocdn.net 및 PWA 서비스 워커 sw.js 캐시 판올림 전사 7개 프로젝트 100% GitHub 푸시 완료, Cloudflare Pages 서버리스 한계 규명 및 TryCloudflare 퀵 터널 원격 실물 테스트 체계 완비, 슈퍼관리자 단순 조회를 탈피한 4대 축 실무형 통합 관제탑 Control Tower 고도화 로드맵 수립)  
 > **개발 행동 강령**: `AGENTS.md` (절대 신조: 상생 신뢰, 정직한 조언, 거짓말/꼼수 금지, 사전 보고·승인제, UID 무결성 사수, ESM/API 계층화)  
 > **프로젝트 위치**: `C:\Users\user\Desktop\aitip-platform`  
@@ -951,6 +951,36 @@ aitip-platform/
 > - **다음 이어서 진행할 과제 (Next Steps)**:
 >   1. **`C005` 잔여 일일 분할 적재 (일 1,000건 기준)**: 다음 실행 명령 `node scripts/import-c005-barcodes.mjs --apply --offset=12000 --limit=1000` (전체 `127,533건` 중 `12,000`까지 처리 완료).
 >   2. **`mart-logistics` MQTT 실시간 브릿지 연결** 및 **SaaS 정산(`/admin/` ↔ `/mart/`)·전사 테이블 주문 UID 축약 표시 통일**.
+
+---
+
+### 30) 5대 축 중간점검 리팩토링, 실서버 Pages D1/R2 실연동 완결 및 ESM 서브모듈 분할 (2026-11-26)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-26 07:07 기준)**:
+> - **완료 항목 (`main` 커밋 `4338e17`, `1adc24c`, Cloudflare Pages 실서버 `https://2ac7a0bd.aitip-platform.pages.dev`)**:
+>   1. **ESM 순수화 및 ID 규격 일원화**:
+>      - `packages/platform-admin/js/modules/onboarding.js:502` 마지막 잔존 인라인 `onclick`을 `addEventListener`로 전환(전사 `window.xxx =` 및 인라인 DOM 핸들러 **0건** 확인).
+>      - `functions/api/mart/[[path]].js` 및 `mart-d1-adapter.mjs` 내 `Date.now()` 단독 ID(`mrt_sku_`, `mpr_`, `mgb_`, `fapp_`, `upl_`, `adj_`)를 전부 `mart-price-batch.mjs`의 `nextMonotonicId()`로 통일.
+>   2. **백엔드 공통 도메인 모듈 분리 및 로컬↔실서버 단일화**:
+>      - `packages/services/mart-logistics/backend/mart-fulfillment-calc.mjs` 신규 분리 (`buildPickingSummary`, `buildBoxingManifest`, `buildSettlementSummary`).
+>      - 로컬 `mart-service.mjs` 중복 약 200줄 제거 후 `mart-fulfillment-calc.mjs` 위임 호출로 치환, `functions/api/mart/[[path]].js`도 동일 모듈 및 기존 `mart-price-batch.mjs`(`applyDailyPriceBatchToData`)·`mart-catalog-parser.mjs`(`parseMartFlyerText`, `parseMartPosCsv`, `parseMartPrepSheet`)를 `import`해 100% 단일화.
+>   3. **Cloudflare Pages Functions D1/R2 실연동 완결 (`functions/api/mart/[[path]].js`, `mart-d1-adapter.mjs`)**:
+>      - `seedIfEmpty(martData)` 워커 인스턴스당 1회 캐시화(`_d1Seeded`).
+>      - 미연동 스텁 제거 및 D1 실연동: `products/bulk-grid`, `orders/adjust`, `picking`, `boxing`, `settlements`, `import/preview`, `import`, `prices/batch` + `prices/rollback`(R2 `MEDIA_PRIVATE` 스냅샷 저장·실복원).
+>      - `mart-d1-adapter.mjs`: `getOrders()`가 `order_items` 배치 조회 포함 반환, `adjustOrderItem()`, `getPriceUploadBatchById()`, `markPriceUploadBatchRolledBack()` 추가.
+>   4. **D1 `media_objects` 공용 풀 복합 인덱스 추가**:
+>      - `0001_mart_d1_init.sql`·`docs/schema_r2_media_v01.sql` 및 원격 D1(`aitip-core-db`)에 `idx_media_shared_lookup (domain, deleted_at, upload_status, created_at)` 생성·`PRAGMA index_list(media_objects)` 실측 확인. (`python scripts/test_schema_integrity.py` 278/278 PASS, 원격 D1 `PRAGMA foreign_key_check` 위반 0건).
+>   5. **프론트엔드 과대 모듈 SRP 분할 (`mart-portal/js/modules/`)**:
+>      - `catalog.js` (`1,259줄` ➔ `865줄`) ➔ `catalog-media-picker.js`(148줄), `catalog-haccp-modal.js`(192줄), `catalog-pos-import.js`(126줄) 분리.
+>      - `flyer-promo.js` (`1,006줄` ➔ `659줄`) ➔ `flyer-promo-helpers.js`(113줄), `flyer-promo-modals.js`(288줄) 분리.
+> - **실측 검증 결과 (2026-11-26)**:
+>   - 로컬(`http://localhost:8989/mart/`, `task-9376`) 브라우저 E2E 5대 항목(상품목록·공용이미지검색·POS CSV 미리보기·행사룰/유형관리 모달·결제정산 B2C/B2B 탭) 통과, 콘솔 에러 `0건`, HTTP `>= 400` `0건`(50/50 정상).
+>   - 실서버(`https://2ac7a0bd.aitip-platform.pages.dev`) `POST /api/mart/import/preview`, `GET /api/mart/picking`, `GET /api/mart/boxing`, `GET /api/mart/settlements`, 분할 모듈 JS 모두 `HTTP 200` 확인.
+> - **다음 이어서 진행할 과제 (Next Steps)**:
+>   1. **`C005` 잔여 일일 분할 적재 (일 1,000건 기준)**: `node scripts/import-c005-barcodes.mjs --apply --offset=12000 --limit=1000` (누적 `17,034건` / 전체 `127,533건`).
+>   2. **외부 테스트 공개 범위·인증 결정 (`functions/_middleware.js` 보류 중)**: 사용자 최종 확정 시 적용.
+>   3. **후속 단계(라이더 앱 연동 시)**: `MEDIA_PRIVATE` 비공개 배달증빙·클레임 사진 서명 조회 엔드포인트 구현, `mart-logistics` MQTT 브릿지 연결.
+
 
 
 
