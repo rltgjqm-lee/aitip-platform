@@ -1,7 +1,7 @@
 # 🚀 AITIP-Platform 마스터 핸드오버 및 실무 개발 지침서 (HANDOVER)
 
-> **문서 번호**: AITIP-HANDOVER-2026-V32  
-> **최종 갱신 일시**: 2026-11-23 20:28 (KST)  
+> **문서 번호**: AITIP-HANDOVER-2026-V33  
+> **최종 갱신 일시**: 2026-11-25 16:26 (KST)  
 > **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V26 (전사 8대 계층형 UID & 통계청 KSIC-11 5자리 법정코드 결합, 주소 엔진 ➔ 관할 총판·대리점 자동 매핑 거버넌스, $O(1)$ 핀포인트 조회, UI 숨김 표시 및 토글 관제, 소상공인 본체 코어 & AITIP 단말기 연동, 경로당·마을 공동구매 메커니즘, 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합, 전사 이모티콘 100% 완전 박멸, 물음표 커서 영구 퇴출, 전사 테이블 1열 상호명/관리코드 전진 배치, 가맹점 상세 관제 SSOT 모달 완성, MQTT-하드웨어 기술 규격서 증보 v1.1.0 완비, MQTT 실시간 중추망 3대 파이프라인 E2E 100% 가동, 전사 8대 계층형 UID 일원화 정규화 완결, 카카오 최신 CDN t1.kakaocdn.net 및 PWA 서비스 워커 sw.js 캐시 판올림 전사 7개 프로젝트 100% GitHub 푸시 완료, Cloudflare Pages 서버리스 한계 규명 및 TryCloudflare 퀵 터널 원격 실물 테스트 체계 완비, 슈퍼관리자 단순 조회를 탈피한 4대 축 실무형 통합 관제탑 Control Tower 고도화 로드맵 수립)  
 > **개발 행동 강령**: `AGENTS.md` (절대 신조: 상생 신뢰, 정직한 조언, 거짓말/꼼수 금지, 사전 보고·승인제, UID 무결성 사수, ESM/API 계층화)  
 > **프로젝트 위치**: `C:\Users\user\Desktop\aitip-platform`  
@@ -921,6 +921,37 @@ aitip-platform/
 > - **다음 이어서 진행할 과제 (Next Steps)**:
 >   1. **`C005` 현행 생산분 잔여 일일 분할 적재**: 내일 이후 하루 10,000건씩 이어서 실행 (`node scripts/import-c005-barcodes.mjs --apply --offset=10000 --limit=10000`, 전체 `127,533건` 완료까지 약 12일치 분할).
 >   2. **`mart-logistics` MQTT 실시간 브릿지 연결** 및 **SaaS 정산(`/admin/` ↔ `/mart/`)·전사 테이블 주문 UID 축약 표시 통일**.
+
+---
+
+### 29) 마트 포털 2열 모달·결제수단·WebP 공용 이미지 풀·D1 수정 정합성 및 `C005` 일 1,000건 분할 전환 (2026-11-24 ~ 2026-11-25)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-25 16:26 기준)**:
+> - **완료 항목 (2026-11-24 배포 완료, `main` 커밋 `f6cd537`~`0c43af1`, Pages 실서버 `https://fac5c604.aitip-platform.pages.dev`)**:
+>   1. **중앙 오버레이 모달 & 2열 와이드 폼 통일 (`mart.css`, `catalog.js`, `prep-catalog.js`, `orders.js`)**:
+>      - `.mc-drawer`를 중앙 오버레이 모달(`min(640px, 95vw)`)로 통일하고 `.mc-drawer--wide`(`min(980px, 96vw)`) + `.mc-drawer-grid-2`를 일반·신선 상품 등록/수정, 전처리 등록/수정, 오프라인 다품목 주문 입력(`#mo-draft-list` `max-height: 280px`)에 적용.
+>      - `catalog.js`: 신선 대분류(`01`/`02`/`03`) HACCP 조회 가드, `'알수없음'` 정제, 행사 미적용 시 `sale_price = regPrice` 동기화.
+>   2. **배정 화면 헤더 정리 & 당일 시세 복구 (`channel-assign.js`, `daily-price.js`, `mart.css`)**:
+>      - `channel-assign.js` 중복 시세 버튼 3종을 `[현재 배정 목록 엑셀 다운로드]` + `[당일 시세 · 변동 바로가기]`로 정리.
+>      - `daily-price.js:30` `martApi.getUploadHistory()` -> `martApi.getPriceUploadHistory()` 수정 및 `mart.css` `.mc-tabs`/`.mc-tab` 스타일 추가.
+>   3. **결제·정산 화면 일반고객(B2C)/기관(B2B) 분리 및 결제 방법 추가 (`settlement.js`)**:
+>      - 상단 `.mc-tabs`(`전체 내역` / `일반고객 결제 (B2C)` / `기관·경로당 정산 (B2B)`), 결제 수단 필터(`#stl-pay-method`), 테이블 `구분`·`결제 방법` 컬럼 및 상세 모달(정산 방식·공제액) 추가, 탭·필터 연동 5대 KPI 재계산 반영.
+>   4. **외부 이미지 프록시 + 브라우저 WebP 변환 + `SHARED` 공용 풀 UID/검색 (`functions/api/mart/[[path]].js`, `dev-server.mjs`, `mart-d1-adapter.mjs`, `api.js`, `catalog.js`)**:
+>      - `GET /api/mart/haccp/proxy-image?url=...` 프록시 추가 -> 브라우저 `fileToWebpDataUrl()`(최대 800px, `image/webp` 0.82) 변환 -> `POST /api/mart/media/upload`(`scope: 'SHARED'`)로 실제 WebP만 R2 저장.
+>      - `SHARED` 공용 UID 정책: `media_objects`(`domain='SHARED'`, `region_code='00-000'`, `tenant_id='SHARED'`, `owner_type='PRODUCT'`), 표준 바코드는 `shared/barcode/{barcode}.webp`, 바코드 없는 다규격·신선 품목은 `shared/common-pool/{mediaId}.webp`(`original_file_name="{상품명} {규격}.webp"`).
+>      - `GET /api/mart/media/shared?q=...`(`searchSharedMedia`) + `catalog.js` `[공용 이미지 검색]` 추가(재업로드 없이 기존 `media_id`/`image_url` 재사용). `haccp/import-image` `owner_type: 'MART_PRODUCT'` -> `'PRODUCT'` D1 `CHECK` 제약 위반 수정.
+>   5. **D1 `upsertProduct()` 수정 정합성 보완 (`mart-d1-adapter.mjs`)**:
+>      - 기존 행 조회·병합으로 부분 수정 시 미전달 필드 보존 + `ON CONFLICT(id) DO UPDATE SET`에 `cost_price`, `barcode_sku`, `category_type`, `category_path`, `spec`, `uom`, `tax_type`, `is_prep`, `storage_temp`, `safety_stock` 반영 완료.
+> - **완료 항목 (2026-11-25)**:
+>   6. **식약처 `C005` 일일 분할 적재량 1,000건으로 축소 조정 & 배치 실행**:
+>      - `scripts/import-c005-barcodes.mjs` 기본 `--limit`을 `15000` -> `1000`으로 변경.
+>      - `--apply --offset=11000 --limit=1000` 실행 완료 (`changes: 987`, `rows_written: 3,948`, DB `5.29 MB`).
+>      - 현재 원격 D1(`aitip-core-db`) `shared_barcode_catalog` 누적 실측: **`17,034건`** (`HACCP 5,206` + `MFDS 11,828`).
+>      - 로컬 개발 서버 `node dev-server.mjs` (`http://localhost:8989`, `task-9126`) 가동 중.
+> - **다음 이어서 진행할 과제 (Next Steps)**:
+>   1. **`C005` 잔여 일일 분할 적재 (일 1,000건 기준)**: 다음 실행 명령 `node scripts/import-c005-barcodes.mjs --apply --offset=12000 --limit=1000` (전체 `127,533건` 중 `12,000`까지 처리 완료).
+>   2. **`mart-logistics` MQTT 실시간 브릿지 연결** 및 **SaaS 정산(`/admin/` ↔ `/mart/`)·전사 테이블 주문 UID 축약 표시 통일**.
+
 
 
 

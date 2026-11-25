@@ -2,7 +2,7 @@
  * AITIP Platform - 식품안전나라 C005(바코드연계제품정보) 현행 생산분 D1 분할 적재 스크립트 (ESM)
  * 사용법:
  *   1) 드라이런 검수: node scripts/import-c005-barcodes.mjs --dry-run
- *   2) 분할 실반영:   node scripts/import-c005-barcodes.mjs --apply --offset=0 --limit=15000
+ *   2) 분할 실반영:   node scripts/import-c005-barcodes.mjs --apply --offset=0 --limit=1000
  */
 
 import fs from 'node:fs';
@@ -64,7 +64,7 @@ async function main() {
   const args = process.argv.slice(2);
   const isApply = args.includes('--apply');
   const offset = getArgValue(args, '--offset=', 0);
-  const limit = getArgValue(args, '--limit=', 15000);
+  const limit = getArgValue(args, '--limit=', 1000);
   const inputPath = getArgStr(args, '--file=', DEFAULT_GZ_PATH);
 
   if (!fs.existsSync(inputPath)) {
