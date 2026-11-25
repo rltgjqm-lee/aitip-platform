@@ -9,6 +9,7 @@ import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { esc, showToast } from '../utils/html.js';
+import { renderProductThumbHtml } from './catalog-helpers.js';
 import {
   SAMPLE_FLYER,
   PROMO_TYPE_LABEL,
@@ -232,8 +233,13 @@ export async function renderMartFlyerView(container, opts = {}) {
                     ` : linkedProducts.map(p => `
                       <tr>
                         <td>
-                          <strong>${esc(p.name)}</strong>
-                          <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode)}</div>
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            ${renderProductThumbHtml(p.image_url, p.name, 36)}
+                            <div style="min-width: 0;">
+                              <strong>${esc(p.name)}</strong>
+                              <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode)}</div>
+                            </div>
+                          </div>
                         </td>
                         <td class="mc-num">
                           <span style="text-decoration: line-through; color: #94a3b8; font-size: 11.5px; margin-right: 4px;">${Number(p.regular_price || 0).toLocaleString()}</span>
@@ -278,8 +284,13 @@ export async function renderMartFlyerView(container, opts = {}) {
                       <tr>
                         <td style="text-align: center;"><input type="checkbox" class="chk-link-prod" data-id="${esc(p.id)}" /></td>
                         <td>
-                          <strong>${esc(p.name)}</strong>
-                          <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode)}</div>
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            ${renderProductThumbHtml(p.image_url, p.name, 36)}
+                            <div style="min-width: 0;">
+                              <strong>${esc(p.name)}</strong>
+                              <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode)}</div>
+                            </div>
+                          </div>
                         </td>
                         <td class="mc-num">${Number(p.regular_price || 0).toLocaleString()}원</td>
                       </tr>

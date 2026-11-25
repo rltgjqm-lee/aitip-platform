@@ -112,3 +112,12 @@ export function computePromoApplication(promo, regularPrice) {
     promo_card_targets: Array.isArray(promo.card_targets) ? promo.card_targets : []
   };
 }
+
+export function renderProductThumbHtml(imageUrl = '', name = '', size = 36) {
+  const s = `${Number(size || 36)}px`;
+  const url = String(imageUrl || '').trim();
+  if (url) {
+    return `<div style="width:${s};height:${s};border-radius:7px;background:#f8fafc;border:1px solid #e2e8f0;overflow:hidden;flex-shrink:0;"><img src="${escapeHtml(url)}" alt="${escapeHtml(name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;" /></div>`;
+  }
+  return `<div style="width:${s};height:${s};border-radius:7px;background:#f1f5f9;border:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#94a3b8;flex-shrink:0;">IMG</div>`;
+}

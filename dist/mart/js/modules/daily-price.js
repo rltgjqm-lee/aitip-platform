@@ -8,6 +8,7 @@ import { martApi } from '../api.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
 import { esc } from '../utils/html.js';
+import { renderProductThumbHtml } from './catalog-helpers.js';
 
 let activeTab = 'LIVE'; // 'LIVE' | 'BATCH' | 'HISTORY'
 let scopeFilter = 'FRESH'; // 'FRESH' | 'ALL' | 'OUT'
@@ -110,8 +111,13 @@ export async function renderMartDailyPriceView(container) {
                           <input type="checkbox" class="chk-dp-row" data-id="${esc(p.id)}" ${selectedIds.has(p.id) ? 'checked' : ''} />
                         </td>
                         <td>
-                          <div style="font-weight: 700; color: #0f172a;">${esc(p.name)}</div>
-                          <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode || p.id)} ${stock <= 0 ? '<span class="mc-pill mc-pill-red" style="margin-left:4px;">품절</span>' : ''}</div>
+                          <div style="display: flex; align-items: center; gap: 10px;">
+                            ${renderProductThumbHtml(p.image_url, p.name, 36)}
+                            <div style="min-width: 0;">
+                              <div style="font-weight: 700; color: #0f172a;">${esc(p.name)}</div>
+                              <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · ${esc(p.barcode || p.id)} ${stock <= 0 ? '<span class="mc-pill mc-pill-red" style="margin-left:4px;">품절</span>' : ''}</div>
+                            </div>
+                          </div>
                         </td>
                         <td style="text-align: right;">
                           <input type="number" min="0" class="erp-input dp-cost" data-id="${esc(p.id)}" value="${Number(p.cost_price || 0)}" style="width: 88px; text-align: right; height: 32px;" />

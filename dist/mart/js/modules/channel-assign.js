@@ -9,6 +9,7 @@ import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../ut
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
 import { esc, showToast } from '../utils/html.js';
+import { renderProductThumbHtml } from './catalog-helpers.js';
 
 let targetFilter = 'ALL'; // 'ALL' | 'BOTH' | 'B2C_ONLY' | 'B2B_ONLY'
 let l1Filter = 'ALL';
@@ -143,8 +144,13 @@ export async function renderMartChannelAssignView(container) {
                     <tr data-pid="${esc(p.id)}">
                       <td><input type="checkbox" class="ca-row-chk" data-pid="${esc(p.id)}" ${selectedIds.has(p.id) ? 'checked' : ''} /></td>
                       <td>
-                        <strong style="color: #0f172a;">${esc(p.name)}</strong>
-                        <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · 정상가 ${Number(p.regular_price || 0).toLocaleString()}원</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                          ${renderProductThumbHtml(p.image_url, p.name, 36)}
+                          <div style="min-width: 0;">
+                            <strong style="color: #0f172a;">${esc(p.name)}</strong>
+                            <div style="font-size: 11.5px; color: #64748b;">${esc(p.spec || '-')} · 정상가 ${Number(p.regular_price || 0).toLocaleString()}원</div>
+                          </div>
+                        </div>
                       </td>
                       <td>
                         <select class="erp-input ca-target" data-pid="${esc(p.id)}" style="height: 30px; font-size: 12px; min-width: 125px;">
