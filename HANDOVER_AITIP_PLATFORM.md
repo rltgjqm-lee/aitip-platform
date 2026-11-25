@@ -977,7 +977,7 @@ aitip-platform/
 >   - 로컬(`http://localhost:8989/mart/`, `task-9376`) 브라우저 E2E 5대 항목(상품목록·공용이미지검색·POS CSV 미리보기·행사룰/유형관리 모달·결제정산 B2C/B2B 탭) 통과, 콘솔 에러 `0건`, HTTP `>= 400` `0건`(50/50 정상).
 >   - 실서버(`https://2ac7a0bd.aitip-platform.pages.dev`) `POST /api/mart/import/preview`, `GET /api/mart/picking`, `GET /api/mart/boxing`, `GET /api/mart/settlements`, 분할 모듈 JS 모두 `HTTP 200` 확인.
 > - **다음 이어서 진행할 과제 (Next Steps)**:
->   1. **`C005` 잔여 일일 분할 적재 (일 1,000건 기준)**: `node scripts/import-c005-barcodes.mjs --apply --offset=12000 --limit=1000` (누적 `17,034건` / 전체 `127,533건`).
+>   1. **`C005` 잔여 일일 분할 적재 (일 2,000건 기준, 건당 4 rows written 실측)**: `node scripts/import-c005-barcodes.mjs --apply --offset=14000 --limit=2000` (2026-11-26 2,000건 적재 완료 ➔ 누적 **`18,994건`**, `HACCP 5,206` + `MFDS 13,788`, DB `5.74 MB`, 잔여 `113,533건` / 약 57일).
 >   2. **외부 테스트 공개 범위·인증 결정 (`functions/_middleware.js` 보류 중)**: 사용자 최종 확정 시 적용.
 >   3. **후속 단계(라이더 앱 연동 시)**: `MEDIA_PRIVATE` 비공개 배달증빙·클레임 사진 서명 조회 엔드포인트 구현, `mart-logistics` MQTT 브릿지 연결.
 
