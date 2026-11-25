@@ -1,6 +1,8 @@
 // Cloudflare Pages Serverless Function for /api/mart/*
 import martData from './mart_data.json';
 import { MartD1Adapter } from '../../../packages/services/mart-logistics/backend/mart-d1-adapter.mjs';
+import { nextMonotonicId, applyDailyPriceBatchToData } from '../../../packages/services/mart-logistics/backend/mart-price-batch.mjs';
+import { buildPickingSummary, buildBoxingManifest, buildSettlementSummary } from '../../../packages/services/mart-logistics/backend/mart-fulfillment-calc.mjs';
 import { buildPublicMediaKey, buildSharedMediaKey, buildPrivateEvidenceKey, extractRegionCodeFromUid } from '../../../packages/core/shared/r2-key-builder.js';
 
 const corsHeaders = {
@@ -13,6 +15,8 @@ const corsHeaders = {
 function jsonRes(data, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: corsHeaders });
 }
+
+let _d1Seeded = false;
 
 export async function onRequest(context) {
   const { request, params, env } = context;
@@ -27,7 +31,10 @@ export async function onRequest(context) {
   let d1 = null;
   if (env?.DB && typeof env.DB.prepare === 'function') {
     d1 = new MartD1Adapter(env);
-    await d1.seedIfEmpty(martData);
+    if (!_d1Seeded) {
+      await d1.seedIfEmpty(martData);
+      _d1Seeded = true;
+    }
   }
 
   if (subPath === 'profile') {
@@ -64,19 +71,30 @@ export async function onRequest(context) {
     });
   }
   if (subPath === 'products' || subPath === 'products/approve') {
-    const item = { ...body, id: body?.id || (body?.name ? `mrt_sku_${Date.now()}` : undefined) };
+    const item = { ...body, id: body?.id || (body?.name ? nextMonotonicId('mrt_sku') : undefined) };
     if (d1 && item.id) {
       await d1.upsertProduct(item);
     }
     return jsonRes({ success: true, item }, method === 'POST' ? 201 : 200);
   }
   if (subPath === 'products/bulk-grid') {
-    return jsonRes({ success: true, updated_count: Array.isArray(body?.updates) ? body.updates.length : 0 });
+    const updates = Array.isArray(body?.updates) ? body.updates : [];
+    let updatedCount = 0;
+    if (d1) {
+      for (const u of updates) {
+        if (!u || !u.id) continue;
+        await d1.upsertProduct(u);
+        updatedCount += 1;
+      }
+    } else {
+      updatedCount = updates.length;
+    }
+    return jsonRes({ success: true, updated_count: updatedCount });
   }
   if (subPath === 'promotions') {
     if (d1) {
       if (method === 'POST') {
-        const pr = { id: body.id || `mpr_${Date.now()}`, ...body };
+        const pr = { id: body.id || nextMonotonicId('mpr'), ...body };
         await d1.createPromotion(pr);
         return jsonRes({ success: true, promotion: pr }, 201);
       }
@@ -89,7 +107,7 @@ export async function onRequest(context) {
         return jsonRes({ success: true, deleted_id: body.id });
       }
     }
-    return jsonRes({ success: true, promotion: { id: body.id || `mpr_${Date.now()}`, ...body } }, method === 'POST' ? 201 : 200);
+    return jsonRes({ success: true, promotion: { id: body.id || nextMonotonicId('mpr'), ...body } }, method === 'POST' ? 201 : 200);
   }
   if (subPath === 'promo-types') {
     if (d1 && method === 'POST') await d1.savePromoType(body);
@@ -115,10 +133,27 @@ export async function onRequest(context) {
     return jsonRes({ success: true, ...body });
   }
   if (subPath === 'orders/adjust') {
+    if (d1) {
+      try {
+        const result = await d1.adjustOrderItem(body || {});
+        return jsonRes({ success: true, ...result });
+      } catch (err) {
+        return jsonRes({ success: false, error: err?.message || '정정 처리 실패' }, 400);
+      }
+    }
     return jsonRes({ success: true, ...body });
   }
   if (subPath === 'picking' || subPath === 'boxing' || subPath === 'settlements') {
-    return jsonRes({ success: true, items: [], rows: [], orders: martData.orders || [], totals: {} });
+    const url = new URL(request.url);
+    const reqDate = url.searchParams.get('date') || '';
+    const d1Orders = d1 ? await d1.getOrders() : [];
+    const allOrders = d1Orders.length ? d1Orders : (martData.orders || []);
+    if (subPath === 'picking') return jsonRes({ success: true, ...buildPickingSummary(allOrders, reqDate) });
+    if (subPath === 'boxing') return jsonRes({ success: true, ...buildBoxingManifest(allOrders, reqDate) });
+    const cat = d1 ? await d1.getCatalog() : { products: martData.products || [], mart: martData.mart || {} };
+    const products = cat.products?.length ? cat.products : (martData.products || []);
+    const martInfo = { ...(martData.mart || {}), ...(cat.mart || {}) };
+    return jsonRes({ success: true, ...buildSettlementSummary(allOrders, products, martInfo) });
   }
   if (subPath === 'pwa/config') {
     if (d1) {
@@ -136,7 +171,7 @@ export async function onRequest(context) {
   }
   if (subPath === 'group-buys') {
     if (method === 'GET') return jsonRes({ success: true, group_buys: martData.group_buys || [] });
-    return jsonRes({ success: true, campaign: { campaign_id: `mgb_${Date.now()}`, ...body, approval_status: 'PENDING_ADMIN' } }, 201);
+    return jsonRes({ success: true, campaign: { campaign_id: nextMonotonicId('mgb'), ...body, approval_status: 'PENDING_ADMIN' } }, 201);
   }
   if (subPath === 'group-buys/join') {
     return jsonRes({ success: true, campaign_id: body.campaign_id });
@@ -154,7 +189,7 @@ export async function onRequest(context) {
     return jsonRes({
       success: true,
       facility: {
-        request_id: `fapp_${Date.now()}`,
+        request_id: nextMonotonicId('fapp'),
         facility_id: '',
         facility_name: name,
         facility_type: body.facility_type || 'SENIOR_CENTER',
@@ -182,42 +217,63 @@ export async function onRequest(context) {
   }
   if (subPath === 'prices/batch') {
     const rows = Array.isArray(body.rows) ? body.rows : [];
-    const batchId = `upl_${Date.now()}`;
+    const cat = d1 ? await d1.getCatalog() : { products: martData.products || [] };
+    const workData = {
+      products: (cat.products || []).map(p => ({ ...p, barcode: p.barcode || p.barcode_sku || '' })),
+      upload_history: []
+    };
+    let batchOut;
+    try {
+      batchOut = applyDailyPriceBatchToData(workData, {
+        rows,
+        mode: body.mode || 'PARTIAL',
+        source_name: body.source_name || 'daily_price.csv'
+      });
+    } catch (err) {
+      return jsonRes({ success: false, error: err?.message || '시세 일괄 처리 오류' }, 400);
+    }
+    const { shouldSave, result } = batchOut;
+    const snapRecord = workData.upload_history[0];
+    const snapshotItems = snapRecord?.snapshot_products || [];
+    if (d1 && shouldSave) {
+      const prevMap = new Map(snapshotItems.map(s => [s.id, s]));
+      for (const p of workData.products) {
+        const prev = prevMap.get(p.id);
+        if (!prev) continue;
+        if (prev.cost_price !== p.cost_price || prev.regular_price !== p.regular_price
+          || prev.sale_price !== p.sale_price || prev.stock_qty !== p.stock_qty
+          || prev.online_publish_status !== p.online_publish_status) {
+          await d1.upsertProduct(p);
+        }
+      }
+    }
     let snapshotKey = null;
-    if (env?.MEDIA_PRIVATE) {
+    if (shouldSave && env?.MEDIA_PRIVATE) {
       const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';
       snapshotKey = buildPrivateEvidenceKey({
         domain: 'MART',
         tenantUid: martId,
         evidenceType: 'snapshots',
-        mediaId: batchId,
+        mediaId: result.batch_id,
         ext: 'json'
       });
-      await env.MEDIA_PRIVATE.put(snapshotKey, JSON.stringify(rows), {
+      await env.MEDIA_PRIVATE.put(snapshotKey, JSON.stringify(snapshotItems), {
         httpMetadata: { contentType: 'application/json' }
       });
     }
-    if (d1) {
+    if (d1 && shouldSave) {
       await d1.recordPriceUploadBatch({
-        batch_id: batchId,
+        batch_id: result.batch_id,
         mode: body.mode || 'PARTIAL',
         total_rows: rows.length,
-        updated_count: rows.length,
-        error_count: 0,
-        sold_out_count: 0,
+        updated_count: result.success_count,
+        error_count: result.error_count,
+        sold_out_count: result.synced_suspended_count,
         snapshot_r2_key: snapshotKey,
-        snapshot: snapshotKey ? undefined : rows
+        snapshot: snapshotKey ? undefined : snapshotItems
       });
     }
-    return jsonRes({
-      success: true,
-      batch_id: batchId,
-      snapshot_r2_key: snapshotKey,
-      success_count: rows.length,
-      error_count: 0,
-      synced_suspended_count: 0,
-      errors: []
-    });
+    return jsonRes({ success: true, snapshot_r2_key: snapshotKey, ...result });
   }
   if (subPath === 'prices/history') {
     if (d1) {
@@ -227,7 +283,27 @@ export async function onRequest(context) {
     return jsonRes({ success: true, history: martData.upload_history || [] });
   }
   if (subPath === 'prices/rollback') {
-    return jsonRes({ success: true, batch_id: body.batch_id, restored_count: 0, rolled_back_at: new Date().toISOString() });
+    const batchId = String(body?.batch_id || '').trim();
+    if (!batchId) return jsonRes({ success: false, error: 'batch_id가 필요합니다.' }, 400);
+    let restoredCount = 0;
+    if (d1) {
+      const batch = await d1.getPriceUploadBatchById(batchId);
+      if (!batch) return jsonRes({ success: false, error: '롤백할 업로드 이력을 찾을 수 없습니다.' }, 404);
+      let snap = [];
+      if (batch.snapshot_r2_key && env?.MEDIA_PRIVATE) {
+        const obj = await env.MEDIA_PRIVATE.get(batch.snapshot_r2_key);
+        if (obj) snap = JSON.parse(await obj.text() || '[]');
+      } else if (batch.snapshot_json) {
+        snap = JSON.parse(batch.snapshot_json || '[]');
+      }
+      for (const item of (Array.isArray(snap) ? snap : [])) {
+        if (!item?.id) continue;
+        await d1.upsertProduct(item);
+        restoredCount += 1;
+      }
+      await d1.markPriceUploadBatchRolledBack(batchId);
+    }
+    return jsonRes({ success: true, batch_id: batchId, restored_count: restoredCount, rolled_back_at: new Date().toISOString() });
   }
   if (subPath === 'media/upload') {
     const dataUrl = String(body.data_url || '');

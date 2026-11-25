@@ -9,6 +9,20 @@ import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, inferCategoryFromProduct } from '../utils/mart-categories.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { esc, showToast } from '../utils/html.js';
+import {
+  SAMPLE_FLYER,
+  PROMO_TYPE_LABEL,
+  CHANNEL_LABEL,
+  DAY_LIST,
+  CARD_LIST,
+  getChannelScope,
+  computePromoLinkUpdate
+} from './flyer-promo-helpers.js';
+import {
+  renderPromoAddDrawerHtml,
+  renderPromoTypeMgrModalHtml,
+  bindFlyerPromoModalEvents
+} from './flyer-promo-modals.js';
 
 let viewTab = 'RULES'; // 'RULES' | 'PROMO_PRODUCTS' | 'FLYER_IMPORT'
 let selectedPromoId = '';
@@ -27,119 +41,6 @@ let drawerOpen = false;
 let typeMgrOpen = false;
 let editingPromoId = '';
 let cloneDraft = null;
-
-const CALC_MODE_LABEL = {
-  UNIT_DISCOUNT: '단품 할인 (요일·카드 조합)',
-  BOGO_BUNDLE: 'N+1 덤 증정 (1+1 / 2+1)',
-  MIX_MATCH: 'N개 골라담기 묶음가',
-  THRESHOLD: '기준금액 · 수량 이상 할인'
-};
-
-const SAMPLE_FLYER = `행사기간 : 2026년 11월 17일(화) ~ 2026년 11월 30일(월)
-거봉 (2kg/박스) 17,900원 ※ 1인 2박스 한정
-한돈 삼겹살 (100g당) 1,980원 ※ NH농협카드 현장결제 시
-[1+1] CJ 해찬들 태양초 골드고추장 (1kg) 12,900원
-[골라담기] 농심 스낵 4종 (새우깡 90g / 양파링 84g / 꿀꽈배기 90g / 자갈치 90g) 4개 구매 시 4,980원
-[2개 이상 구매 시 30% 할인] 오뚜기 진라면 매운맛 (120g*5입) 각 3,480원`;
-
-const PROMO_TYPE_LABEL = {
-  PRICE_DISCOUNT: '기간 특가',
-  DAY_OF_WEEK: '요일별 특가',
-  AMOUNT_THRESHOLD: '금액기준 할인',
-  QTY_THRESHOLD: '수량기준 할인',
-  QTY_DISCOUNT: '다다익선 %할인',
-  BOGO_1_PLUS_1: '덤(1+1)',
-  BOGO_2_PLUS_1: '덤(2+1)',
-  MIX_AND_MATCH: '골라담기',
-  CROSS_BUY: '함께구매'
-};
-
-const CHANNEL_LABEL = {
-  ALL_CHANNELS: '온·오프 공통',
-  ONLINE_ONLY: '온라인 전용',
-  POS_ONLY: '오프라인 POS 전용'
-};
-
-const DAY_LIST = [
-  { code: 'MON', label: '월' },
-  { code: 'TUE', label: '화' },
-  { code: 'WED', label: '수' },
-  { code: 'THU', label: '목' },
-  { code: 'FRI', label: '금' },
-  { code: 'SAT', label: '토' },
-  { code: 'SUN', label: '일' }
-];
-
-const CARD_LIST = [
-  { code: 'NH', label: 'NH농협' },
-  { code: 'SHINHAN', label: '신한' },
-  { code: 'SAMSUNG', label: '삼성' },
-  { code: 'LOTTE', label: '롯데' },
-  { code: 'WOORI', label: '우리' },
-  { code: 'BC', label: 'BC' },
-  { code: 'KAKAOPAY', label: '카카오페이' },
-  { code: 'NAVERPAY', label: '네이버페이' },
-  { code: 'TOSSPAY', label: '토스페이' }
-];
-
-function getChannelScope(pr) {
-  if (pr.channel_scope) return pr.channel_scope;
-  return pr.payment_scope === 'POS_ONLY' ? 'POS_ONLY' : 'ALL_CHANNELS';
-}
-
-const BUNDLE_PROMO_TYPES = new Set(['BOGO_1_PLUS_1', 'BOGO_2_PLUS_1', 'MIX_AND_MATCH', 'CROSS_BUY']);
-
-function computePromoLinkUpdate(promo, regularPrice) {
-  const reg = Math.max(0, Number(regularPrice || 0));
-  if (!promo) {
-    return {
-      sale_price: reg,
-      discount_pct: 0,
-      promo_start: '',
-      promo_end: '',
-      applied_promo_id: '',
-      applied_promo_name: '',
-      applied_promo_type: '',
-      promo_required_qty: 1,
-      promo_bundle_price: 0,
-      promo_days_of_week: [],
-      promo_max_discount_amount: 0,
-      promo_limit_per_person: 0,
-      promo_card_targets: []
-    };
-  }
-  let sale = reg;
-  if (!BUNDLE_PROMO_TYPES.has(promo.promo_type)) {
-    let rawDisc = 0;
-    if (promo.discount_type === 'FIXED_AMOUNT' && Number(promo.discount_amount || 0) > 0) {
-      rawDisc = Number(promo.discount_amount || 0);
-    } else if (Number(promo.discount_pct || 0) > 0 && reg > 0) {
-      rawDisc = Math.round(reg * (Number(promo.discount_pct) / 100));
-    }
-    const maxCap = Number(promo.max_discount_amount || 0);
-    const capped = maxCap > 0 ? Math.min(rawDisc, maxCap) : rawDisc;
-    sale = Math.max(0, reg - capped);
-  }
-  const discPct = reg > 0 && sale < reg ? Math.round((1 - sale / reg) * 100) : 0;
-  const chScope = getChannelScope(promo);
-  return {
-    sale_price: sale,
-    discount_pct: discPct,
-    promo_start: promo.start_date || '',
-    promo_end: promo.end_date || '',
-    payment_scope: chScope === 'POS_ONLY' ? 'POS_ONLY' : 'ONLINE_APPLICABLE',
-    channel_scope: chScope,
-    applied_promo_id: promo.id || '',
-    applied_promo_name: promo.name || '',
-    applied_promo_type: promo.promo_type || '',
-    promo_required_qty: Number(promo.required_qty || 1),
-    promo_bundle_price: Number(promo.bundle_price || 0),
-    promo_days_of_week: Array.isArray(promo.days_of_week) ? promo.days_of_week : [],
-    promo_max_discount_amount: Number(promo.max_discount_amount || 0),
-    promo_limit_per_person: Number(promo.limit_per_person || 0),
-    promo_card_targets: Array.isArray(promo.card_targets) ? promo.card_targets : []
-  };
-}
 
 export async function renderMartFlyerView(container, opts = {}) {
   if (!container) return;
@@ -505,193 +406,9 @@ export async function renderMartFlyerView(container, opts = {}) {
         </div>
       ` : ''}
 
-      ${drawerOpen ? `
-        <div class="mc-drawer-backdrop" id="mc-promo-backdrop">
-          <form class="mc-drawer" id="form-promo-add" style="width: 560px;">
-            <div class="mc-drawer-header">
-              <h2>${editingPromoId ? '행사 룰 수정' : cloneDraft ? '행사 룰 복제 등록' : '새 행사 룰 등록'}</h2>
-              <button type="button" class="mc-drawer-close" id="btn-close-promo-drawer">×</button>
-            </div>
-            <div class="mc-drawer-body">
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">1. 행사 유형 · 적용 채널</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div style="grid-column: 1 / -1;">
-                    <label class="erp-field-label">행사명 *</label>
-                    <input id="pm-name" type="text" required class="erp-input" value="${esc(d.name || '')}" placeholder="예: 수요일 농산 15% 특가 / 금토일 특가 (최대 3천원)" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">행사 유형</label>
-                    <select id="pm-type" class="erp-input">
-                      ${(() => {
-                        const curType = d.promo_type === 'WEEKEND_SPECIAL' ? 'DAY_OF_WEEK' : (d.promo_type || activePromoTypes[0]?.code || 'PRICE_DISCOUNT');
-                        const list = activePromoTypes.some(t => t.code === curType)
-                          ? activePromoTypes
-                          : [...activePromoTypes, { code: curType, label: typeLabelMap[curType] || curType }];
-                        return list.map(t => `<option value="${esc(t.code)}" ${curType === t.code ? 'selected' : ''}>${esc(t.label)}</option>`).join('');
-                      })()}
-                    </select>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">온·오프 채널</label>
-                    <select id="pm-scope" class="erp-input">
-                      <option value="ALL_CHANNELS" ${getChannelScope(d) === 'ALL_CHANNELS' ? 'selected' : ''}>온·오프 공통</option>
-                      <option value="ONLINE_ONLY" ${getChannelScope(d) === 'ONLINE_ONLY' ? 'selected' : ''}>온라인 전용</option>
-                      <option value="POS_ONLY" ${getChannelScope(d) === 'POS_ONLY' ? 'selected' : ''}>오프라인 POS 전용</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+      ${drawerOpen ? renderPromoAddDrawerHtml({ d, editingPromoId, cloneDraft, activePromoTypes, typeLabelMap, today }) : ''}
 
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">2. 할인 · 묶음 · 상한 · 한도 조건</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div>
-                    <label class="erp-field-label">할인 방식</label>
-                    <select id="pm-disc-type" class="erp-input">
-                      <option value="PERCENT" ${d.discount_type !== 'FIXED_AMOUNT' ? 'selected' : ''}>정률 할인 (%)</option>
-                      <option value="FIXED_AMOUNT" ${d.discount_type === 'FIXED_AMOUNT' ? 'selected' : ''}>정액 할인 (원)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">할인율 (%) / 정액 (원)</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-                      <input id="pm-rate" type="number" min="0" max="99" value="${Number(d.discount_pct ?? 0)}" class="erp-input" title="정률 %" />
-                      <input id="pm-fixed" type="number" min="0" value="${Number(d.discount_amount ?? 0)}" class="erp-input" title="정액 원" />
-                    </div>
-                  </div>
-                  <div>
-                    <label class="erp-field-label">필요 수량 (묶음·골라담기)</label>
-                    <input id="pm-req-qty" type="number" min="1" value="${Number(d.required_qty ?? 1)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">묶음가 (원, 골라담기 등)</label>
-                    <input id="pm-bundle" type="number" min="0" value="${Number(d.bundle_price ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">기준 구매금액 (원, 이상 시)</label>
-                    <input id="pm-min-amt" type="number" min="0" value="${Number(d.min_purchase_amount ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">최대 할인 상한 (원, 0=무제한)</label>
-                    <input id="pm-max-disc" type="number" min="0" value="${Number(d.max_discount_amount ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">1인 구매 한정 (0=무제한)</label>
-                    <input id="pm-limit" type="number" min="0" value="${Number(d.limit_per_person ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">선착순 전체 한정수량 (0=무제한)</label>
-                    <input id="pm-total-limit" type="number" min="0" value="${Number(d.total_limit_qty ?? 0)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">영수증당 최대 구간 (0=무제한)</label>
-                    <input id="pm-receipt-sec" type="number" min="0" value="${Number(d.max_receipt_sections ?? 0)}" class="erp-input" />
-                  </div>
-                </div>
-              </div>
-
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">3. 기간 · 요일 · 카드/간편결제</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                  <div>
-                    <label class="erp-field-label">행사 시작일</label>
-                    <input id="pm-start" type="date" value="${esc(d.start_date || today)}" class="erp-input" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">행사 종료일</label>
-                    <input id="pm-end" type="date" value="${esc(d.end_date || today)}" class="erp-input" />
-                  </div>
-                  <div style="grid-column: 1 / -1;">
-                    <label class="erp-field-label">적용 요일 (미선택 시 매일 적용)</label>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      ${DAY_LIST.map(day => `
-                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc;">
-                          <input type="checkbox" class="pm-day-chk" value="${day.code}" ${Array.isArray(d.days_of_week) && d.days_of_week.includes(day.code) ? 'checked' : ''} /> ${day.label}
-                        </label>
-                      `).join('')}
-                    </div>
-                  </div>
-                  <div style="grid-column: 1 / -1;">
-                    <label class="erp-field-label">대상 카드 · 간편결제 (미선택 시 전체 적용)</label>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      ${CARD_LIST.map(card => `
-                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc;">
-                          <input type="checkbox" class="pm-card-chk" value="${card.code}" ${Array.isArray(d.card_targets) && d.card_targets.includes(card.code) ? 'checked' : ''} /> ${card.label}
-                        </label>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="mc-drawer-footer">
-              <button type="button" class="mc-btn-secondary" id="btn-cancel-promo-drawer">취소</button>
-              <button type="submit" class="mc-btn-primary">행사 룰 저장</button>
-            </div>
-          </form>
-        </div>
-      ` : ''}
-
-      ${typeMgrOpen ? `
-        <div class="mc-drawer-backdrop" id="mc-type-mgr-backdrop">
-          <div class="mc-drawer" style="width: 560px;">
-            <div class="mc-drawer-header">
-              <div>
-                <h2>행사 유형 관리 (추가 · 숨김 · 삭제)</h2>
-                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">마트별 행사 명칭을 자유롭게 추가하고 계산 방식(단품/덤/골라담기/기준할인)을 연결합니다.</div>
-              </div>
-              <button type="button" class="mc-drawer-close" id="btn-close-type-mgr">×</button>
-            </div>
-            <div class="mc-drawer-body">
-              <form id="form-add-promo-type" class="mc-drawer-section" style="margin-bottom: 14px;">
-                <div class="mc-drawer-section-title">새 행사 유형 추가</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: end;">
-                  <div>
-                    <label class="erp-field-label">행사 유형 이름 *</label>
-                    <input id="pt-label" type="text" required class="erp-input" placeholder="예: 조합원 데이, 수요장터 특가" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">적용 계산 방식 *</label>
-                    <select id="pt-calc-mode" class="erp-input">
-                      ${Object.entries(CALC_MODE_LABEL).map(([k, lbl]) => `<option value="${k}">${lbl}</option>`).join('')}
-                    </select>
-                  </div>
-                  <button type="submit" class="mc-btn-primary" style="height: 36px;">추가</button>
-                </div>
-              </form>
-
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">등록된 행사 유형 (${promoTypes.length}종)</div>
-                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto;">
-                  ${promoTypes.map(t => {
-                    const used = promotions.some(pr => pr.promo_type === t.code);
-                    return `
-                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: ${t.is_active !== false ? '#ffffff' : '#f8fafc'}; opacity: ${t.is_active !== false ? '1' : '0.65'};">
-                        <div>
-                          <div style="font-size: 13px; font-weight: 700; color: #0f172a;">${esc(t.label)} <span style="font-size: 11px; color: #64748b; font-weight: 500;">(${esc(t.code)})</span></div>
-                          <div style="font-size: 11.5px; color: #0369a1; margin-top: 2px;">${esc(CALC_MODE_LABEL[t.calc_mode] || t.calc_mode)}${used ? ' · 사용 중' : ''}</div>
-                        </div>
-                        <div style="display: flex; gap: 6px;">
-                          <button type="button" class="mc-btn-secondary btn-toggle-promo-type" data-code="${esc(t.code)}" data-active="${t.is_active !== false ? '1' : '0'}" style="height: 28px; padding: 0 10px; font-size: 12px;">
-                            ${t.is_active !== false ? '숨김' : '복원'}
-                          </button>
-                          <button type="button" class="mc-btn-secondary btn-del-promo-type" data-code="${esc(t.code)}" style="height: 28px; padding: 0 10px; font-size: 12px; color: #b91c1c;">
-                            ${used ? '사용중지' : '삭제'}
-                          </button>
-                        </div>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-            </div>
-            <div class="mc-drawer-footer">
-              <button type="button" class="mc-btn-primary" id="btn-done-type-mgr">닫기</button>
-            </div>
-          </div>
-        </div>
-      ` : ''}
+      ${typeMgrOpen ? renderPromoTypeMgrModalHtml({ promoTypes, promotions }) : ''}
     </div>
   `;
 
@@ -874,94 +591,27 @@ export async function renderMartFlyerView(container, opts = {}) {
     });
   });
 
-  const closeDrawer = () => {
-    drawerOpen = false;
-    editingPromoId = '';
-    cloneDraft = null;
-    renderMartFlyerView(container);
-  };
-  container.querySelector('#btn-close-promo-drawer')?.addEventListener('click', closeDrawer);
-  container.querySelector('#btn-cancel-promo-drawer')?.addEventListener('click', closeDrawer);
-  container.querySelector('#mc-promo-backdrop')?.addEventListener('click', (e) => {
-    if (e.target.id === 'mc-promo-backdrop') closeDrawer();
-  });
-
-  container.querySelector('#btn-open-type-mgr')?.addEventListener('click', () => {
-    typeMgrOpen = true;
-    renderMartFlyerView(container);
-  });
-  const closeTypeMgr = () => {
-    typeMgrOpen = false;
-    renderMartFlyerView(container);
-  };
-  container.querySelector('#btn-close-type-mgr')?.addEventListener('click', closeTypeMgr);
-  container.querySelector('#btn-done-type-mgr')?.addEventListener('click', closeTypeMgr);
-  container.querySelector('#mc-type-mgr-backdrop')?.addEventListener('click', (e) => {
-    if (e.target.id === 'mc-type-mgr-backdrop') closeTypeMgr();
-  });
-  container.querySelector('#form-add-promo-type')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const label = container.querySelector('#pt-label')?.value?.trim();
-    const calc_mode = container.querySelector('#pt-calc-mode')?.value || 'UNIT_DISCOUNT';
-    if (!label) return;
-    await martApi.savePromoType({ label, calc_mode });
-    renderMartFlyerView(container);
-  });
-  container.querySelectorAll('.btn-toggle-promo-type').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const target = promoTypes.find(t => t.code === btn.dataset.code);
-      if (!target) return;
-      await martApi.savePromoType({
-        is_update: true,
-        code: target.code,
-        label: target.label,
-        calc_mode: target.calc_mode,
-        is_active: btn.dataset.active !== '1'
-      });
+  bindFlyerPromoModalEvents({
+    container,
+    martApi,
+    promoTypes,
+    editingPromoId,
+    today,
+    onCloseDrawer: () => {
+      drawerOpen = false;
+      editingPromoId = '';
+      cloneDraft = null;
       renderMartFlyerView(container);
-    });
-  });
-  container.querySelectorAll('.btn-del-promo-type').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      await martApi.deletePromoType(btn.dataset.code);
+    },
+    onOpenTypeMgr: () => {
+      typeMgrOpen = true;
       renderMartFlyerView(container);
-    });
-  });
-
-  container.querySelector('#form-promo-add')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const daysOfWeek = Array.from(container.querySelectorAll('.pm-day-chk:checked')).map(c => c.value);
-    const cardTargets = Array.from(container.querySelectorAll('.pm-card-chk:checked')).map(c => c.value);
-    const channelScope = container.querySelector('#pm-scope')?.value || 'ALL_CHANNELS';
-    const payload = {
-      name: container.querySelector('#pm-name')?.value?.trim(),
-      promo_type: container.querySelector('#pm-type')?.value || 'PRICE_DISCOUNT',
-      channel_scope: channelScope,
-      payment_scope: channelScope === 'POS_ONLY' ? 'POS_ONLY' : 'ONLINE_APPLICABLE',
-      required_qty: Math.max(1, Number(container.querySelector('#pm-req-qty')?.value ?? 1)),
-      min_purchase_amount: Math.max(0, Number(container.querySelector('#pm-min-amt')?.value ?? 0)),
-      bundle_price: Math.max(0, Number(container.querySelector('#pm-bundle')?.value ?? 0)),
-      discount_type: container.querySelector('#pm-disc-type')?.value || 'PERCENT',
-      discount_pct: Math.max(0, Math.min(99, Number(container.querySelector('#pm-rate')?.value ?? 0))),
-      discount_amount: Math.max(0, Number(container.querySelector('#pm-fixed')?.value ?? 0)),
-      max_discount_amount: Math.max(0, Number(container.querySelector('#pm-max-disc')?.value ?? 0)),
-      days_of_week: daysOfWeek,
-      card_targets: cardTargets,
-      limit_per_person: Math.max(0, Number(container.querySelector('#pm-limit')?.value ?? 0)),
-      total_limit_qty: Math.max(0, Number(container.querySelector('#pm-total-limit')?.value ?? 0)),
-      max_receipt_sections: Math.max(0, Number(container.querySelector('#pm-receipt-sec')?.value ?? 0)),
-      start_date: container.querySelector('#pm-start')?.value || today,
-      end_date: container.querySelector('#pm-end')?.value || today
-    };
-    if (editingPromoId) {
-      await martApi.updatePromotion({ id: editingPromoId, ...payload });
-    } else {
-      await martApi.createPromotion(payload);
-    }
-    drawerOpen = false;
-    editingPromoId = '';
-    cloneDraft = null;
-    await renderMartFlyerView(container);
+    },
+    onCloseTypeMgr: () => {
+      typeMgrOpen = false;
+      renderMartFlyerView(container);
+    },
+    onReload: () => renderMartFlyerView(container)
   });
 
   container.querySelector('#btn-dl-promo-rules-csv')?.addEventListener('click', () => {

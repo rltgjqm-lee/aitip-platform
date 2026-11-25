@@ -499,7 +499,7 @@ function showOnboardingReviewModal(app) {
                 <tr style="border-bottom: 1px solid #f1f5f9;">
                   <td style="padding: 10px 12px; font-weight: 700; color: #1e293b;">${doc.name}</td>
                   <td style="padding: 10px 12px; font-family: monospace; color: #2563eb;">
-                    <a href="javascript:void(0)" style="color: #2563eb; text-decoration: underline;" onclick="alert('서류 미리보기: ${doc.file_name}')">${doc.file_name}</a>
+                    <a href="javascript:void(0)" class="btn-doc-preview" data-file-name="${doc.file_name}" style="color: #2563eb; text-decoration: underline;">${doc.file_name}</a>
                   </td>
                   <td style="padding: 10px 12px; text-align: center;">
                     ${doc.status === 'VERIFIED'
@@ -541,6 +541,12 @@ function showOnboardingReviewModal(app) {
   overlay.querySelector('#btn-close-review-modal').addEventListener('click', closeModal);
   overlay.querySelector('#btn-modal-close-action').addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  overlay.querySelectorAll('.btn-doc-preview').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert(`서류 미리보기: ${link.dataset.fileName || ''}`);
+    });
+  });
 
   // 모달 내 보완 요청 트리거
   overlay.querySelector('#btn-modal-trigger-revision').addEventListener('click', () => {

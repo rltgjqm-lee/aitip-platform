@@ -6,9 +6,11 @@
 import { martApi } from '../api.js';
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, buildCategoryPath, inferCategoryFromProduct } from '../utils/mart-categories.js';
-import { downloadExcelCsv, readCsvOrTextFile, parseDelimitedRows } from '../utils/excel-csv.js';
 import { bindStopPropagation } from '../utils/html.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
+import { bindCatalogMediaPicker } from './catalog-media-picker.js';
+import { bindCatalogHaccpLookup } from './catalog-haccp-modal.js';
+import { renderPosImportDrawerHtml, bindPosImportEvents } from './catalog-pos-import.js';
 import {
   SAMPLE_POS_CSV,
   TYPE_LABEL,
@@ -482,58 +484,7 @@ export async function renderMartCatalogView(container, opts = {}) {
         </div>
       ` : ''}
 
-      ${drawerMode === 'IMPORT' ? `
-        <div class="mc-drawer-backdrop" id="mc-drawer-backdrop">
-          <div class="mc-drawer" style="width: 600px;">
-            <div class="mc-drawer-header">
-              <h2>POS 상품마스터 엑셀(CSV) 일괄 등록</h2>
-              <button type="button" class="mc-drawer-close" id="btn-close-drawer">×</button>
-            </div>
-            <div class="mc-drawer-body">
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">0. 업로드 성격 분리 (기초 · 전단 · 당일신선)</div>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                  ${[
-                    { key: 'BASE_PRODUCT', label: '기초상품 (공산품)' },
-                    { key: 'FLYER_PROMO', label: '전단행사 (기간할인)' },
-                    { key: 'DAILY_FRESH', label: '당일신선 (일일시세)' }
-                  ].map(t => `
-                    <button type="button" class="${uploadBatchType === t.key ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-import-batch-type" data-batch="${t.key}" style="height: 34px; font-size: 12px;">${t.label}</button>
-                  `).join('')}
-                </div>
-              </div>
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">
-                  <span>1. 엑셀 서식 다운로드 & 파일 선택</span>
-                  <div style="display: flex; gap: 6px;">
-                    <button type="button" class="mc-btn-secondary" id="btn-dl-pos-template" style="height: 28px; padding: 0 10px; font-size: 12px;">엑셀 서식 다운로드</button>
-                    <button type="button" class="mc-btn-secondary" id="btn-fill-pos-sample" style="height: 28px; padding: 0 10px; font-size: 12px;">샘플 채우기</button>
-                  </div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                  <label class="mc-btn-secondary" style="display: inline-flex; align-items: center; cursor: pointer;">
-                    CSV / TXT 파일 불러오기
-                    <input id="file-pos-csv" type="file" accept=".csv,.tsv,.txt" style="display: none;" />
-                  </label>
-                  <span style="font-size: 12px; color: #64748b;">엑셀에서 저장한 CSV 파일을 올리거나 아래에 붙여넣으세요. (이미지는 등록 후 목록에서 일괄 보정 가능)</span>
-                </div>
-                <textarea id="txt-pos-import" rows="7" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 12px;" placeholder="바코드,상품명,규격,단위,과면세구분,매입원가,정상판매가,행사가,행사시작일,행사종료일,분류코드"></textarea>
-              </div>
-              <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">
-                  <span>2. 파싱 미리보기</span>
-                  <span id="pos-preview-count" class="mc-pill mc-pill-gray">0건 인식</span>
-                </div>
-                <div id="pos-import-preview" style="max-height: 200px; overflow: auto; font-size: 12px; color: #64748b;">데이터를 입력하거나 파일을 선택하면 미리보기가 표시됩니다.</div>
-              </div>
-            </div>
-            <div class="mc-drawer-footer">
-              <button type="button" class="mc-btn-secondary" id="btn-cancel-drawer">취소</button>
-              <button type="button" class="mc-btn-primary" id="btn-run-pos-import">엑셀(CSV) 일괄 반영</button>
-            </div>
-          </div>
-        </div>
-      ` : ''}
+      ${drawerMode === 'IMPORT' ? renderPosImportDrawerHtml(uploadBatchType) : ''}
     </div>
   `;
 
@@ -765,134 +716,12 @@ export async function renderMartCatalogView(container, opts = {}) {
     if (e.target.id === 'mc-drawer-backdrop') closeDrawer();
   });
 
-  // 드로어 내 이미지 업로드 (파일 선택 / Ctrl+V 클립보드 붙여넣기 / 외부 URL 가져오기 / 웹 검색 바로가기)
-  const setImgStatus = (msg, isError = false) => {
-    const st = container.querySelector('#mp-img-status');
-    if (st) {
-      st.style.color = isError ? '#b91c1c' : '#64748b';
-      st.textContent = msg;
-    }
-  };
-  const setImgPreview = (url) => {
-    const box = container.querySelector('#mp-img-preview-box');
-    if (box) box.innerHTML = `<img src="${escapeHtml(url)}" alt="상품 이미지" style="width: 100%; height: 100%; object-fit: cover;" />`;
-  };
-  const buildSharedImgName = (fallback = 'product') => {
-    const nm = container.querySelector('#mp-name')?.value?.trim() || '';
-    const sp = container.querySelector('#mp-spec')?.value?.trim() || '';
-    const base = [nm, sp && sp !== '-' ? sp : ''].filter(Boolean).join(' ').trim() || String(fallback || 'product').replace(/\.[^.]+$/, '');
-    return `${base}.webp`;
-  };
-  const uploadWebpBlobToShared = async (blobOrFile, originalName, barcode = '') => {
-    const webpDataUrl = await fileToWebpDataUrl(blobOrFile);
-    const bc = barcode || container.querySelector('#mp-barcode')?.value?.trim() || '';
-    return martApi.uploadMedia({
-      data_url: webpDataUrl,
-      original_name: originalName || buildSharedImgName(blobOrFile?.name),
-      scope: 'SHARED',
-      barcode: bc
-    });
-  };
-  const importExternalUrlAsWebp = async (url, fallbackName = 'product', barcode = '') => {
-    const blob = await martApi.fetchExternalImageBlob(url);
-    return uploadWebpBlobToShared(blob, buildSharedImgName(fallbackName), barcode);
-  };
-  const uploadProductImageFile = async (file) => {
-    if (!file) return;
-    setImgStatus('WebP 변환 및 공용 저장소 업로드 중...');
-    const uploaded = await uploadWebpBlobToShared(file, buildSharedImgName(file.name));
-    draftMedia = { media_id: uploaded.media_id, image_url: uploaded.image_url };
-    setImgPreview(uploaded.image_url);
-    setImgStatus('WebP 변환 및 공용 이미지 저장 완료');
-  };
-
-  container.querySelector('#mp-img-file')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (file) await uploadProductImageFile(file);
-  });
-
-  const buildWebSearchQuery = () => {
-    const nm = container.querySelector('#mp-name')?.value?.trim() || '';
-    const bc = container.querySelector('#mp-barcode')?.value?.trim() || '';
-    return [nm, bc].filter(Boolean).join(' ').trim();
-  };
-  container.querySelector('#btn-shared-img-search')?.addEventListener('click', async () => {
-    const kw = container.querySelector('#mp-name')?.value?.trim() || '';
-    const box = container.querySelector('#shared-img-box');
-    if (!kw) { setImgStatus('상품명(예: 대파)을 먼저 입력해 주세요.', true); return; }
-    if (!box) return;
-    box.style.display = 'block';
-    box.innerHTML = '<div style="font-size: 11.5px; color: #475569;">공용 이미지 풀 검색 중...</div>';
-    try {
-      const res = await martApi.searchSharedMedia(kw, 40);
-      const list = res.items || [];
-      if (list.length === 0) {
-        box.innerHTML = `<div style="font-size: 11.5px; color: #64748b;">'${escapeHtml(kw)}' 관련 공용 이미지가 아직 없습니다. 아래 URL 가져오기 또는 파일 업로드로 등록하면 이후 공용으로 재사용됩니다.</div>`;
-        return;
-      }
-      box.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <span style="font-size: 11px; font-weight: 700; color: #007749;">공용 이미지 ${list.length}건 (클릭 시 재업로드 없이 연결)</span>
-          <button type="button" id="btn-close-shared-img" style="border: 0; background: none; font-size: 12px; cursor: pointer; color: #64748b;">닫기</button>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;">
-          ${list.map((it, idx) => `
-            <button type="button" class="shared-img-pick" data-idx="${idx}" style="border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; padding: 4px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 4px;">
-              <img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.label)}" style="width: 100%; height: 64px; object-fit: cover; border-radius: 4px; background: #f1f5f9;" />
-              <span style="font-size: 10.5px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${escapeHtml(it.label)}">${escapeHtml(it.label)}</span>
-            </button>
-          `).join('')}
-        </div>
-      `;
-      box.querySelector('#btn-close-shared-img')?.addEventListener('click', () => { box.style.display = 'none'; });
-      box.querySelectorAll('.shared-img-pick').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const picked = list[Number(btn.dataset.idx)];
-          if (!picked) return;
-          draftMedia = { media_id: picked.media_id || null, image_url: picked.image_url };
-          setImgPreview(picked.image_url);
-          setImgStatus(`공용 이미지 연결 완료 (${picked.label})`);
-          box.style.display = 'none';
-        });
-      });
-    } catch (err) {
-      box.innerHTML = `<div style="font-size: 11.5px; color: #b91c1c;">공용 이미지 조회 실패: ${escapeHtml(err.message)}</div>`;
-    }
-  });
-  container.querySelector('#btn-web-img-google')?.addEventListener('click', () => {
-    const kw = buildWebSearchQuery();
-    if (!kw) { setImgStatus('상품명 또는 바코드를 먼저 입력해 주세요.', true); return; }
-    window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(kw)}`, '_blank', 'noopener,noreferrer');
-  });
-  container.querySelector('#btn-web-img-naver')?.addEventListener('click', () => {
-    const kw = buildWebSearchQuery();
-    if (!kw) { setImgStatus('상품명 또는 바코드를 먼저 입력해 주세요.', true); return; }
-    window.open(`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(kw)}`, '_blank', 'noopener,noreferrer');
-  });
-  container.querySelector('#btn-mp-img-url')?.addEventListener('click', async () => {
-    const url = container.querySelector('#mp-img-url')?.value?.trim() || '';
-    if (!/^https?:\/\//i.test(url)) {
-      setImgStatus('http:// 또는 https://로 시작하는 이미지 주소를 입력해 주세요.', true);
-      return;
-    }
-    try {
-      setImgStatus('외부 이미지 다운로드 후 WebP 변환 중...');
-      const nm = container.querySelector('#mp-name')?.value?.trim() || 'product';
-      const up = await importExternalUrlAsWebp(url, nm);
-      draftMedia = { media_id: up.media_id, image_url: up.image_url };
-      setImgPreview(up.image_url);
-      setImgStatus('WebP 변환 및 공용 이미지 저장 완료');
-    } catch (err) {
-      setImgStatus(`가져오기 실패: ${err.message}`, true);
-    }
-  });
-  container.querySelector('#form-mart-add')?.addEventListener('paste', async (e) => {
-    const items = Array.from(e.clipboardData?.items || []);
-    const imgItem = items.find(it => it.type && it.type.startsWith('image/'));
-    if (!imgItem) return;
-    e.preventDefault();
-    const file = imgItem.getAsFile();
-    if (file) await uploadProductImageFile(file);
+  // 드로어 내 이미지 업로드 · 외부 URL WebP 변환 · 공용 이미지 풀 검색 (catalog-media-picker.js)
+  const { importExternalUrlAsWebp } = bindCatalogMediaPicker({
+    container,
+    martApi,
+    fileToWebpDataUrl,
+    onMediaSelected: (nextMedia) => { draftMedia = nextMedia; }
   });
 
   // 드로어 내 원가 <-> 기준 판매가 실시간 마진율 미리보기
@@ -935,188 +764,14 @@ export async function renderMartCatalogView(container, opts = {}) {
   });
   mpL2?.addEventListener('change', syncL3Options);
 
-  // HACCP 공식 제품이미지 · 규격 조회 연동 (Enter 키 조기 폼 제출 방지 및 자동 조회)
-  const haccpLookupBtn = container.querySelector('#btn-haccp-lookup');
-  ['#mp-name', '#mp-barcode'].forEach(sel => {
-    container.querySelector(sel)?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        haccpLookupBtn?.click();
-      }
-    });
-  });
-  const cleanHaccpVal = (v = '') => {
-    const s = String(v || '').trim();
-    return (!s || s === '-' || s === '알수없음' || s === 'null' || s === 'undefined') ? '' : s;
-  };
-
-  const applyPickedHaccpItem = async (picked) => {
-    if (!picked) return;
-    const nameEl = container.querySelector('#mp-name');
-    const specEl = container.querySelector('#mp-spec');
-    const bcEl = container.querySelector('#mp-barcode');
-    if (nameEl) nameEl.value = picked.name;
-    const cleanSpec = cleanHaccpVal(picked.spec);
-    if (specEl && cleanSpec) specEl.value = cleanSpec;
-    if (bcEl && picked.barcode) bcEl.value = picked.barcode;
-    if (picked.image_url) {
-      if (picked.image_url.startsWith('/api/mart/media/public/')) {
-        draftMedia = { media_id: picked.id || null, image_url: picked.image_url };
-      } else {
-        const up = await importExternalUrlAsWebp(picked.image_url, picked.name, picked.barcode || '');
-        draftMedia = { media_id: up.media_id, image_url: up.image_url };
-      }
-      const imgBox = container.querySelector('#mp-img-preview-box');
-      if (imgBox) imgBox.innerHTML = `<img src="${draftMedia.image_url}" alt="미리보기" style="width:100%;height:100%;object-fit:cover;" />`;
-    }
-    const box = container.querySelector('#haccp-lookup-box');
-    if (box) box.style.display = 'none';
-    document.querySelector('#mc-haccp-wide-modal')?.remove();
-  };
-
-  const openHaccpWideModal = (list, queryText) => {
-    document.querySelector('#mc-haccp-wide-modal')?.remove();
-    const types = Array.from(new Set(list.map(it => String(it.prdkind || '').trim()).filter(Boolean)));
-    const overlay = document.createElement('div');
-    overlay.id = 'mc-haccp-wide-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
-    overlay.innerHTML = `
-      <div style="background:#fff;border-radius:14px;width:min(960px,96vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 24px 48px rgba(15,23,42,0.22);overflow:hidden;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #e2e8f0;background:#f8fafc;">
-          <div>
-            <div style="font-size:15px;font-weight:800;color:#0f172a;">공용 바코드 · HACCP 상품 검색 결과 (${list.length}건)</div>
-            <div style="font-size:12px;color:#64748b;">검색어: "${escapeHtml(queryText)}" · 사진 보유 및 분류 일치 우선 정렬</div>
-          </div>
-          <button type="button" id="btn-close-haccp-modal" class="mc-btn-secondary" style="height:30px;padding:0 12px;">닫기</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:10px 18px;border-bottom:1px solid #e2e8f0;background:#fff;">
-          <input id="haccp-modal-filter" type="text" class="erp-input" style="max-width:240px;height:32px;" placeholder="결과 내 상품명·제조사 필터..." />
-          <select id="haccp-modal-type" class="erp-input" style="max-width:170px;height:32px;">
-            <option value="">전체 유형 (${list.length})</option>
-            ${types.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}
-          </select>
-          <label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#334155;cursor:pointer;">
-            <input type="checkbox" id="haccp-modal-only-img" /> 사진 있는 상품만
-          </label>
-          <span id="haccp-modal-count" style="margin-left:auto;font-size:12px;color:#64748b;"></span>
-        </div>
-        <div id="haccp-modal-grid" style="padding:14px 18px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;background:#f8fafc;"></div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const gridEl = overlay.querySelector('#haccp-modal-grid');
-    const countEl = overlay.querySelector('#haccp-modal-count');
-    const filterInput = overlay.querySelector('#haccp-modal-filter');
-    const typeSelect = overlay.querySelector('#haccp-modal-type');
-    const imgCheck = overlay.querySelector('#haccp-modal-only-img');
-
-    const renderGrid = () => {
-      const kw = String(filterInput?.value || '').trim().toLowerCase();
-      const tp = String(typeSelect?.value || '').trim();
-      const onlyImg = Boolean(imgCheck?.checked);
-      const filtered = list.filter(it => {
-        if (onlyImg && !it.image_url) return false;
-        if (tp && String(it.prdkind || '').trim() !== tp) return false;
-        if (kw) {
-          const hay = `${it.name || ''} ${it.manufacture || ''} ${it.barcode || ''}`.toLowerCase();
-          if (!hay.includes(kw)) return false;
-        }
-        return true;
-      });
-      if (countEl) countEl.textContent = `표시 ${filtered.length}건`;
-      if (!gridEl) return;
-      if (filtered.length === 0) {
-        gridEl.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#64748b;font-size:13px;">조건에 맞는 상품이 없습니다.</div>';
-        return;
-      }
-      gridEl.innerHTML = filtered.map((it, idx) => `
-        <div class="haccp-modal-card" data-bc="${escapeHtml(it.barcode || '')}" data-fidx="${idx}" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:border-color 0.15s;">
-          <div style="width:52px;height:52px;border-radius:8px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-            ${it.image_url ? `<img src="${escapeHtml(it.image_url)}" style="width:100%;height:100%;object-fit:cover;" />` : `<span style="font-size:10px;color:#94a3b8;">이미지없음</span>`}
-          </div>
-          <div style="min-width:0;flex:1;">
-            <div style="font-size:13px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.name)}</div>
-            <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.manufacture || '-')}</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-              <code style="font-size:10.5px;color:#334155;background:#f1f5f9;padding:1px 5px;border-radius:4px;">${escapeHtml(it.barcode || '바코드없음')}</code>
-              ${it.prdkind ? `<span style="font-size:10.5px;color:#047857;background:#ecfdf5;padding:1px 5px;border-radius:4px;">${escapeHtml(it.prdkind)}</span>` : ''}
-            </div>
-          </div>
-        </div>
-      `).join('');
-      gridEl.querySelectorAll('.haccp-modal-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const picked = filtered[Number(card.dataset.fidx)];
-          applyPickedHaccpItem(picked);
-        });
-      });
-    };
-
-    renderGrid();
-    filterInput?.addEventListener('input', renderGrid);
-    typeSelect?.addEventListener('change', renderGrid);
-    imgCheck?.addEventListener('change', renderGrid);
-    overlay.querySelector('#btn-close-haccp-modal')?.addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-  };
-
-  haccpLookupBtn?.addEventListener('click', async () => {
-    const l1Val = mpL1?.value || '';
-    const q = container.querySelector('#mp-name')?.value?.trim() || '';
-    const barcode = container.querySelector('#mp-barcode')?.value?.trim() || '';
-    const category_hint = mpL2?.selectedOptions?.[0]?.textContent?.trim() || '';
-    const box = container.querySelector('#haccp-lookup-box');
-    if (!box) return;
-    if (['01', '02', '03'].includes(l1Val)) {
-      box.style.display = 'block';
-      box.innerHTML = '<div style="font-size:12px;color:#b45309;">신선 농·축·수산물은 가공식품 바코드/HACCP 조회 대상이 아닙니다. 아래 이미지 검색(구글/네이버) 또는 직접 업로드를 이용해 주세요.</div>';
-      return;
-    }
-    if (!q && !barcode) {
-      box.style.display = 'block';
-      box.innerHTML = '<div style="font-size:12px;color:#b45309;">상품명 또는 바코드를 먼저 입력한 뒤 조회하세요.</div>';
-      return;
-    }
-    box.style.display = 'block';
-    box.innerHTML = '<div style="font-size:12px;color:#475569;">공용 바코드 · HACCP DB 조회 중...</div>';
-    try {
-      const res = await martApi.searchHaccp({ q, barcode, limit: 50, category_hint });
-      const list = res.items || [];
-      if (list.length === 0) {
-        box.innerHTML = '<div style="font-size:12px;color:#64748b;">일치하는 등록 상품이 없습니다.</div>';
-        return;
-      }
-      const previewList = list.slice(0, 8);
-      const headerBar = list.length > 8
-        ? `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 4px 6px;border-bottom:1px solid #cbd5e1;margin-bottom:4px;">
-             <span style="font-size:11.5px;font-weight:700;color:#334155;">상위 8건 (총 ${list.length}건 · 사진 보유 우선)</span>
-             <button type="button" id="btn-haccp-open-modal" class="mc-btn-secondary" style="height:24px;padding:0 8px;font-size:11px;">넓은 창에서 전체 ${list.length}건 보기</button>
-           </div>`
-        : '';
-      box.innerHTML = headerBar + previewList.map((it, idx) => {
-        const metaLine = [cleanHaccpVal(it.spec), cleanHaccpVal(it.manufacture), it.barcode].filter(Boolean).join(' · ');
-        return `
-        <div class="haccp-pick-row" data-idx="${idx}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px;border-bottom:1px solid #e2e8f0;cursor:pointer;">
-          <div style="display:flex;align-items:center;gap:8px;min-width:0;">
-            ${it.image_url ? `<img src="${escapeHtml(it.image_url)}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;flex-shrink:0;" />` : `<div style="width:36px;height:36px;border-radius:6px;background:#f1f5f9;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;font-size:9px;color:#94a3b8;flex-shrink:0;">없음</div>`}
-            <div style="min-width:0;">
-              <div style="font-size:12.5px;font-weight:700;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(it.name)}</div>
-              <div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(metaLine || '-')}</div>
-            </div>
-          </div>
-          <span class="mc-pill mc-pill-green">선택</span>
-        </div>`;
-      }).join('');
-      box.querySelector('#btn-haccp-open-modal')?.addEventListener('click', () => openHaccpWideModal(list, q || barcode));
-      box.querySelectorAll('.haccp-pick-row').forEach(row => {
-        row.addEventListener('click', () => {
-          applyPickedHaccpItem(previewList[Number(row.dataset.idx)]);
-        });
-      });
-    } catch (err) {
-      box.innerHTML = `<div style="font-size:12px;color:#b91c1c;">조회 실패: ${escapeHtml(err.message)}</div>`;
-    }
+  // HACCP 공식 제품이미지 · 규격 조회 및 와이드 모달 (catalog-haccp-modal.js)
+  bindCatalogHaccpLookup({
+    container,
+    martApi,
+    mpL1,
+    mpL2,
+    importExternalUrlAsWebp,
+    onMediaSelected: (nextMedia) => { draftMedia = nextMedia; }
   });
 
   // 드로어 내 저장된 행사 룰 불러와 원클릭 자동 채움
@@ -1197,65 +852,15 @@ export async function renderMartCatalogView(container, opts = {}) {
     await renderMartCatalogView(container);
   });
 
-  // POS 엑셀(CSV) 일괄 등록 + 서식 다운로드 + 파싱 미리보기
-  const renderPosPreview = () => {
-    const raw = container.querySelector('#txt-pos-import')?.value || '';
-    const rows = parseDelimitedRows(raw).filter(cols => cols[0] && cols[0] !== '바코드' && cols[1]);
-    const cntEl = container.querySelector('#pos-preview-count');
-    const prevEl = container.querySelector('#pos-import-preview');
-    if (cntEl) cntEl.textContent = `${rows.length}건 인식`;
-    if (prevEl) {
-      if (rows.length === 0) {
-        prevEl.innerHTML = '데이터를 입력하거나 파일을 선택하면 미리보기가 표시됩니다.';
-      } else {
-        prevEl.innerHTML = `
-          <table class="mc-table" style="font-size: 11.5px;">
-            <thead><tr><th>바코드</th><th>상품명</th><th>규격</th><th style="text-align:right;">정상가</th><th style="text-align:right;">행사가</th></tr></thead>
-            <tbody>
-              ${rows.slice(0, 20).map(c => `<tr><td><code>${escapeHtml(c[0])}</code></td><td><b>${escapeHtml(c[1])}</b></td><td>${escapeHtml(c[2] || '-')}</td><td class="mc-num">${Number(c[6] || 0).toLocaleString()}원</td><td class="mc-num">${Number(c[7] || c[6] || 0).toLocaleString()}원</td></tr>`).join('')}
-            </tbody>
-          </table>
-        `;
-      }
+  // POS 엑셀(CSV) 일괄 등록 이벤트 (catalog-pos-import.js)
+  bindPosImportEvents({
+    container,
+    martApi,
+    sampleCsv: SAMPLE_POS_CSV,
+    setUploadBatchType: (nextType) => { uploadBatchType = nextType; },
+    onImportComplete: async () => {
+      drawerMode = 'NONE';
+      await renderMartCatalogView(container);
     }
-  };
-  container.querySelectorAll('.btn-import-batch-type').forEach(btn => {
-    btn.addEventListener('click', () => {
-      uploadBatchType = btn.dataset.batch;
-      container.querySelectorAll('.btn-import-batch-type').forEach(b => {
-        b.className = `${b.dataset.batch === uploadBatchType ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-import-batch-type`;
-      });
-    });
-  });
-  container.querySelector('#txt-pos-import')?.addEventListener('input', renderPosPreview);
-  container.querySelector('#btn-dl-pos-template')?.addEventListener('click', () => {
-    downloadExcelCsv(
-      'mart_pos_products_template.csv',
-      ['바코드', '상품명', '규격', '단위', '과면세구분', '매입원가', '정상판매가', '행사가', '행사시작일', '행사종료일', '분류코드'],
-      [
-        ['8801007052120', 'CJ 백설 하얀설탕', '1KG', '봉', '과세', 1650, 2350, 1980, '2026-11-17', '2026-11-25', '가공식품>조미료'],
-        ['2000020000005', '국내산 깐마늘(대)', '1KG', '봉', '면세', 6800, 8900, 7900, '2026-11-17', '2026-11-23', '농산>양념채소']
-      ]
-    );
-  });
-  container.querySelector('#file-pos-csv')?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await readCsvOrTextFile(file);
-    const ta = container.querySelector('#txt-pos-import');
-    if (ta) ta.value = text;
-    renderPosPreview();
-  });
-  container.querySelector('#btn-fill-pos-sample')?.addEventListener('click', () => {
-    const ta = container.querySelector('#txt-pos-import');
-    if (ta) ta.value = SAMPLE_POS_CSV;
-    renderPosPreview();
-  });
-  container.querySelector('#btn-run-pos-import')?.addEventListener('click', async () => {
-    const text = container.querySelector('#txt-pos-import')?.value?.trim();
-    if (!text) return;
-    await martApi.bulkImport('POS_CSV', text);
-    drawerMode = 'NONE';
-    await renderMartCatalogView(container);
   });
 }

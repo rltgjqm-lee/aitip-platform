@@ -3,6 +3,8 @@
  * env.DB (D1Database) 바인딩을 사용하는 Workers 환경용 비동기 데이터 어댑터
  */
 
+import { nextMonotonicId } from './mart-price-batch.mjs';
+
 const CROCKFORD = '0123456789abcdefghjkmnpqrstvwxyz';
 
 function cleanCatalogText(val = '') {
@@ -182,6 +184,19 @@ export class MartD1Adapter {
     return res?.results || [];
   }
 
+  async getPriceUploadBatchById(batchId) {
+    return this.db.prepare(
+      'SELECT * FROM mart_price_upload_batches WHERE mart_id = ? AND batch_id = ? LIMIT 1'
+    ).bind(this.martId, batchId).first();
+  }
+
+  async markPriceUploadBatchRolledBack(batchId) {
+    await this.db.prepare(
+      'UPDATE mart_price_upload_batches SET rolled_back = 1 WHERE mart_id = ? AND batch_id = ?'
+    ).bind(this.martId, batchId).run();
+    return true;
+  }
+
   async savePromoType(t) {
     const now = Date.now();
     await this.db.prepare(`
@@ -200,10 +215,54 @@ export class MartD1Adapter {
   }
 
   async getOrders() {
-    const res = await this.db.prepare(
-      'SELECT * FROM orders WHERE mart_id = ? ORDER BY created_at DESC LIMIT 200'
-    ).bind(this.martId).all();
-    return res?.results || [];
+    const [ordRes, itemRes] = await this.db.batch([
+      this.db.prepare('SELECT * FROM orders WHERE mart_id = ? ORDER BY created_at DESC LIMIT 200').bind(this.martId),
+      this.db.prepare('SELECT oi.* FROM order_items oi INNER JOIN orders o ON oi.order_id = o.id WHERE o.mart_id = ?').bind(this.martId)
+    ]);
+    const itemsByOrder = new Map();
+    for (const it of (itemRes?.results || [])) {
+      const list = itemsByOrder.get(it.order_id) || [];
+      list.push({
+        id: it.id,
+        product_id: it.product_id,
+        name: it.product_name,
+        qty: Number(it.qty || 0),
+        uom: it.uom || '개',
+        unit_price: Number(it.unit_price || 0),
+        storage_temp: it.storage_temp || 'AMBIENT'
+      });
+      itemsByOrder.set(it.order_id, list);
+    }
+    return (ordRes?.results || []).map(r => ({
+      ...r,
+      order_id: r.id,
+      status: r.order_status,
+      items: itemsByOrder.get(r.id) || []
+    }));
+  }
+
+  async adjustOrderItem({ order_id, product_id, actual_qty, reason = '결품·수량 정정' } = {}) {
+    if (!order_id || !product_id) throw new Error('order_id와 product_id가 필요합니다.');
+    const nextQty = Math.max(0, Number(actual_qty ?? 0));
+    const item = await this.db.prepare(
+      'SELECT * FROM order_items WHERE order_id = ? AND (product_id = ? OR id = ? OR product_name = ?) LIMIT 1'
+    ).bind(order_id, product_id, product_id, product_id).first();
+    if (!item) throw new Error('주문 내 해당 품목을 찾을 수 없습니다.');
+    const prevQty = Number(item.qty || 0);
+    const diffAmount = Math.round((nextQty - prevQty) * Number(item.unit_price || 0));
+    const now = Date.now();
+    await this.db.prepare('UPDATE order_items SET qty = ? WHERE id = ?').bind(nextQty, item.id).run();
+    const sumRow = await this.db.prepare(
+      'SELECT COALESCE(SUM(qty * unit_price), 0) AS total FROM order_items WHERE order_id = ?'
+    ).bind(order_id).first();
+    const newTotal = Number(sumRow?.total || 0);
+    await this.db.prepare('UPDATE orders SET total_amount = ?, updated_at = ? WHERE id = ? AND mart_id = ?')
+      .bind(newTotal, now, order_id, this.martId).run();
+    await this.db.prepare(`
+      INSERT INTO mart_adjustments (id, mart_id, order_id, product_id, prev_qty, next_qty, diff_amount, reason, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(nextMonotonicId('adj'), this.martId, order_id, item.product_id, prevQty, nextQty, diffAmount, String(reason || '결품·수량 정정'), now).run().catch(() => {});
+    return { order_id, product_id: item.product_id, prev_qty: prevQty, actual_qty: nextQty, diff_amount: diffAmount, total_amount: newTotal };
   }
 
   async getPwaConfig() {
