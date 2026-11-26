@@ -14,7 +14,7 @@ function jsonRes(data, status = 200) {
 }
 
 export async function onRequest(context) {
-  const { request, params } = context;
+  const { request, params, env } = context;
   const method = request.method.toUpperCase();
   if (method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
 
@@ -22,6 +22,7 @@ export async function onRequest(context) {
   const body = (method === 'POST' || method === 'PATCH' || method === 'PUT' || method === 'DELETE')
     ? await request.json().catch(() => ({}))
     : {};
+  const hasD1 = Boolean(env?.DB && typeof env.DB.prepare === 'function');
 
   if (subPath === 'dashboard') {
     const foodOrders = Array.isArray(storeData.orders) ? storeData.orders : [];
@@ -40,10 +41,64 @@ export async function onRequest(context) {
     });
   }
   if (subPath === 'marts') {
-    return jsonRes({ success: true, marts: martData.marts || [] });
+    let marts = Array.isArray(martData.marts) ? martData.marts : [];
+    if (hasD1) {
+      const [mRes, oRes] = await Promise.all([
+        env.DB.prepare('SELECT * FROM mart_suppliers ORDER BY created_at DESC').all().catch(() => null),
+        env.DB.prepare('SELECT mart_id, COUNT(*) AS cnt, COALESCE(SUM(total_amount), 0) AS gmv FROM orders GROUP BY mart_id').all().catch(() => null)
+      ]);
+      if (mRes?.results?.length) {
+        const orderStats = new Map((oRes?.results || []).map(r => [r.mart_id, r]));
+        marts = mRes.results.map(m => {
+          const st = orderStats.get(m.id) || { cnt: 0, gmv: 0 };
+          return {
+            ...m,
+            name: m.mart_name || m.name || '하나로마트',
+            rep_name: m.operator_name || '-',
+            devices_cnt: Number(m.devices_cnt ?? 1),
+            today_orders: Number(st.cnt || 0),
+            today_gmv: Number(st.gmv || 0)
+          };
+        });
+      }
+    }
+    const normalizedMarts = marts.map(m => ({
+      ...m,
+      name: m.name || m.mart_name || '하나로마트',
+      rep_name: m.rep_name || m.operator_name || '-',
+      biz_number: m.biz_number || '-',
+      phone: m.phone || '-',
+      devices_cnt: Number(m.devices_cnt ?? 1),
+      today_orders: Number(m.today_orders ?? 0),
+      today_gmv: Number(m.today_gmv ?? 0)
+    }));
+    return jsonRes({ success: true, marts: normalizedMarts });
   }
   if (subPath === 'stores') {
-    return jsonRes({ success: true, stores: storeData.store ? [storeData.store] : [] });
+    const foodOrders = Array.isArray(storeData.orders) ? storeData.orders : [];
+    const foodGmv = foodOrders.reduce((s, o) => s + Number(o.total_amount || 0), 0);
+    const stores = storeData.store
+      ? [{
+          ...storeData.store,
+          name: storeData.store.name || storeData.store.store_name || '가맹점',
+          rep_name: storeData.store.rep_name || storeData.store.owner_name || '-',
+          biz_number: storeData.store.biz_number || '-',
+          phone: storeData.store.phone || '-',
+          devices_cnt: Number(storeData.store.devices_cnt ?? 1),
+          today_orders: Number(storeData.store.today_orders ?? foodOrders.length),
+          today_gmv: Number(storeData.store.today_gmv ?? foodGmv)
+        }]
+      : [];
+    return jsonRes({ success: true, stores });
+  }
+  if (subPath === 'devices') {
+    return jsonRes({ success: true, devices: [] });
+  }
+  if (subPath === 'payments/transactions') {
+    return jsonRes({ success: true, transactions: [] });
+  }
+  if (subPath === 'agencies') {
+    return jsonRes({ success: true, agencies: [] });
   }
   if (subPath === 'stores/status') {
     return jsonRes({ success: true, ...body });

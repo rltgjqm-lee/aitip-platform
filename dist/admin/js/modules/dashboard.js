@@ -174,13 +174,13 @@ export async function renderMasterDashboard(container, data, filter = {}) {
                         <span style="font-size: 10px; color: var(--text-muted); margin-left: 2px;">(${m.store_category || m.ksic_code || '561'})</span>
                       `}
                     </td>
-                    <td style="font-family: monospace; font-size: 11.5px; color: var(--text-secondary);">${m.biz_number}</td>
-                    <td>${m.rep_name} <span style="font-size: 11px; color: var(--text-muted);">(${m.phone})</span></td>
+                    <td style="font-family: monospace; font-size: 11.5px; color: var(--text-secondary);">${m.biz_number || '-'}</td>
+                    <td>${m.rep_name || '-'} <span style="font-size: 11px; color: var(--text-muted);">(${m.phone || '-'})</span></td>
                     <td>${[m.sido, m.sigungu].filter(Boolean).join(' ') || m.region || m.address || '-'}</td>
                     <td style="font-size: 12px; font-weight: 700; color: var(--text-primary);">${agencyDisplayName}</td>
-                    <td style="text-align: center; font-weight: 800;">${m.devices_cnt}대</td>
-                    <td style="text-align: right; font-weight: 700;">${m.today_orders}건</td>
-                    <td style="text-align: right; font-weight: 800;">${m.today_gmv.toLocaleString()}원</td>
+                    <td style="text-align: center; font-weight: 800;">${Number(m.devices_cnt || 0)}대</td>
+                    <td style="text-align: right; font-weight: 700;">${Number(m.today_orders || 0).toLocaleString()}건</td>
+                    <td style="text-align: right; font-weight: 800;">${Number(m.today_gmv || 0).toLocaleString()}원</td>
                     <td style="text-align: center;"><span class="badge-status active">${m.isMart ? '정상공급' : '정상영업'}</span></td>
                     <td style="text-align: center;">
                       <button type="button" class="header-btn btn-store-detail" data-storeid="${m.id}" style="padding: 3px 8px; font-size: 11px; font-weight: 700; white-space: nowrap;">상세보기</button>
