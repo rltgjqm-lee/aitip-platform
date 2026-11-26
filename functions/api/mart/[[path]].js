@@ -70,7 +70,7 @@ export async function onRequest(context) {
     }
   }
 
-  const ctx = { request, env, method, subPath, body, d1, martData, tenantMartId, jsonRes };
+  const ctx = { request, env, method, subPath, body, d1, martData, tenantMartId, authCtx, jsonRes };
   try {
     const commerceRes = await handleMartCommerceRoutes(ctx);
     if (commerceRes) return commerceRes;

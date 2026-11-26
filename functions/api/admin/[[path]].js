@@ -143,6 +143,23 @@ export async function onRequest(context) {
     return jsonRes({ success: true, items: [], data: body });
   }
   if (subPath === 'audit-logs') {
+    if (hasD1) {
+      const res = await env.DB.prepare(`
+        SELECT
+          a.id, a.user_id, u.email AS actor_email, u.display_name AS actor_name, u.role AS actor_role,
+          a.mart_id, a.action, a.target_type, a.target_id, a.detail_json, a.ip_address, a.created_at
+        FROM auth_audit_logs a
+        LEFT JOIN platform_users u ON u.id = a.user_id
+        ORDER BY a.created_at DESC
+        LIMIT 100
+      `).all().catch(() => null);
+      const logs = (res?.results || []).map(r => ({
+        ...r,
+        detail: r.detail_json ? (() => { try { return JSON.parse(r.detail_json); } catch (_) { return r.detail_json; } })() : null,
+        created_at_iso: r.created_at ? new Date(Number(r.created_at)).toISOString() : ''
+      }));
+      return jsonRes({ success: true, logs });
+    }
     return jsonRes({ success: true, logs: [] });
   }
   if (subPath === 'reviews/blind-queue') {

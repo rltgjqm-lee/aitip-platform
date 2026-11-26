@@ -4,6 +4,12 @@
  */
 
 import { nextMonotonicId } from './mart-price-batch.mjs';
+import {
+  reserveInventoryForOrder,
+  compensateReservations,
+  adjustInventoryForDelta,
+  restoreInventoryForCancelledOrder
+} from './mart-inventory-tx.mjs';
 
 const CROCKFORD = '0123456789abcdefghjkmnpqrstvwxyz';
 
@@ -263,7 +269,11 @@ export class MartD1Adapter {
     ).bind(order_id, product_id, product_id, product_id).first();
     if (!item) throw new Error('주문 내 해당 품목을 찾을 수 없습니다.');
     const prevQty = Number(item.qty || 0);
-    const diffAmount = Math.round((nextQty - prevQty) * Number(item.unit_price || 0));
+    const deltaQty = nextQty - prevQty;
+    if (deltaQty !== 0 && item.product_id) {
+      await adjustInventoryForDelta(this.db, this.martId, item.product_id, deltaQty);
+    }
+    const diffAmount = Math.round(deltaQty * Number(item.unit_price || 0));
     const now = Date.now();
     await this.db.prepare('UPDATE order_items SET qty = ? WHERE id = ?').bind(nextQty, item.id).run();
     const sumRow = await this.db.prepare(
@@ -437,6 +447,10 @@ export class MartD1Adapter {
     const martSuffix = String(this.martId || 'MRT-11-650-01-47121-0001').replace(/^MRT-/, '');
     const orderId = order.order_id || `ORD-${martSuffix}-${d}-${String(now).slice(-4)}`;
     const totalAmount = (order.items || []).reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.qty || 1), 0);
+
+    // 1. 원자적 재고 및 행사 한정수량 선차감 (부족 시 409 Conflict + 자동 보상 복원)
+    const reservations = await reserveInventoryForOrder(this.db, this.martId, order.items || []);
+
     const stmts = [
       this.db.prepare(`
         INSERT INTO orders (
@@ -463,13 +477,27 @@ export class MartD1Adapter {
         Number(it.unit_price || 0), it.storage_temp || 'AMBIENT'
       ));
     });
-    await this.db.batch(stmts);
+    try {
+      await this.db.batch(stmts);
+    } catch (err) {
+      await compensateReservations(this.db, this.martId, reservations);
+      throw err;
+    }
     return { order_id: orderId, ...order, total_amount: totalAmount, status: 'REQUESTED' };
   }
 
   async updateOrderStatus(orderId, status) {
-    await this.db.prepare('UPDATE orders SET order_status = ?, updated_at = ? WHERE id = ? AND mart_id = ?')
-      .bind(status, Date.now(), orderId, this.martId).run();
+    const prev = await this.db.prepare(
+      'SELECT order_status FROM orders WHERE id = ? AND mart_id = ? LIMIT 1'
+    ).bind(orderId, this.martId).first();
+    const res = await this.db.prepare(
+      'UPDATE orders SET order_status = ?, updated_at = ? WHERE id = ? AND mart_id = ?'
+    ).bind(status, Date.now(), orderId, this.martId).run();
+
+    // 비취소 상태에서 CANCELLED로 최초 전환 시에만 재고·행사수량 자동 복원 (이중 복원 방지)
+    if (res?.meta?.changes && prev && prev.order_status !== 'CANCELLED' && status === 'CANCELLED') {
+      await restoreInventoryForCancelledOrder(this.db, this.martId, orderId);
+    }
     return { order_id: orderId, status };
   }
 

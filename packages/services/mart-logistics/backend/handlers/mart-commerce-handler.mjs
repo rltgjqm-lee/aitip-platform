@@ -4,6 +4,7 @@
 
 import { nextMonotonicId, applyDailyPriceBatchToData } from '../mart-price-batch.mjs';
 import { buildPickingSummary, buildBoxingManifest, buildSettlementSummary } from '../mart-fulfillment-calc.mjs';
+import { recordAuditLog, getClientIp } from '../mart-auth-guard.mjs';
 import { parseMartFlyerText, parseMartPosCsv, parseMartPrepSheet } from '../../../../core/merchant-meta/mart-catalog-parser.mjs';
 import { buildPrivateEvidenceKey } from '../../../../core/shared/r2-key-builder.js';
 
@@ -16,8 +17,19 @@ export async function handleMartCommerceRoutes({
   d1,
   martData,
   tenantMartId,
+  authCtx,
   jsonRes
 }) {
+  const audit = (action, targetType, targetId, detail = null) =>
+    recordAuditLog(env?.DB, {
+      userId: authCtx?.user?.id || null,
+      martId: tenantMartId,
+      action,
+      targetType,
+      targetId: targetId ? String(targetId) : null,
+      detail,
+      ipAddress: getClientIp(request)
+    });
   if (subPath === 'profile') {
     if (method === 'GET') {
       if (d1) {
@@ -58,6 +70,12 @@ export async function handleMartCommerceRoutes({
     const item = { ...body, id: body?.id || (body?.name ? nextMonotonicId('mrt_sku') : undefined) };
     if (d1 && item.id) {
       await d1.upsertProduct(item);
+      await audit('PRODUCT_UPSERT', 'PRODUCT', item.id, {
+        name: item.name,
+        cost_price: item.cost_price,
+        regular_price: item.regular_price,
+        sale_price: item.sale_price
+      });
     }
     return jsonRes({ success: true, item }, method === 'POST' ? 201 : 200);
   }
@@ -71,6 +89,7 @@ export async function handleMartCommerceRoutes({
         await d1.upsertProduct(u);
         updatedCount += 1;
       }
+      await audit('PRODUCT_BULK_GRID', 'PRODUCT', tenantMartId, { updated_count: updatedCount });
     } else {
       updatedCount = updates.length;
     }
@@ -142,14 +161,17 @@ export async function handleMartCommerceRoutes({
       if (method === 'POST') {
         const pr = { id: body.id || nextMonotonicId('mpr'), ...body };
         await d1.createPromotion(pr);
+        await audit('PROMO_CREATE', 'PROMOTION', pr.id, { name: pr.name, promo_type: pr.promo_type });
         return jsonRes({ success: true, promotion: pr }, 201);
       }
       if (method === 'PATCH') {
         await d1.updatePromotion(body);
+        await audit('PROMO_UPDATE', 'PROMOTION', body.id, { name: body.name, status: body.status });
         return jsonRes({ success: true, promotion: body });
       }
       if (method === 'DELETE') {
         await d1.deletePromotion(body.id);
+        await audit('PROMO_DELETE', 'PROMOTION', body.id);
         return jsonRes({ success: true, deleted_id: body.id });
       }
     }
@@ -178,13 +200,22 @@ export async function handleMartCommerceRoutes({
   }
 
   if (subPath === 'orders/status') {
-    if (d1 && body?.order_id && body?.status) await d1.updateOrderStatus(body.order_id, body.status);
+    if (d1 && body?.order_id && body?.status) {
+      await d1.updateOrderStatus(body.order_id, body.status);
+      await audit('ORDER_STATUS_UPDATE', 'ORDER', body.order_id, { status: body.status });
+    }
     return jsonRes({ success: true, ...body });
   }
 
   if (subPath === 'orders/adjust') {
     if (d1) {
       const result = await d1.adjustOrderItem(body || {});
+      await audit('ORDER_ITEM_ADJUST', 'ORDER', body?.order_id, {
+        product_id: result.product_id,
+        prev_qty: result.prev_qty,
+        actual_qty: result.actual_qty,
+        diff_amount: result.diff_amount
+      });
       return jsonRes({ success: true, ...result });
     }
     return jsonRes({ success: true, ...body });
@@ -328,6 +359,11 @@ export async function handleMartCommerceRoutes({
         snapshot_r2_key: snapshotKey,
         snapshot: snapshotKey ? undefined : snapshotItems
       });
+      await audit('PRICE_BATCH_UPLOAD', 'PRICE_BATCH', result.batch_id, {
+        mode: body.mode || 'PARTIAL',
+        updated_count: result.success_count,
+        error_count: result.error_count
+      });
     }
     return jsonRes({ success: true, snapshot_r2_key: snapshotKey, ...result });
   }
@@ -360,6 +396,7 @@ export async function handleMartCommerceRoutes({
         restoredCount += 1;
       }
       await d1.markPriceUploadBatchRolledBack(batchId);
+      await audit('PRICE_BATCH_ROLLBACK', 'PRICE_BATCH', batchId, { restored_count: restoredCount });
     }
     return jsonRes({ success: true, batch_id: batchId, restored_count: restoredCount, rolled_back_at: new Date().toISOString() });
   }
