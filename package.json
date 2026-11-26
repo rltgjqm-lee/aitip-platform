@@ -6,6 +6,10 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-pages.mjs",
+    "dev:pages": "node scripts/build-pages.mjs && wrangler pages dev dist --port 8989",
+    "dev:legacy": "node dev-server.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply aitip-core-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply aitip-core-db --remote",
     "deploy": "node scripts/build-pages.mjs && wrangler pages deploy dist --project-name aitip-platform",
     "test:schema": "python scripts/test_schema_integrity.py",
     "test": "npm run test:schema"

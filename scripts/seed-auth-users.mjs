@@ -13,6 +13,7 @@ import { execSync } from 'node:child_process';
 import { hashPassword, nextAuthUid } from '../packages/core/shared/auth-crypto.mjs';
 
 const applyRemote = process.argv.includes('--apply');
+const applyLocal = process.argv.includes('--local');
 const martPw = String(process.env.MART_ADMIN_PW || '').trim();
 const superPw = String(process.env.SUPER_ADMIN_PW || '').trim();
 const defaultMartId = String(process.env.DEFAULT_MART_ID || 'MRT-11-650-01-47121-0001').trim();
@@ -45,7 +46,10 @@ async function main() {
     }
   ];
 
-  const lines = ['PRAGMA foreign_keys = ON;'];
+  const lines = [
+    'PRAGMA foreign_keys = ON;',
+    `INSERT OR IGNORE INTO mart_suppliers (id, mart_name, mart_type, status, created_at, updated_at) VALUES (${escSql(defaultMartId)}, '서초 하나로마트', 'NH_HANARO', 'ACTIVE', ${now}, ${now});`
+  ];
   for (const u of users) {
     lines.push(`
 INSERT INTO platform_users (
@@ -69,15 +73,17 @@ ON CONFLICT(email) DO UPDATE SET
   fs.writeFileSync(sqlFile, lines.join('\n\n') + '\n', 'utf8');
   console.log(`[seed-auth-users] SQL 생성 완료: ${sqlFile} (${users.length}명)`);
 
-  if (applyRemote) {
+  if (applyRemote || applyLocal) {
+    const targetFlag = applyRemote ? '--remote' : '--local';
+    const label = applyRemote ? '원격 D1' : '로컬 D1';
     try {
-      execSync(`cmd /c "npx wrangler d1 execute aitip-core-db --remote --file=${sqlFile}"`, { stdio: 'inherit' });
-      console.log('[seed-auth-users] 원격 D1 적용 완료.');
+      execSync(`cmd /c "npx wrangler d1 execute aitip-core-db ${targetFlag} --file=${sqlFile}"`, { stdio: 'inherit' });
+      console.log(`[seed-auth-users] ${label} 적용 완료.`);
     } finally {
       try { fs.unlinkSync(sqlFile); } catch (_) {}
     }
   } else {
-    console.log('[seed-auth-users] 드라이런 모드입니다. 원격 D1에 반영하려면 --apply 옵션을 붙여 실행하세요.');
+    console.log('[seed-auth-users] 드라이런 모드입니다. 원격은 --apply, 로컬은 --local 옵션을 붙여 실행하세요.');
   }
 }
 
