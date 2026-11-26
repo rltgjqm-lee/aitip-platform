@@ -20,11 +20,12 @@ function isPublicFoodEndpoint(method, subPath) {
   const p = String(subPath || '').replace(/^\/+|\/+$/g, '');
   if (m === 'GET' && [
     'store', 'store/hours', 'delivery-rules', 'delivery-regions',
-    'menus', 'categories', 'options', 'option-groups',
-    'coupons', 'reviews', 'store-blocks', 'holidays'
+    'menu', 'menus', 'categories', 'options', 'option-groups',
+    'coupons', 'reviews', 'store-blocks', 'holidays', 'public-feed'
   ].includes(p)) {
     return true;
   }
+  if (m === 'GET' && p.startsWith('orders/') && p.endsWith('/track')) return true;
   if (m === 'POST' && p === 'orders') return true;
   return false;
 }

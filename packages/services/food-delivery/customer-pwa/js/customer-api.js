@@ -16,6 +16,7 @@ const BASE_URL = '/api/food';
  */
 async function request(endpoint, options = {}) {
   const config = {
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,

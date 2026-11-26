@@ -79,6 +79,12 @@ copyDirSync(
   path.join(DIST_DIR, 'core', 'shared')
 );
 
+console.log('[Build] Copying core merchant-meta modules to dist/core/merchant-meta...');
+copyDirSync(
+  path.join(ROOT_DIR, 'packages', 'core', 'merchant-meta'),
+  path.join(DIST_DIR, 'core', 'merchant-meta')
+);
+
 console.log('[Build] Copying mart media assets to dist/mart/media...');
 copyDirSync(
   path.join(ROOT_DIR, 'packages', 'services', 'mart-logistics', 'backend', 'media'),

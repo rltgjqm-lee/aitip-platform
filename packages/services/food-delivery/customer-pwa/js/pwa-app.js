@@ -21,6 +21,7 @@ import { customerApi } from './customer-api.js';
 import { generateCode128Svg } from './vendor/barcode-generator.js';
 import { defaultStore, defaultCategories, defaultOptionGroups, defaultProducts, defaultReviews } from './default-data.js';
 import { getOrCreateCustomerUid } from './zero-pii-idb.js';
+import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 
 const state = {
   customerUid: null,
@@ -64,11 +65,21 @@ const state = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  state.customerUid = await getOrCreateCustomerUid();
-  parseUrlParams();
-  setupNavEvents();
-  setupModalEvents();
-  await Promise.all([loadStoreData(), loadPublicFeed()]);
+  await initPortalAuthGate({
+    title: 'AITIP 가맹점 주문 (PWA) 로그인',
+    badgeText: 'PWA',
+    badgeColor: '#ea580c',
+    allowedRoles: ['SUPER_ADMIN'],
+    headerSelector: null,
+    placeholderEmail: '이메일 입력',
+    onAuthenticated: async () => {
+      state.customerUid = await getOrCreateCustomerUid();
+      parseUrlParams();
+      setupNavEvents();
+      setupModalEvents();
+      await Promise.all([loadStoreData(), loadPublicFeed()]);
+    }
+  });
 });
 
 async function loadPublicFeed() {
