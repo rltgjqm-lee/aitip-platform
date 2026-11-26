@@ -19,6 +19,7 @@ import { renderMartPickingView } from './modules/picking.js';
 import { renderMartBoxingView } from './modules/boxing.js';
 import { renderMartSettlementView } from './modules/settlement.js';
 import { renderMartPwaControlView } from './modules/pwa-control.js';
+import { initMartAuthGate } from './modules/auth-gate.js';
 
 let currentView = 'catalog';
 
@@ -44,8 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  renderCurrentView();
-  connectMartPortalRealtime();
+  initMartAuthGate({
+    onAuthenticated: () => {
+      renderCurrentView();
+      connectMartPortalRealtime();
+    }
+  });
 });
 
 function showMartOrderToast(order = {}) {

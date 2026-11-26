@@ -5,22 +5,40 @@ import { nextMonotonicId, applyDailyPriceBatchToData } from '../../../packages/s
 import { buildPickingSummary, buildBoxingManifest, buildSettlementSummary } from '../../../packages/services/mart-logistics/backend/mart-fulfillment-calc.mjs';
 import { parseMartFlyerText, parseMartPosCsv, parseMartPrepSheet } from '../../../packages/core/merchant-meta/mart-catalog-parser.mjs';
 import { buildPublicMediaKey, buildSharedMediaKey, buildPrivateEvidenceKey, extractRegionCodeFromUid } from '../../../packages/core/shared/r2-key-builder.js';
+import {
+  buildSessionCookieHeader,
+  buildClearSessionCookieHeader
+} from '../../../packages/core/shared/auth-crypto.mjs';
+import {
+  getClientIp,
+  loginWithPassword,
+  authenticateRequest,
+  extendSession,
+  revokeSession,
+  resolveTenantMartId,
+  checkMartApiAccess
+} from '../../../packages/services/mart-logistics/backend/mart-auth-guard.mjs';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Content-Type': 'application/json; charset=utf-8'
-};
-
-function jsonRes(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: corsHeaders });
+function buildCorsHeaders(request) {
+  const origin = request?.headers?.get?.('Origin') || '';
+  const headers = {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Mart-Id',
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  if (origin) headers['Access-Control-Allow-Credentials'] = 'true';
+  return headers;
 }
 
 let _d1Seeded = false;
 
 export async function onRequest(context) {
   const { request, params, env } = context;
+  const corsHeaders = buildCorsHeaders(request);
+  const jsonRes = (data, status = 200, extraHeaders = {}) =>
+    new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, ...extraHeaders } });
+
   const method = request.method.toUpperCase();
   if (method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
 
@@ -29,14 +47,97 @@ export async function onRequest(context) {
     ? await request.json().catch(() => ({}))
     : {};
 
+  const isHttps = new URL(request.url).protocol === 'https:';
+  const hasD1 = Boolean(env?.DB && typeof env.DB.prepare === 'function');
+  const authCtx = hasD1 ? await authenticateRequest(env.DB, request) : null;
+
+  // ── 인증 전용 엔드포인트 (/api/mart/auth/*) ──
+  if (subPath === 'auth/login' && method === 'POST') {
+    if (!hasD1) return jsonRes({ success: false, error: 'D1 데이터베이스 바인딩이 필요합니다.' }, 503);
+    const result = await loginWithPassword(env.DB, {
+      email: body?.email,
+      password: body?.password,
+      userAgent: request.headers.get('User-Agent') || '',
+      ipAddress: getClientIp(request)
+    });
+    if (!result.ok) return jsonRes({ success: false, error: result.error }, result.status || 401);
+    return jsonRes(
+      {
+        success: true,
+        user: result.user,
+        expires_at: result.expires_at,
+        remaining_seconds: result.remaining_seconds
+      },
+      200,
+      { 'Set-Cookie': buildSessionCookieHeader(result.token, { secure: isHttps }) }
+    );
+  }
+
+  if (subPath === 'auth/me' && method === 'GET') {
+    if (!authCtx) {
+      return jsonRes({ success: true, authenticated: false, user: null, expires_at: null, remaining_seconds: 0 });
+    }
+    return jsonRes({
+      success: true,
+      authenticated: true,
+      user: authCtx.user,
+      expires_at: authCtx.expires_at,
+      remaining_seconds: authCtx.remaining_seconds
+    });
+  }
+
+  if (subPath === 'auth/extend' && method === 'POST') {
+    if (!hasD1) return jsonRes({ success: false, error: 'D1 데이터베이스 바인딩이 필요합니다.' }, 503);
+    if (!authCtx) return jsonRes({ success: false, error: '로그인이 필요합니다.' }, 401);
+    const extended = await extendSession(env.DB, authCtx, { ipAddress: getClientIp(request) });
+    if (!extended.ok) return jsonRes({ success: false, error: extended.error }, extended.status || 401);
+    return jsonRes(
+      {
+        success: true,
+        user: extended.user,
+        expires_at: extended.expires_at,
+        remaining_seconds: extended.remaining_seconds
+      },
+      200,
+      { 'Set-Cookie': buildSessionCookieHeader(authCtx.token, { secure: isHttps }) }
+    );
+  }
+
+  if (subPath === 'auth/logout' && method === 'POST') {
+    if (hasD1 && authCtx) {
+      await revokeSession(env.DB, authCtx, { ipAddress: getClientIp(request) });
+    }
+    return jsonRes(
+      { success: true },
+      200,
+      { 'Set-Cookie': buildClearSessionCookieHeader({ secure: isHttps }) }
+    );
+  }
+
+  // ── RBAC & 테넌트 가드 ──
+  if (hasD1) {
+    const access = checkMartApiAccess(method, subPath, authCtx);
+    if (!access.allowed) {
+      return jsonRes({ success: false, error: access.error }, access.status || 401);
+    }
+  }
+
+  const tenantMartId = resolveTenantMartId(
+    authCtx,
+    request,
+    env?.DEFAULT_MART_ID || martData.mart?.mart_id || 'MRT-11-650-01-47121-0001'
+  );
+
   let d1 = null;
-  if (env?.DB && typeof env.DB.prepare === 'function') {
-    d1 = new MartD1Adapter(env);
+  if (hasD1) {
+    d1 = new MartD1Adapter(env, tenantMartId);
     if (!_d1Seeded) {
       await d1.seedIfEmpty(martData);
       _d1Seeded = true;
     }
   }
+
+  try {
 
   if (subPath === 'profile') {
     if (method === 'GET') {
@@ -374,7 +475,7 @@ export async function onRequest(context) {
     const bytes = new Uint8Array(binStr.length);
     for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
     const mediaId = `med_0${Date.now().toString(32).padStart(10, '0')}`.padEnd(30, '0').slice(0, 30);
-    const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';
+    const martId = tenantMartId;
     const isPrivate = ['DELIVERY', 'CLAIM', 'RETURN'].includes(String(body.owner_type || '').toUpperCase());
     const isShared = !isPrivate && String(body.scope || body.domain || '').toUpperCase() === 'SHARED';
     const cleanBc = String(body.barcode || '').replace(/[^0-9]/g, '');
@@ -516,7 +617,7 @@ export async function onRequest(context) {
     }
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
     const mediaId = `med_0${Date.now().toString(32).padStart(10, '0')}`.padEnd(30, '0').slice(0, 30);
-    const martId = martData.mart?.mart_id || 'MRT-11-650-01-47121-0001';
+    const martId = tenantMartId;
     const r2Key = buildPublicMediaKey({ domain: 'MART', tenantUid: martId, itemType: 'products', mediaId, variant: 'orig' });
     if (env?.MEDIA_PUBLIC) {
       await env.MEDIA_PUBLIC.put(r2Key, bytes, { httpMetadata: { contentType } });
@@ -547,4 +648,8 @@ export async function onRequest(context) {
   }
 
   return jsonRes({ success: false, error: `Unknown mart endpoint: /api/mart/${subPath}` }, 404);
+  } catch (err) {
+    const status = Number(err?.status || 500);
+    return jsonRes({ success: false, error: err?.message || '서버 처리 중 오류가 발생했습니다.' }, status);
+  }
 }

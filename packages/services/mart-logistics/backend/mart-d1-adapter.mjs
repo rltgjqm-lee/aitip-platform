@@ -57,6 +57,11 @@ export class MartD1Adapter {
     const existing = p?.id
       ? await this.db.prepare('SELECT * FROM products WHERE id = ? LIMIT 1').bind(p.id).first().catch(() => null)
       : null;
+    if (existing && existing.mart_id && existing.mart_id !== this.martId) {
+      const err = new Error('다른 마트 소유의 상품은 수정할 수 없습니다.');
+      err.status = 403;
+      throw err;
+    }
     const merged = { ...(existing || {}) };
     for (const [k, v] of Object.entries(p || {})) {
       if (v !== undefined) merged[k] = v;
@@ -199,6 +204,7 @@ export class MartD1Adapter {
 
   async savePromoType(t) {
     const now = Date.now();
+    const typeId = t.id || (t.is_system ? `prt_${t.code}` : `prt_${this.martId}_${t.code}`);
     await this.db.prepare(`
       INSERT INTO mart_promo_types (id, mart_id, code, label, calc_mode, is_active, is_system, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -208,10 +214,10 @@ export class MartD1Adapter {
         is_active = excluded.is_active,
         updated_at = excluded.updated_at
     `).bind(
-      `prt_${t.code}`, this.martId, t.code, t.label, t.calc_mode || 'UNIT_DISCOUNT',
+      typeId, this.martId, t.code, t.label, t.calc_mode || 'UNIT_DISCOUNT',
       t.is_active !== false ? 1 : 0, t.is_system ? 1 : 0, now, now
     ).run();
-    return t;
+    return { ...t, id: typeId };
   }
 
   async getOrders() {
@@ -243,6 +249,14 @@ export class MartD1Adapter {
 
   async adjustOrderItem({ order_id, product_id, actual_qty, reason = '결품·수량 정정' } = {}) {
     if (!order_id || !product_id) throw new Error('order_id와 product_id가 필요합니다.');
+    const ownedOrder = await this.db.prepare(
+      'SELECT id FROM orders WHERE id = ? AND mart_id = ? LIMIT 1'
+    ).bind(order_id, this.martId).first();
+    if (!ownedOrder) {
+      const err = new Error('해당 마트 소유의 주문을 찾을 수 없습니다.');
+      err.status = 403;
+      throw err;
+    }
     const nextQty = Math.max(0, Number(actual_qty ?? 0));
     const item = await this.db.prepare(
       'SELECT * FROM order_items WHERE order_id = ? AND (product_id = ? OR id = ? OR product_name = ?) LIMIT 1'
@@ -420,7 +434,8 @@ export class MartD1Adapter {
   async createOrder(order) {
     const now = Date.now();
     const d = String(order.delivery_date || new Date().toISOString().slice(0, 10)).replace(/-/g, '').slice(2, 8);
-    const orderId = order.order_id || `ORD-11-650-01-47121-0001-${d}-${String(now).slice(-4)}`;
+    const martSuffix = String(this.martId || 'MRT-11-650-01-47121-0001').replace(/^MRT-/, '');
+    const orderId = order.order_id || `ORD-${martSuffix}-${d}-${String(now).slice(-4)}`;
     const totalAmount = (order.items || []).reduce((s, it) => s + Number(it.unit_price || 0) * Number(it.qty || 1), 0);
     const stmts = [
       this.db.prepare(`
