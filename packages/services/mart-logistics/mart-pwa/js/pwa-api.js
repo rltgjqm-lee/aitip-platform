@@ -6,6 +6,7 @@ const BASE = '/api/mart';
 
 async function req(path, opts = {}) {
   const res = await fetch(`${BASE}${path}`, {
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...opts.headers },
     ...opts
   });

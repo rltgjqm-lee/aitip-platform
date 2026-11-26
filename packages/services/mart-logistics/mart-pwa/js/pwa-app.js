@@ -6,6 +6,7 @@
 import { martPwaApi } from './pwa-api.js';
 import { evaluateCartPromotions } from './pwa-promo-engine.js';
 import { getL1List, getL2List, inferCategoryFromProduct } from '../../js/utils/mart-categories.js';
+import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 
 let persona = new URLSearchParams(location.search).get('mode') === 'facility' ? 'B2B_FACILITY' : 'B2C_CONSUMER'; // 'B2C_CONSUMER' | 'B2B_FACILITY'
 let largeText = false;
@@ -702,6 +703,16 @@ function connectMartPwaRealtime() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  render();
-  connectMartPwaRealtime();
+  initPortalAuthGate({
+    title: '하나로마트 몰 (PWA) 로그인',
+    badgeText: 'NH',
+    badgeColor: '#007749',
+    allowedRoles: ['MART_ADMIN', 'MART_PICKER', 'SUPER_ADMIN'],
+    headerSelector: null,
+    placeholderEmail: '이메일 입력',
+    onAuthenticated: () => {
+      render();
+      connectMartPwaRealtime();
+    }
+  });
 });

@@ -7,6 +7,7 @@
 import { martB2bApi } from './b2b-api.js';
 import { getL1List, getL2List, inferCategoryFromProduct } from '/core/shared/mart-categories.js';
 import { showToast } from '/core/shared/html.js';
+import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 
 const SESSION_KEY = 'aitip_mart_b2b_facility';
 const FACILITY_TYPE_KO = {
@@ -691,4 +692,16 @@ async function render() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', render);
+document.addEventListener('DOMContentLoaded', () => {
+  initPortalAuthGate({
+    title: '하나로마트 기관 B2B 로그인',
+    badgeText: 'B2B',
+    badgeColor: '#0f172a',
+    allowedRoles: ['MART_ADMIN', 'MART_PICKER', 'B2B_ORG', 'SUPER_ADMIN'],
+    headerSelector: null,
+    placeholderEmail: '이메일 입력',
+    onAuthenticated: () => {
+      render();
+    }
+  });
+});

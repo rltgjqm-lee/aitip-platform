@@ -85,8 +85,7 @@ export async function initPortalAuthGate({
   }
 
   function renderSessionBar() {
-    const host = document.querySelector(headerSelector);
-    if (!host) return;
+    const host = headerSelector ? document.querySelector(headerSelector) : null;
     let bar = document.getElementById('aitip-portal-session-bar');
     if (!state.user) {
       if (bar) bar.remove();
@@ -95,8 +94,13 @@ export async function initPortalAuthGate({
     if (!bar) {
       bar = document.createElement('div');
       bar.id = 'aitip-portal-session-bar';
-      bar.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:8px;background:#f8fafc;border:1px solid #cbd5e1;font-size:12px;color:#0f172a;margin-right:6px;white-space:nowrap;';
-      host.prepend(bar);
+      if (host) {
+        bar.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:8px;background:#f8fafc;border:1px solid #cbd5e1;font-size:12px;color:#0f172a;margin-right:6px;white-space:nowrap;';
+        host.prepend(bar);
+      } else {
+        bar.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:1600;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:rgba(248,250,252,0.96);border:1px solid #cbd5e1;box-shadow:0 8px 20px rgba(15,23,42,0.16);font-size:12px;color:#0f172a;white-space:nowrap;';
+        document.body.appendChild(bar);
+      }
     }
     const roleLabel = ROLE_LABEL[state.user.role] || state.user.role;
     const remainSec = Math.max(0, Math.floor((state.expiresAt - Date.now()) / 1000));
