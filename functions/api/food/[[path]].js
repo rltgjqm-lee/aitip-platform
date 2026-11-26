@@ -1,16 +1,37 @@
 // Cloudflare Pages Serverless Function for /api/food/*
 // 완전 동기화: DOC-02, DOC-07, DOC-14, DOC-15, DOC-18 (food-service.mjs 100% 매핑)
 import storeData from './store_data.json';
+import { authenticateRequest } from '../../../packages/services/mart-logistics/backend/mart-auth-guard.mjs';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Content-Type': 'application/json; charset=utf-8'
-};
+function buildCorsHeaders(request) {
+  const origin = request?.headers?.get?.('Origin') || '';
+  const headers = {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  if (origin) headers['Access-Control-Allow-Credentials'] = 'true';
+  return headers;
+}
+
+function isPublicFoodEndpoint(method, subPath) {
+  const m = String(method || 'GET').toUpperCase();
+  const p = String(subPath || '').replace(/^\/+|\/+$/g, '');
+  if (m === 'GET' && [
+    'store', 'store/hours', 'delivery-rules', 'delivery-regions',
+    'menus', 'categories', 'options', 'option-groups',
+    'coupons', 'reviews', 'store-blocks', 'holidays'
+  ].includes(p)) {
+    return true;
+  }
+  if (m === 'POST' && p === 'orders') return true;
+  return false;
+}
 
 export async function onRequest(context) {
-  const { request, params } = context;
+  const { request, params, env } = context;
+  const corsHeaders = buildCorsHeaders(request);
   const method = request.method.toUpperCase();
 
   if (method === 'OPTIONS') {
@@ -19,6 +40,17 @@ export async function onRequest(context) {
 
   const pathSegments = params.path || [];
   const subPath = pathSegments.join('/');
+  const hasD1 = Boolean(env?.DB && typeof env.DB.prepare === 'function');
+
+  if (hasD1 && !isPublicFoodEndpoint(method, subPath)) {
+    const authCtx = await authenticateRequest(env.DB, request);
+    if (!authCtx?.user) {
+      return new Response(JSON.stringify({ success: false, error: '가맹점 관리자 로그인이 필요합니다.' }), { status: 401, headers: corsHeaders });
+    }
+    if (authCtx.role !== 'SUPER_ADMIN') {
+      return new Response(JSON.stringify({ success: false, error: '접근 권한이 없습니다.' }), { status: 403, headers: corsHeaders });
+    }
+  }
 
   // 1. 매장 기본 정보
   if (subPath === 'store' || subPath === 'store/') {

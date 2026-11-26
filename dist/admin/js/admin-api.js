@@ -756,6 +756,7 @@ const authContext = {
 
 async function request(endpoint, options = {}) {
   const config = {
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       'x-admin-role': authContext.role,
@@ -1491,10 +1492,10 @@ export const adminApi = {
   // 20. 마트 연합 · 공동구매 · 3자 정산 & PWA 강제 제어 (DOC-19)
   async getMartUnionSnapshot() {
     const [martsRes, gbRes, stlRes, pwaRes] = await Promise.all([
-      fetch('/api/mart/marts').then(r => r.json()),
-      fetch('/api/mart/group-buys').then(r => r.json()),
-      fetch('/api/mart/settlements').then(r => r.json()),
-      fetch('/api/mart/pwa/config').then(r => r.json())
+      fetch('/api/mart/marts', { credentials: 'same-origin' }).then(r => r.json()),
+      fetch('/api/mart/group-buys', { credentials: 'same-origin' }).then(r => r.json()),
+      fetch('/api/mart/settlements', { credentials: 'same-origin' }).then(r => r.json()),
+      fetch('/api/mart/pwa/config', { credentials: 'same-origin' }).then(r => r.json())
     ]);
     return {
       marts: martsRes.marts || [],
@@ -1506,6 +1507,7 @@ export const adminApi = {
   async updateMartPwaControl(payload) {
     const res = await fetch('/api/mart/pwa/control', {
       method: 'PATCH',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
@@ -1514,6 +1516,7 @@ export const adminApi = {
   async decideMartGroupBuy(payload) {
     const res = await fetch('/api/admin/mart/group-buys/decide', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
@@ -1522,6 +1525,7 @@ export const adminApi = {
   async createMartCoSellProduct(payload) {
     const res = await fetch('/api/admin/mart/co-sell-products', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });

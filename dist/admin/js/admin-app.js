@@ -8,6 +8,7 @@
 
 import { adminApi, ROLE_ALLOWED_VIEWS } from './admin-api.js';
 import { setupAuth } from './modules/auth.js';
+import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 import { renderMasterDashboard } from './modules/dashboard.js';
 import { renderMerchantsView } from './modules/merchants.js';
 import { renderOnboardingView } from './modules/onboarding.js';
@@ -85,7 +86,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // D. 사이드바 및 네비게이션
   setupNavigation();
   setupGlobalEvents();
-  await loadCurrentView();
+  await initPortalAuthGate({
+    title: 'AITIP 슈퍼관리자 (HQ) 로그인',
+    badgeText: 'HQ',
+    badgeColor: '#0f172a',
+    allowedRoles: ['SUPER_ADMIN'],
+    headerSelector: '.header-right',
+    placeholderEmail: 'superking@aitip.com',
+    onAuthenticated: async () => {
+      await loadCurrentView();
+    }
+  });
 });
 
 // 사이드바 활성 메뉴 동기화

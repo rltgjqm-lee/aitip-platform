@@ -6,6 +6,7 @@
  * ============================================================================
  */
 import { merchantApi } from './api.js';
+import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 import { setupReceiptEvents } from './modules/receipt.js';
 import { renderKdsOrders, playOrderChime, initKdsFilterListeners, renderOrderHistory } from './modules/kds.js';
 import {
@@ -92,8 +93,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   initReviewFilterListeners(state);
   initKdsFilterListeners(state);
   initQuickStatusSwitches(state);
-  await refreshAllData();
-  initKdsLiveSync();
+  await initPortalAuthGate({
+    title: 'AITIP 가맹점관리자 (외식) 로그인',
+    badgeText: 'FOOD',
+    badgeColor: '#ea580c',
+    allowedRoles: ['SUPER_ADMIN'],
+    headerSelector: '.navbar-right',
+    placeholderEmail: 'superking@aitip.com',
+    onAuthenticated: async () => {
+      await refreshAllData();
+      initKdsLiveSync();
+    }
+  });
 });
 
 // KDS 실시간 주문 및 CTI 전화 인입 동기화 (DOC-17: WebSocket/MQTT + BroadcastChannel + 폴링 폴백)

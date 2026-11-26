@@ -1,20 +1,25 @@
 // Cloudflare Pages Serverless Function for /api/admin/*
 import martData from '../mart/mart_data.json';
 import storeData from '../food/store_data.json';
+import { authenticateRequest } from '../../../packages/services/mart-logistics/backend/mart-auth-guard.mjs';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-role, x-tenant-id',
-  'Content-Type': 'application/json; charset=utf-8'
-};
-
-function jsonRes(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: corsHeaders });
+function buildCorsHeaders(request) {
+  const origin = request?.headers?.get?.('Origin') || '';
+  const headers = {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-role, x-tenant-id',
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  if (origin) headers['Access-Control-Allow-Credentials'] = 'true';
+  return headers;
 }
 
 export async function onRequest(context) {
   const { request, params, env } = context;
+  const corsHeaders = buildCorsHeaders(request);
+  const jsonRes = (data, status = 200) =>
+    new Response(JSON.stringify(data), { status, headers: corsHeaders });
   const method = request.method.toUpperCase();
   if (method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
 
@@ -23,6 +28,16 @@ export async function onRequest(context) {
     ? await request.json().catch(() => ({}))
     : {};
   const hasD1 = Boolean(env?.DB && typeof env.DB.prepare === 'function');
+
+  if (hasD1) {
+    const authCtx = await authenticateRequest(env.DB, request);
+    if (!authCtx?.user) {
+      return jsonRes({ success: false, error: '슈퍼관리자 로그인이 필요합니다.' }, 401);
+    }
+    if (authCtx.role !== 'SUPER_ADMIN') {
+      return jsonRes({ success: false, error: '슈퍼관리자 권한이 필요합니다.' }, 403);
+    }
+  }
 
   if (subPath === 'dashboard') {
     const foodOrders = Array.isArray(storeData.orders) ? storeData.orders : [];
