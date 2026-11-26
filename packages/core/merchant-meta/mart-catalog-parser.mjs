@@ -5,6 +5,12 @@
  * 3. 대행기관 전처리·경로당 급식 발주서 파서 (전처리, 대/중/소 등급, 입수, 냉장/상온, 검수기준)
  */
 
+let _parserUidSeq = 0;
+function nextMonotonicId(prefix) {
+  _parserUidSeq = (_parserUidSeq + 1) % 10000;
+  return `${prefix}_${Date.now()}_${String(_parserUidSeq).padStart(4, '0')}`;
+}
+
 function parseWeightAndUnit(specText = '') {
   const s = String(specText || '');
   let weightGrams = 0;
@@ -108,8 +114,8 @@ function parseMartFlyerCsvRows(lines = []) {
     if (startDate && (!minStart || startDate < minStart)) minStart = startDate;
     if (endDate && (!maxEnd || endDate > maxEnd)) maxEnd = endDate;
 
-    const productId = `mrt_sku_${Date.now()}_${items.length}`;
-    const promoId = `mpr_${Date.now()}_${promotions.length}`;
+    const productId = nextMonotonicId('mrt_sku');
+    const promoId = nextMonotonicId('mpr');
     const promoName = `${name} (${promoType})`;
     promotions.push({
       id: promoId,
@@ -230,7 +236,7 @@ export function parseMartFlyerText(rawText = '') {
       .replace(/\s+/g, ' ')
       .trim();
 
-    const productId = `mrt_sku_${Date.now()}_${items.length}`;
+    const productId = nextMonotonicId('mrt_sku');
     const isFresh = /(거봉|무화과|오이|애호박|한돈|삼겹살|목심|양파|감자|대파|당근|무|계란|우유)/.test(cleanName);
     const catType = isFresh ? 'FRESH' : 'B2B_INDUSTRIAL';
     const paymentScope = inferPaymentScope(line);
@@ -249,7 +255,7 @@ export function parseMartFlyerText(rawText = '') {
     let linkedPromo = null;
     if (promoType !== 'PRICE_DISCOUNT' || (promoStart && promoEnd) || cardTargets.length > 0 || daysOfWeek.length > 0) {
       linkedPromo = {
-        id: `mpr_${Date.now()}_${promotions.length}`,
+        id: nextMonotonicId('mpr'),
         name: `${cleanName || '전단 행사'} (${promoType})`,
         promo_type: promoType,
         calc_mode: calcMode,
@@ -320,7 +326,7 @@ export function parseMartPosCsv(csvText = '') {
     const isFresh = taxLabel === '면세' || /^200/.test(barcode || '') || /(농산|축산|수산|유제품)/.test(categoryPath || '');
     const catType = isFresh ? 'FRESH' : 'B2B_INDUSTRIAL';
     items.push({
-      id: `mrt_pos_${Date.now()}_${i}`,
+      id: nextMonotonicId('mrt_pos'),
       barcode: barcode || `20000${i}`,
       name: name || 'POS 상품',
       category_type: catType,
@@ -371,7 +377,7 @@ export function parseMartPrepSheet(rawText = '') {
     const isCold = /냉장|0~5℃|진공/.test(`${detail} ${note}`);
 
     items.push({
-      id: `mrt_prep_${Date.now()}_${i}`,
+      id: nextMonotonicId('mrt_prep'),
       barcode: `290${String(1000000000 + i).slice(-10)}`,
       name: name || '전처리 품목',
       category_type: 'PREP_PROCESSED',

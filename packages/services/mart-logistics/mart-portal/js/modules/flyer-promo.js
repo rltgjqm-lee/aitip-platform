@@ -703,7 +703,7 @@ export async function renderMartFlyerView(container, opts = {}) {
   container.querySelector('#btn-dl-promo-rules-csv')?.addEventListener('click', () => {
     downloadExcelCsv(
       `mart_promo_rules_${new Date().toISOString().slice(0, 10)}.csv`,
-      ['규칙ID', '행사명', '할인율(%)', '할인금액(원)', '묶음가(원)', '최대할인(원)', '한정수량(0=무제한)', '시작일', '종료일', '상태(ACTIVE/ENDED)'],
+      ['규칙ID(수정시 유지/신규시 공란)', '행사명', '할인율(%)', '할인금액(원)', '묶음가(원)', '최대할인(원)', '한정수량(0=무제한)', '시작일', '종료일', '상태(ACTIVE/ENDED)'],
       filtered.map(pr => [
         pr.id,
         pr.name || '',
@@ -722,26 +722,62 @@ export async function renderMartFlyerView(container, opts = {}) {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await readCsvOrTextFile(file);
-    const rows = parseDelimitedRows(text).filter(c => c[0] && c[0] !== '규칙ID');
+    const rows = parseDelimitedRows(text).filter(c => {
+      const col0 = String(c[0] || '').trim();
+      const col1 = String(c[1] || '').trim();
+      if (!col0 && !col1) return false;
+      if (col0.startsWith('규칙ID')) return false;
+      return true;
+    });
+    let createdCount = 0;
     let updatedCount = 0;
     for (const c of rows) {
       const id = String(c[0] || '').trim();
+      const name = c[1] ? String(c[1]).trim() : '';
+      const discount_pct = c[2] !== undefined && c[2] !== '' ? Number(c[2]) : undefined;
+      const discount_amount = c[3] !== undefined && c[3] !== '' ? Number(c[3]) : undefined;
+      const bundle_price = c[4] !== undefined && c[4] !== '' ? Number(c[4]) : undefined;
+      const max_discount_amount = c[5] !== undefined && c[5] !== '' ? Number(c[5]) : undefined;
+      const total_limit_qty = c[6] !== undefined && c[6] !== '' ? Number(c[6]) : undefined;
+      const start_date = c[7] ? String(c[7]).trim() : undefined;
+      const end_date = c[8] ? String(c[8]).trim() : undefined;
+      const status = c[9] ? String(c[9]).trim().toUpperCase() : undefined;
+
+      if (!id) {
+        if (!name) continue;
+        await martApi.createPromotion({
+          name,
+          promo_type: 'PRICE_DISCOUNT',
+          calc_mode: (bundle_price && bundle_price > 0) ? 'BOGO_BUNDLE' : 'UNIT_DISCOUNT',
+          discount_pct: discount_pct ?? 0,
+          discount_amount: discount_amount ?? 0,
+          bundle_price: bundle_price ?? 0,
+          max_discount_amount: max_discount_amount ?? 0,
+          total_limit_qty: total_limit_qty ?? 0,
+          start_date: start_date || '',
+          end_date: end_date || '',
+          status: status || 'ACTIVE'
+        });
+        createdCount += 1;
+        continue;
+      }
+
       if (!promotions.some(p => p.id === id)) continue;
       await martApi.updatePromotion({
         id,
-        name: c[1] ? String(c[1]).trim() : undefined,
-        discount_pct: c[2] !== undefined && c[2] !== '' ? Number(c[2]) : undefined,
-        discount_amount: c[3] !== undefined && c[3] !== '' ? Number(c[3]) : undefined,
-        bundle_price: c[4] !== undefined && c[4] !== '' ? Number(c[4]) : undefined,
-        max_discount_amount: c[5] !== undefined && c[5] !== '' ? Number(c[5]) : undefined,
-        total_limit_qty: c[6] !== undefined && c[6] !== '' ? Number(c[6]) : undefined,
-        start_date: c[7] ? String(c[7]).trim() : undefined,
-        end_date: c[8] ? String(c[8]).trim() : undefined,
-        status: c[9] ? String(c[9]).trim().toUpperCase() : undefined
+        name: name || undefined,
+        discount_pct,
+        discount_amount,
+        bundle_price,
+        max_discount_amount,
+        total_limit_qty,
+        start_date,
+        end_date,
+        status
       });
       updatedCount += 1;
     }
-    showToast(`할인 규칙 ${updatedCount}건이 일괄 수정되었습니다.`, 'success');
+    showToast(`할인 규칙 신규 ${createdCount}건 등록, 기존 ${updatedCount}건 수정되었습니다.`, 'success');
     await renderMartFlyerView(container);
   });
 }
