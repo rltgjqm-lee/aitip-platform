@@ -12,7 +12,9 @@
     "db:migrate:remote": "wrangler d1 migrations apply aitip-core-db --remote",
     "deploy": "node scripts/build-pages.mjs && wrangler pages deploy dist --project-name aitip-platform",
     "test:schema": "python scripts/test_schema_integrity.py",
-    "test": "npm run test:schema"
+    "test:regression": "node scripts/run-regression-tests.mjs",
+    "test:all": "npm run test:schema && npm run test:regression",
+    "test": "npm run test:regression"
   },
   "engines": {
     "node": ">=20.0.0"

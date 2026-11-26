@@ -1,0 +1,25 @@
+name: AITIP CI Quality Gate
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build static Pages bundle
+        run: node scripts/build-pages.mjs
+
+      - name: Run automated regression suite
+        run: node scripts/run-regression-tests.mjs
