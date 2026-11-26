@@ -5,6 +5,7 @@
 export function downloadExcelCsv(filename, headers, rows = []) {
   const escCell = (v) => {
     const s = String(v ?? '');
+    if (/^\d{11,}$/.test(s)) return `"=""${s}"""`;
     return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = [
@@ -38,5 +39,10 @@ export function parseDelimitedRows(rawText = '') {
     .split(/\r?\n/)
     .map(l => l.trim())
     .filter(Boolean)
-    .map(line => line.split(/\t|,/).map(c => c.trim().replace(/^"|"$/g, '')));
+    .map(line => line.split(/\t|,/).map(c => {
+      let v = c.trim();
+      if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1).replace(/""/g, '"');
+      if (v.startsWith('="') && v.endsWith('"')) v = v.slice(2, -1);
+      return v.trim();
+    }));
 }
