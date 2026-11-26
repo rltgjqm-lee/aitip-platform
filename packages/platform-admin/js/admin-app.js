@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     badgeColor: '#0f172a',
     allowedRoles: ['SUPER_ADMIN'],
     headerSelector: '.header-right',
-    placeholderEmail: 'superking@aitip.com',
+    placeholderEmail: '이메일 입력',
     onAuthenticated: async () => {
       await loadCurrentView();
     }

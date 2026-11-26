@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     badgeColor: '#ea580c',
     allowedRoles: ['SUPER_ADMIN'],
     headerSelector: '.navbar-right',
-    placeholderEmail: 'superking@aitip.com',
+    placeholderEmail: '이메일 입력',
     onAuthenticated: async () => {
       await refreshAllData();
       initKdsLiveSync();

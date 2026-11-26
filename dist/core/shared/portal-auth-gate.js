@@ -61,7 +61,7 @@ export async function initPortalAuthGate({
   badgeColor = '#0f172a',
   allowedRoles = ['SUPER_ADMIN'],
   headerSelector = '.header-right',
-  placeholderEmail = 'superking@aitip.com',
+  placeholderEmail = '이메일 입력',
   onAuthenticated = null
 } = {}) {
   const state = {

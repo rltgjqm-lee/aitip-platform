@@ -155,7 +155,7 @@ function showLoginOverlay(noticeMessage = '') {
       <form id="mart-auth-form" style="display:flex;flex-direction:column;gap:12px;">
         <div>
           <label for="mart-auth-email" style="display:block;font-size:12px;font-weight:700;color:#334155;margin-bottom:4px;">관리자 이메일</label>
-          <input id="mart-auth-email" type="email" required autocomplete="username" placeholder="mart@aitip.com"
+          <input id="mart-auth-email" type="email" required autocomplete="username" placeholder="이메일 입력"
             style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;" />
         </div>
         <div>
