@@ -1,7 +1,7 @@
 # 🚀 AITIP-Platform 마스터 핸드오버 및 실무 개발 지침서 (HANDOVER)
 
-> **문서 번호**: AITIP-HANDOVER-2026-V34  
-> **최종 갱신 일시**: 2026-11-26 07:07 (KST)  
+> **문서 번호**: AITIP-HANDOVER-2026-V35  
+> **최종 갱신 일시**: 2026-11-26 16:35 (KST)  
 > **시스템 규격**: STD-ENTERPRISE-MASTER-2026-V26 (전사 8대 계층형 UID & 통계청 KSIC-11 5자리 법정코드 결합, 주소 엔진 ➔ 관할 총판·대리점 자동 매핑 거버넌스, $O(1)$ 핀포인트 조회, UI 숨김 표시 및 토글 관제, 소상공인 본체 코어 & AITIP 단말기 연동, 경로당·마을 공동구매 메커니즘, 쿼드러플 디스패칭, 결품 듀얼 영수증, CS 분쟁, 알림톡/0504, MDM/OTA, 경영BI/수요예측 완전 통합, 전사 이모티콘 100% 완전 박멸, 물음표 커서 영구 퇴출, 전사 테이블 1열 상호명/관리코드 전진 배치, 가맹점 상세 관제 SSOT 모달 완성, MQTT-하드웨어 기술 규격서 증보 v1.1.0 완비, MQTT 실시간 중추망 3대 파이프라인 E2E 100% 가동, 전사 8대 계층형 UID 일원화 정규화 완결, 카카오 최신 CDN t1.kakaocdn.net 및 PWA 서비스 워커 sw.js 캐시 판올림 전사 7개 프로젝트 100% GitHub 푸시 완료, Cloudflare Pages 서버리스 한계 규명 및 TryCloudflare 퀵 터널 원격 실물 테스트 체계 완비, 슈퍼관리자 단순 조회를 탈피한 4대 축 실무형 통합 관제탑 Control Tower 고도화 로드맵 수립)  
 > **개발 행동 강령**: `AGENTS.md` (절대 신조: 상생 신뢰, 정직한 조언, 거짓말/꼼수 금지, 사전 보고·승인제, UID 무결성 사수, ESM/API 계층화)  
 > **프로젝트 위치**: `C:\Users\user\Desktop\aitip-platform`  
@@ -980,6 +980,48 @@ aitip-platform/
 >   1. **`C005` 잔여 일일 분할 적재 (일 2,000건 기준, 건당 4 rows written 실측)**: `node scripts/import-c005-barcodes.mjs --apply --offset=14000 --limit=2000` (2026-11-26 2,000건 적재 완료 ➔ 누적 **`18,994건`**, `HACCP 5,206` + `MFDS 13,788`, DB `5.74 MB`, 잔여 `113,533건` / 약 57일).
 >   2. **외부 테스트 공개 범위·인증 결정 (`functions/_middleware.js` 보류 중)**: 사용자 최종 확정 시 적용.
 >   3. **후속 단계(라이더 앱 연동 시)**: `MEDIA_PRIVATE` 비공개 배달증빙·클레임 사진 서명 조회 엔드포인트 구현, `mart-logistics` MQTT 브릿지 연결.
+
+---
+
+### 31) 마트 UX/CSV 정밀 개선 및 전사 4대 엔터프라이즈 보강 완결 (인증·RBAC·테넌트 격리 / 런타임 단일화·핸들러 분리 / 원자적 재고·감사로그 / CI 회귀테스트) (2026-11-26)
+
+> **다음 AI를 위한 현재 상태 요약 (2026-11-26 16:35 기준, `main` HEAD: `f9195a6`, 프로덕션: `https://5a9e55db.aitip-platform.pages.dev` / `https://aitip-platform.pages.dev`)**:
+> - **완료 항목 A — 마트 포털 실무 UX 및 CSV/UID 정밀 개선 (`c7a60f1`, `1a2ed44`)**:
+>   1. **공통 36px 지연로딩 썸네일 적용**: `catalog-helpers.js`의 `renderProductThumbHtml()`을 `channel-assign.js`, `daily-price.js`, `flyer-promo.js` 전체에 적용.
+>   2. **할인·행사 연결 상품 아코디언 인라인 수정**: `flyer-promo.js` 각 행사 행에서 연결 상품을 아코디언으로 펼쳐 행사가 인라인 수정, 연결 해제, 상품 연결 탭 바로가기 지원.
+>   3. **한셀/엑셀 바코드 지수변환(`E+12`) 방어 및 규칙 CSV UID 자동 발급**:
+>      - `mart-portal/js/utils/excel-csv.js`: 11자리 이상 바코드를 `"=""..."""` 텍스트 수식으로 감싸고 업로드 파싱 시 자동 언랩.
+>      - `flyer-promo.js`: 할인 규칙 CSV 1열 헤더를 `규칙ID(수정시 유지/신규시 공란)`으로 변경하고, 공란+행사명 입력 행 업로드 시 `martApi.createPromotion()` 호출로 플랫폼 단조 증가 UID(`mpr_...`) 자동 발급.
+>      - `packages/core/merchant-meta/mart-catalog-parser.mjs`: 잔여 `Date.now()` ID 6곳을 `nextMonotonicId()`로 통일.
+> - **완료 항목 B — GitHub 5대 커머스 비교 기반 4대 엔터프라이즈 보강 (`e249bd9` ~ `f9195a6`)**:
+>   1. **[1번] D1 1시간 세션 인증 + 시간 연장 + RBAC + 멀티마트 테넌트 격리**:
+>      - **D1 마이그레이션**: `packages/services/mart-logistics/migrations/0002_auth_rbac_tenant.sql` 원격(`aitip-core-db`, 17개 테이블 `5.80 MB`) 및 로컬(`.wrangler/state/v3/d1`) 모두 적용 완료 (`platform_users`, `auth_sessions`, `auth_audit_logs` + 인덱스 5종).
+>      - **암호화·세션 모듈**: `packages/core/shared/auth-crypto.mjs` (Web Crypto `PBKDF2-SHA256` 100,000회, 32B CSPRNG 토큰 + SHA-256 해시 저장, 1시간=`3600초` TTL, `HttpOnly; Secure; SameSite=Lax; Path=/` 쿠키 `aitip_sid`).
+>      - **서버 가드 & 테넌트 격리**: `packages/services/mart-logistics/backend/mart-auth-guard.mjs` + `mart-d1-adapter.mjs` (`upsertProduct` 타 마트 소유 `403` 차단, `adjustOrderItem` 주문 소유 검증 선행, `savePromoType` 지점별 ID 충돌 방지, `createOrder` 테넌트 UID 기반 주문번호, R2 `SHARED` 공용 풀 삭제 `SUPER_ADMIN` 전용).
+>      - **전사 6개 하위 포털 로그인 게이트 완비** (`packages/core/shared/portal-auth-gate.js`, `mart-portal/js/modules/auth-gate.js`):
+>        - 마트 ID (`MART_ADMIN`, `MART_PICKER`, `SUPER_ADMIN`): `/mart/`, `/mart/pwa/`, `/mart/b2b/` (1시간 카운트다운 + `[시간 연장]` + `[로그아웃]`)
+>        - 슈퍼관리자 전용 (`SUPER_ADMIN`): `/admin/`, `/food/`, `/food/pwa/` (외식 점주 테스트는 슈퍼관리자 계정으로 통합 진행)
+>        - 보안 조치: 모든 로그인 화면 `placeholder`에서 실제 계정 이메일 제거(`이메일 입력`), `scripts/seed-auth-users.mjs`는 환경변수(`MART_ADMIN_PW`, `SUPER_ADMIN_PW`)로만 원격(`--apply`)/로컬(`--local`) 시드 지원(코드 내 비밀번호 하드코딩 0건).
+>   2. **[2번] 로컬·운영 런타임 단일화 및 마트 API 3대 도메인 ESM 핸들러 분리 (`77499a9`)**:
+>      - `package.json`: `db:migrate:local`, `db:migrate:remote`, `dev:pages`(`wrangler pages dev dist`), `dev:legacy`(`dev-server.mjs`) 표준화.
+>      - `functions/api/mart/[[path]].js` (`655줄` ➔ `80줄` 슬림화) ➔ `packages/services/mart-logistics/backend/handlers/` 아래 `mart-auth-handler.mjs`, `mart-media-handler.mjs`, `mart-commerce-handler.mjs` 3대 도메인 모듈로 분리.
+>      - `functions/api/admin/[[path]].js` 누락 엔드포인트 3종(`devices`, `payments/transactions`, `agencies`) 및 `stores`/`marts` 숫자 집계 필드 보강, `dashboard.js:183` 방어 처리.
+>      - `scripts/build-pages.mjs`: `packages/core/merchant-meta` ➔ `dist/core/merchant-meta` 복사 추가(`/food/` `bulk-catalog-parser.mjs` MIME `text/html` 에러 해결) 및 `food/index.html:476` `24:00` ➔ `23:59` 수정.
+>   3. **[3번] 원자적(Atomic) D1 재고·행사 한정수량 차감 + 실시간 감사 로그 (`efed367`)**:
+>      - `packages/services/mart-logistics/backend/mart-inventory-tx.mjs`: 조건부 원자적 `UPDATE`로 동시 주문 초과 판매 및 행사 `total_limit_qty` 초과 시 `409 Conflict` + 자동 보상 롤백(`compensateReservations`), 취소(`CANCELLED`) 및 결품 정정 시 자동 복원.
+>      - `mart-commerce-handler.mjs` 핵심 변경 9종 `auth_audit_logs` 기록 + `GET /api/admin/audit-logs` 실제 D1 최근 100건 조회 연동.
+>   4. **[4번] 자동 회귀 테스트 스위트 및 GitHub Actions CI (`5aadbe0`)**:
+>      - `scripts/run-regression-tests.mjs` (Node 내장 `node:test`, 외부 의존성 0개, 6/6 PASS) + `.github/workflows/ci-quality-gate.yml` (`main` Push/PR 자동 실행).
+> - **실측 검증 결과 (2026-11-26)**:
+>   - 자동 회귀 테스트: `node scripts/run-regression-tests.mjs` **6/6 PASS (FAIL 0)**.
+>   - 실운영 프로덕션(`https://aitip-platform.pages.dev`) E2E 검증: 비로그인 차단(`401`), 역할 위반 차단(`403`), 로그인·1시간 타이머·연장(`3600초`)·로그아웃, 초과 판매 차단(`409`), 실시간 감사 로그(`GET /api/admin/audit-logs` 17건 실측), `/core/merchant-meta/bulk-catalog-parser.mjs` `200 application/javascript`, `GET /api/food/menu` & `GET /api/food/public-feed` `200 OK` 모두 통과.
+> - **미구현·제약 사항 (Gap) 및 다음 이어서 진행할 과제 (Next Steps)**:
+>   1. **비밀번호 변경 UI 및 운영 계정 비밀번호 강화**: 현재 테스트용 시드 비밀번호는 크롬 유출 DB 경고 대상이므로, 운영 전환 전 고유 비밀번호로 변경(`scripts/seed-auth-users.mjs --apply`) 및 포털 상단 `[비밀번호 변경]` 모달 구현 권장.
+>   2. **`C005` 식약처 바코드 잔여 일일 분할 적재**: 다음 배치 `node scripts/import-c005-barcodes.mjs --apply --offset=14000 --limit=2000` (누적 `18,994건`, `HACCP 5,206` + `MFDS 13,788`).
+>   3. **실결제(PG) 어댑터 연동 및 정산 대사 고도화**: 결품 정정 시 PG 부분취소 자동 호출, 기관 B2B 후불 여신 정산서 PDF 출력.
+>   4. **소비자 공개 전환 시 체크포인트**: 현재 테스트 보호를 위해 `/mart/pwa/`, `/mart/b2b/`, `/food/pwa/`에도 `initPortalAuthGate`가 걸려 있으므로, 대외 소비자 공개 시 각 `pwa-app.js`/`b2b-app.js`의 `initPortalAuthGate` 호출만 해제하면 즉시 공개 전환 가능.
+>   5. **후속 단계(라이더 앱 연동 시)**: `MEDIA_PRIVATE` 비공개 증빙 서명 조회 엔드포인트 및 `mart-logistics` MQTT 브릿지 연결.
+
 
 
 

@@ -330,6 +330,26 @@
 3. **D1 공용 미디어 복합 인덱스 추가 (`0001_mart_d1_init.sql`, `schema_r2_media_v01.sql`)**
    - 원격 `aitip-core-db`에 `idx_media_shared_lookup (domain, deleted_at, upload_status, created_at)` 생성 및 `PRAGMA index_list(media_objects)` 실측 검증 완료.
 
+---
+
+## 15. 엔터프라이즈 보안·인증(1시간 세션)·멀티테넌트·원자적 재고·CI 품질 관문 (2026-11-26 반영)
+
+1. **D1 세션 인증 · 1시간 TTL + 시간 연장 · RBAC · 멀티마트 테넌트 격리**
+   - 마이그레이션: `packages/services/mart-logistics/migrations/0002_auth_rbac_tenant.sql` (`platform_users`, `auth_sessions`, `auth_audit_logs` + 5개 인덱스).
+   - 암호화·세션: `packages/core/shared/auth-crypto.mjs` (`PBKDF2-SHA256` 100,000회, `aitip_sid` `HttpOnly` 쿠키, 1시간=`3600초` TTL).
+   - 인증 엔드포인트: `POST /api/mart/auth/login`, `GET /api/mart/auth/me`, `POST /api/mart/auth/extend`, `POST /api/mart/auth/logout`.
+   - 권한 매트릭스: 마트 3대 포털(`/mart/`, `/mart/pwa/`, `/mart/b2b/`)은 마트 ID(`MART_ADMIN`, `MART_PICKER`, `SUPER_ADMIN`), 본사·외식 포털(`/admin/`, `/food/`, `/food/pwa/`)은 `SUPER_ADMIN` 전용.
+   - 테넌트 격리: `mart-auth-guard.mjs` + `mart-d1-adapter.mjs`에서 일반 마트 계정은 세션의 `user.mart_id`로 강제 고정(타 지점 상품/주문 수정 시 `403` 차단, R2 `SHARED` 공용 풀 삭제는 `SUPER_ADMIN` 전용).
+2. **마트 API 3대 도메인 ESM 핸들러 분리 및 로컬·운영 단일화**
+   - `functions/api/mart/[[path]].js`를 80줄 진입점으로 슬림화하고 `handlers/mart-auth-handler.mjs`, `handlers/mart-media-handler.mjs`, `handlers/mart-commerce-handler.mjs`로 분리.
+   - `package.json`에 `db:migrate:local`, `db:migrate:remote`, `dev:pages` 표준화.
+3. **원자적(Atomic) 재고·행사 한정수량 차감 & 실시간 감사 로그**
+   - `packages/services/mart-logistics/backend/mart-inventory-tx.mjs`: 조건부 `UPDATE` 기반 초과 판매 `409 Conflict` 차단 및 자동 보상 롤백, 취소/결품 정정 시 자동 복원.
+   - 핵심 변경 9종 `auth_audit_logs` 영구 기록 및 `GET /api/admin/audit-logs` 실데이터 연동.
+4. **자동 회귀 테스트 및 GitHub Actions CI**
+   - `scripts/run-regression-tests.mjs` (외부 의존성 0개, 6/6 PASS) + `.github/workflows/ci-quality-gate.yml` 구축 완료.
+
+
 
 
 
