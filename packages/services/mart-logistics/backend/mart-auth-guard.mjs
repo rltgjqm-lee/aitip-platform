@@ -273,10 +273,10 @@ export function isPublicMartEndpoint(method, subPath) {
   if (p === 'auth/logout' && m === 'POST') return true;
   if (p === 'auth/me' && m === 'GET') return true;
 
-  // 소비자 PWA 공개 읽기 및 주문/공구 참여
-  if (m === 'GET' && (p === 'catalog' || p === 'pwa/config' || p === 'group-buys')) return true;
+  // 소비자 PWA & B2B 기관몰 공개 읽기 및 주문/공구/가입 신청
+  if (m === 'GET' && (p === 'catalog' || p === 'pwa/config' || p === 'group-buys' || p === 'marts')) return true;
   if (m === 'GET' && p.startsWith('media/public/')) return true;
-  if (m === 'POST' && (p === 'orders' || p === 'group-buys/join')) return true;
+  if (m === 'POST' && (p === 'orders' || p === 'group-buys/join' || p === 'b2b/login' || p === 'facilities/register')) return true;
 
   return false;
 }
@@ -300,8 +300,8 @@ export function checkMartApiAccess(method, subPath, authCtx) {
     return { allowed: true };
   }
 
-  // 슈퍼관리자 전용 영역
-  if (p === 'marts' || (m === 'DELETE' && p.startsWith('media/shared'))) {
+  // 슈퍼관리자 전용 영역 (지점 마스터 쓰기 / 공용 이미지 삭제)
+  if ((p === 'marts' && m !== 'GET') || (m === 'DELETE' && p.startsWith('media/shared'))) {
     return { allowed: false, status: 403, error: '슈퍼관리자 권한이 필요합니다.' };
   }
 

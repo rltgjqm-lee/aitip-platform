@@ -101,11 +101,13 @@ test('3. RBAC 권한 매트릭스 · 멀티마트 테넌트 격리 · R2 공용 
   assert.equal(resolveTenantMartId(superCtx, spoofReq), 'MRT-OTHER');
 
   assert.equal(checkMartApiAccess('GET', 'catalog', null).allowed, true);
+  assert.equal(checkMartApiAccess('GET', 'marts', null).allowed, true);
+  assert.equal(checkMartApiAccess('POST', 'b2b/login', null).allowed, true);
   assert.equal(checkMartApiAccess('POST', 'products', null).status, 401);
   assert.equal(checkMartApiAccess('POST', 'prices/batch', pickerCtx).status, 403);
   assert.equal(checkMartApiAccess('GET', 'picking', pickerCtx).allowed, true);
-  assert.equal(checkMartApiAccess('GET', 'marts', martCtx).status, 403);
-  assert.equal(checkMartApiAccess('GET', 'marts', superCtx).allowed, true);
+  assert.equal(checkMartApiAccess('POST', 'marts', martCtx).status, 403);
+  assert.equal(checkMartApiAccess('POST', 'marts', superCtx).allowed, true);
 
   assert.equal(
     canModifyMediaObject(martCtx, { domain: 'SHARED', tenant_id: 'MRT-11-650-01-47121-0001' }, { isDelete: true }),
