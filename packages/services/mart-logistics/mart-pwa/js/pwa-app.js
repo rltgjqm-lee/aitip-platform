@@ -7,6 +7,11 @@ import { martPwaApi } from './pwa-api.js';
 import { evaluateCartPromotions } from './pwa-promo-engine.js';
 import { getL1List, getL2List, inferCategoryFromProduct } from '../../js/utils/mart-categories.js';
 import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
+import {
+  getBlockScheduleStatus,
+  formatScheduleSummary,
+  buildPromoFieldBadges
+} from '/core/shared/mart-promo-display.js';
 
 let persona = new URLSearchParams(location.search).get('mode') === 'facility' ? 'B2B_FACILITY' : 'B2C_CONSUMER'; // 'B2C_CONSUMER' | 'B2B_FACILITY'
 let largeText = false;
@@ -51,6 +56,7 @@ async function render() {
   const mart = catRes.mart || {};
   const products = catRes.products || [];
   const promotions = catRes.promotions || [];
+  const promoMap = new Map(promotions.map(pr => [pr.id, pr]));
   const marts = martsRes.marts || [];
   const groupBuys = gbRes.group_buys || [];
   const orders = ordersRes.orders || [];
@@ -192,7 +198,7 @@ async function render() {
         ? fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv)
         : visibleProducts.filter(p => p.applied_promo_id || Number(p.sale_price || 0) < Number(p.regular_price || 0)).slice(0, 4);
       const finalList = list.length > 0 ? list : visibleProducts.slice(0, 4);
-      return renderProductGrid(blk?.title || '1+1 · 골라담기 · 행사 상품', finalList, cfg);
+      return renderProductGrid(blk?.title || '1+1 · 골라담기 · 행사 상품', finalList, cfg, promoMap);
     },
     CURATED_SHELF: (blk) => {
       const fids = Array.isArray(blk?.featured_product_ids) ? blk.featured_product_ids : [];
@@ -201,9 +207,68 @@ async function render() {
       const list = (!q && fids.length > 0)
         ? fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv)
         : visibleProducts;
-      return renderProductGrid(q ? `검색 결과 (${visibleProducts.length}건)` : (blk?.title || '우리동네 추천 진열대'), list, cfg);
+      return renderProductGrid(q ? `검색 결과 (${visibleProducts.length}건)` : (blk?.title || '우리동네 추천 진열대'), list, cfg, promoMap);
     },
     CO_SELL_AND_GROUP_BUY: () => ''
+  };
+
+  const renderCustomPromoShelf = (blk) => {
+    const linkedPromo = blk.linked_promo_id ? promoMap.get(blk.linked_promo_id) : null;
+    const sched = getBlockScheduleStatus(blk, linkedPromo);
+    if (!sched.active) return '';
+
+    const fids = Array.isArray(blk.featured_product_ids) ? blk.featured_product_ids : [];
+    const ov = blk.shelf_overrides || {};
+    const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price) } : p);
+    let list = [];
+    if (fids.length > 0) {
+      list = fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv);
+    } else if (blk.linked_promo_id) {
+      list = visibleProducts.filter(p => p.applied_promo_id === blk.linked_promo_id).map(applyOv);
+    }
+    if (list.length === 0) return '';
+
+    const fieldBadges = buildPromoFieldBadges(linkedPromo);
+    const schedText = formatScheduleSummary(blk);
+    const layout = blk.layout || 'GRID';
+    const isHero = layout === 'HERO';
+    const isCountdown = layout === 'COUNTDOWN';
+    const isHoriz = layout === 'HORIZONTAL';
+    const totalLimit = Number(linkedPromo?.total_limit_qty || 0);
+    const usedQty = Number(linkedPromo?.used_qty || 0);
+    const remainQty = totalLimit > 0 ? Math.max(0, totalLimit - usedQty) : 0;
+    const remainPct = totalLimit > 0 ? Math.min(100, Math.round((remainQty / totalLimit) * 100)) : 0;
+
+    return `
+      <div class="section-block" style="${isHero ? 'border: 1.5px solid #007749; background: #f8fafc;' : ''}">
+        <div style="${isHero ? 'background: #0f172a; color: #fff; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px;' : 'margin-bottom: 10px;'}">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <strong style="font-size: 14.5px; ${isHero ? 'color: #fff;' : 'color: #0f172a;'}">${esc(blk.title || linkedPromo?.name || '기획 특가')}</strong>
+            <span style="font-size: 11px; ${isHero ? 'color: #cbd5e1;' : 'color: #64748b;'}">${esc(schedText)}</span>
+          </div>
+          ${blk.subtitle ? `<div style="font-size: 12px; margin-top: 3px; ${isHero ? 'color: #e2e8f0;' : 'color: #475569;'}">${esc(blk.subtitle)}</div>` : ''}
+          ${fieldBadges.length > 0 ? `
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;">
+              ${fieldBadges.map(fb => `<span class="badge ${fb.tone === 'green' ? 'badge-fresh' : fb.tone === 'red' ? 'badge-pos' : 'badge-promo'}">${esc(fb.text)}</span>`).join('')}
+            </div>
+          ` : ''}
+          ${isCountdown && totalLimit > 0 ? `
+            <div style="margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: #b91c1c; margin-bottom: 3px;">
+                <span>선착순 한정수량 잔여</span>
+                <span>${remainQty} / ${totalLimit}개 남음</span>
+              </div>
+              <div style="background: #fee2e2; height: 6px; border-radius: 999px; overflow: hidden;">
+                <div style="background: #dc2626; height: 100%; width: ${remainPct}%;"></div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+        <div class="prod-grid" style="${isHoriz ? 'display: flex; overflow-x: auto; gap: 10px; padding-bottom: 4px;' : ''}">
+          ${list.map(p => renderProductCardHtml(p, cfg, promoMap, isHoriz)).join('')}
+        </div>
+      </div>
+    `;
   };
 
   root.innerHTML = `
@@ -242,13 +307,22 @@ async function render() {
         : pwaTab === 'GROUP_BUY'
           ? renderGroupBuySection()
           : pwaTab === 'FLYER'
-            ? (['FLYER_CAROUSEL', 'PROMO_SHELF'].map(id => {
-                const blk = blocks.find(b => b.id === id) || { id };
-                return blockHtmlMap[id] ? blockHtmlMap[id](blk) : '';
-              }).join(''))
+            ? (
+                ['FLYER_CAROUSEL', 'PROMO_SHELF'].map(id => {
+                  const blk = blocks.find(b => b.id === id) || { id };
+                  return blockHtmlMap[id] ? blockHtmlMap[id](blk) : '';
+                }).join('') +
+                blocks
+                  .filter(b => b.block_type === 'CUSTOM_PROMO_SHELF' && (b.target_tab === 'FLYER' || b.target_tab === 'BOTH'))
+                  .map(b => renderCustomPromoShelf(b))
+                  .join('')
+              )
             : blocks
                 .filter(b => !['FLYER_CAROUSEL', 'PROMO_SHELF'].includes(b.id))
-                .map(b => (blockHtmlMap[b.id] ? blockHtmlMap[b.id](b) : ''))
+                .filter(b => b.block_type !== 'CUSTOM_PROMO_SHELF' || b.target_tab !== 'FLYER')
+                .map(b => b.block_type === 'CUSTOM_PROMO_SHELF'
+                  ? renderCustomPromoShelf(b)
+                  : (blockHtmlMap[b.id] ? blockHtmlMap[b.id](b) : ''))
                 .join('')
       }
       <footer style="padding: 18px 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #64748b; line-height: 1.7;">
@@ -277,43 +351,60 @@ async function render() {
   bindEvents(root, { products, orders });
 }
 
-function renderProductGrid(title, list, cfg) {
+function renderProductCardHtml(p, cfg, promoMap = null, isHoriz = false) {
+  const isPosOnly = p.payment_scope === 'POS_ONLY';
+  const isSoldOut = Number(p.stock_qty ?? 50) <= Number(p.safety_stock ?? 5);
+  const disabled = isPosOnly || isSoldOut || cfg.store_status === 'CLOSED';
+  const linkedPromo = (promoMap && p.applied_promo_id) ? promoMap.get(p.applied_promo_id) : null;
+  const fieldBadges = buildPromoFieldBadges(linkedPromo);
+  const regPrice = Number(p.regular_price || 0);
+  const salePrice = Number(p.sale_price || regPrice || 0);
+  const hasDiscount = regPrice > 0 && salePrice < regPrice;
+
+  return `
+    <div class="prod-card" style="${isHoriz ? 'min-width: 158px; max-width: 158px; flex-shrink: 0;' : ''}">
+      <div>
+        <div class="prod-thumb prod-clickable" data-detail-pid="${esc(p.id)}">
+          ${p.image_url
+            ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />`
+            : (p.category_type === 'FRESH' ? '신선농수산' : p.category_type === 'PREP_PROCESSED' ? '전처리규격' : '표준상품')
+          }
+        </div>
+        <div style="margin-top:6px; display:flex; gap:3px; flex-wrap:wrap;">
+          ${isPosOnly ? `<span class="badge badge-pos">매장 현장결제 전용</span>` : ''}
+          ${isSoldOut ? `<span class="badge badge-pos">일시품절</span>` : ''}
+          ${p.category_type === 'FRESH' ? `<span class="badge badge-fresh">오늘 신선</span>` : ''}
+          ${fieldBadges.length > 0
+            ? fieldBadges.slice(0, 2).map(fb => `<span class="badge ${fb.tone === 'green' ? 'badge-fresh' : fb.tone === 'red' ? 'badge-pos' : 'badge-promo'}">${esc(fb.text)}</span>`).join('')
+            : (p.applied_promo_name ? `<span class="badge badge-promo">${esc(p.applied_promo_name)}</span>` : '')
+          }
+          ${fieldBadges.length === 0 && (p.promo_limit_per_person || p.limit_per_person)
+            ? `<span class="badge badge-promo">1인 ${p.promo_limit_per_person || p.limit_per_person}한정</span>`
+            : ''
+          }
+        </div>
+        <div class="prod-title prod-clickable" data-detail-pid="${esc(p.id)}" style="margin-top:4px;">${esc(p.name)}</div>
+        <div class="prod-spec">${esc(p.spec)} · ${esc(p.uom)}</div>
+      </div>
+      <div>
+        <div style="display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;">
+          <div class="prod-price">${salePrice.toLocaleString()}원</div>
+          ${hasDiscount ? `<span style="font-size:11px; color:#94a3b8; text-decoration:line-through;">${regPrice.toLocaleString()}원</span>` : ''}
+        </div>
+        <button type="button" class="btn-add" data-pid="${esc(p.id)}" ${disabled ? 'disabled' : ''}>
+          ${isPosOnly ? '현장 전용가' : isSoldOut ? '품절' : '담기'}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderProductGrid(title, list, cfg, promoMap = null) {
   return `
     <div class="section-block">
       <div class="section-title"><span>${esc(title)}</span></div>
       <div class="prod-grid">
-        ${list.map(p => {
-          const isPosOnly = p.payment_scope === 'POS_ONLY';
-          const isSoldOut = Number(p.stock_qty ?? 50) <= Number(p.safety_stock ?? 5);
-          const disabled = isPosOnly || isSoldOut || cfg.store_status === 'CLOSED';
-          return `
-            <div class="prod-card">
-              <div>
-                <div class="prod-thumb prod-clickable" data-detail-pid="${esc(p.id)}">
-                  ${p.image_url
-                    ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />`
-                    : (p.category_type === 'FRESH' ? '신선농수산' : p.category_type === 'PREP_PROCESSED' ? '전처리규격' : '표준상품')
-                  }
-                </div>
-                <div style="margin-top:6px;">
-                  ${isPosOnly ? `<span class="badge badge-pos">매장 현장결제 전용</span>` : ''}
-                  ${isSoldOut ? `<span class="badge badge-pos">일시품절</span>` : ''}
-                  ${p.category_type === 'FRESH' ? `<span class="badge badge-fresh">오늘 신선</span>` : ''}
-                  ${p.applied_promo_name ? `<span class="badge badge-promo">${esc(p.applied_promo_name)}</span>` : ''}
-                  ${(p.promo_limit_per_person || p.limit_per_person) ? `<span class="badge badge-promo">1인 ${p.promo_limit_per_person || p.limit_per_person}한정</span>` : ''}
-                </div>
-                <div class="prod-title prod-clickable" data-detail-pid="${esc(p.id)}" style="margin-top:4px;">${esc(p.name)}</div>
-                <div class="prod-spec">${esc(p.spec)} · ${esc(p.uom)}</div>
-              </div>
-              <div>
-                <div class="prod-price">${Number(p.sale_price || p.regular_price || 0).toLocaleString()}원</div>
-                <button type="button" class="btn-add" data-pid="${esc(p.id)}" ${disabled ? 'disabled' : ''}>
-                  ${isPosOnly ? '현장 전용가' : isSoldOut ? '품절' : '담기'}
-                </button>
-              </div>
-            </div>
-          `;
-        }).join('')}
+        ${list.map(p => renderProductCardHtml(p, cfg, promoMap, false)).join('')}
       </div>
     </div>
   `;

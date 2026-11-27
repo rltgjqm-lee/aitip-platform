@@ -21,6 +21,17 @@ export function renderPromoAddDrawerHtml({ d, editingPromoId, cloneDraft, active
           <button type="button" class="mc-drawer-close" id="btn-close-promo-drawer">×</button>
         </div>
         <div class="mc-drawer-body">
+          ${!editingPromoId ? `
+            <div style="margin-bottom: 14px; padding: 10px 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0;">
+              <div style="font-size: 11.5px; font-weight: 700; color: #334155; margin-bottom: 6px;">실무 빠른 프리셋 (클릭 시 조건 자동 입력)</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button type="button" class="mc-btn-secondary btn-promo-preset" data-preset="WEEKEND" style="height: 28px; padding: 0 10px; font-size: 11.5px;">주말 특가 (금·토·일 15%)</button>
+                <button type="button" class="mc-btn-secondary btn-promo-preset" data-preset="CLOSING" style="height: 28px; padding: 0 10px; font-size: 11.5px;">오늘 마감세일 (20% · 50개 한정)</button>
+                <button type="button" class="mc-btn-secondary btn-promo-preset" data-preset="BOGO" style="height: 28px; padding: 0 10px; font-size: 11.5px;">1+1 덤 행사</button>
+                <button type="button" class="mc-btn-secondary btn-promo-preset" data-preset="MIX" style="height: 28px; padding: 0 10px; font-size: 11.5px;">골라담기 (3개 9,900원)</button>
+              </div>
+            </div>
+          ` : ''}
           <div class="mc-drawer-section">
             <div class="mc-drawer-section-title">1. 행사 유형 · 적용 채널</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -129,6 +140,7 @@ export function renderPromoAddDrawerHtml({ d, editingPromoId, cloneDraft, active
         </div>
         <div class="mc-drawer-footer">
           <button type="button" class="mc-btn-secondary" id="btn-cancel-promo-drawer">취소</button>
+          ${!editingPromoId ? `<button type="button" class="mc-btn-secondary" id="btn-promo-save-and-link" style="border-color: #007749; color: #007749;">저장 후 바로 상품 연결</button>` : ''}
           <button type="submit" class="mc-btn-primary">행사 룰 저장</button>
         </div>
       </form>
@@ -205,10 +217,94 @@ export function bindFlyerPromoModalEvents({
   editingPromoId,
   today,
   onCloseDrawer,
+  onCreatedAndLink,
   onOpenTypeMgr,
   onCloseTypeMgr,
   onReload
 }) {
+  let goLinkAfterCreate = false;
+
+  // 실무 빠른 프리셋 4종
+  container.querySelectorAll('.btn-promo-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.preset;
+      const now = new Date();
+      const addDays = (n) => {
+        const dt = new Date(now.getTime() + n * 86400000);
+        return dt.toISOString().slice(0, 10);
+      };
+      const setVal = (sel, v) => {
+        const el = container.querySelector(sel);
+        if (el) el.value = String(v);
+      };
+      const setDays = (codes = []) => {
+        container.querySelectorAll('.pm-day-chk').forEach(c => {
+          c.checked = codes.includes(c.value);
+        });
+      };
+
+      if (code === 'WEEKEND') {
+        const daysToSun = (7 - now.getDay()) % 7;
+        setVal('#pm-name', `주말 반짝 특가 (${today.slice(5)})`);
+        setVal('#pm-type', 'DAY_OF_WEEK');
+        setVal('#pm-scope', 'ALL_CHANNELS');
+        setVal('#pm-disc-type', 'PERCENT');
+        setVal('#pm-rate', 15);
+        setVal('#pm-fixed', 0);
+        setVal('#pm-req-qty', 1);
+        setVal('#pm-bundle', 0);
+        setVal('#pm-total-limit', 0);
+        setVal('#pm-start', today);
+        setVal('#pm-end', addDays(daysToSun || 3));
+        setDays(['FRI', 'SAT', 'SUN']);
+      } else if (code === 'CLOSING') {
+        setVal('#pm-name', `오늘의 마감세일 20% (${today.slice(5)})`);
+        setVal('#pm-type', 'PRICE_DISCOUNT');
+        setVal('#pm-scope', 'ONLINE_ONLY');
+        setVal('#pm-disc-type', 'PERCENT');
+        setVal('#pm-rate', 20);
+        setVal('#pm-fixed', 0);
+        setVal('#pm-req-qty', 1);
+        setVal('#pm-bundle', 0);
+        setVal('#pm-total-limit', 50);
+        setVal('#pm-start', today);
+        setVal('#pm-end', today);
+        setDays([]);
+      } else if (code === 'BOGO') {
+        setVal('#pm-name', `인기상품 1+1 덤 행사 (${today.slice(5)})`);
+        setVal('#pm-type', 'BOGO_1_PLUS_1');
+        setVal('#pm-scope', 'ALL_CHANNELS');
+        setVal('#pm-disc-type', 'PERCENT');
+        setVal('#pm-rate', 0);
+        setVal('#pm-fixed', 0);
+        setVal('#pm-req-qty', 2);
+        setVal('#pm-bundle', 0);
+        setVal('#pm-total-limit', 0);
+        setVal('#pm-start', today);
+        setVal('#pm-end', addDays(6));
+        setDays([]);
+      } else if (code === 'MIX') {
+        setVal('#pm-name', `골라담기 3개 9,900원 (${today.slice(5)})`);
+        setVal('#pm-type', 'MIX_AND_MATCH');
+        setVal('#pm-scope', 'ALL_CHANNELS');
+        setVal('#pm-disc-type', 'PERCENT');
+        setVal('#pm-rate', 0);
+        setVal('#pm-fixed', 0);
+        setVal('#pm-req-qty', 3);
+        setVal('#pm-bundle', 9900);
+        setVal('#pm-total-limit', 0);
+        setVal('#pm-start', today);
+        setVal('#pm-end', addDays(6));
+        setDays([]);
+      }
+      container.querySelector('#pm-name')?.focus();
+    });
+  });
+
+  container.querySelector('#btn-promo-save-and-link')?.addEventListener('click', () => {
+    goLinkAfterCreate = true;
+    container.querySelector('#form-promo-add')?.requestSubmit();
+  });
   container.querySelector('#btn-close-promo-drawer')?.addEventListener('click', onCloseDrawer);
   container.querySelector('#btn-cancel-promo-drawer')?.addEventListener('click', onCloseDrawer);
   container.querySelector('#mc-promo-backdrop')?.addEventListener('click', (e) => {
@@ -280,9 +376,17 @@ export function bindFlyerPromoModalEvents({
     };
     if (editingPromoId) {
       await martApi.updatePromotion({ id: editingPromoId, ...payload });
+      onCloseDrawer();
     } else {
-      await martApi.createPromotion(payload);
+      const createdRes = await martApi.createPromotion(payload);
+      const newId = createdRes?.promotion?.id || '';
+      const shouldGoLink = goLinkAfterCreate && Boolean(newId);
+      goLinkAfterCreate = false;
+      if (shouldGoLink && typeof onCreatedAndLink === 'function') {
+        onCreatedAndLink(newId);
+      } else {
+        onCloseDrawer();
+      }
     }
-    onCloseDrawer();
   });
 }

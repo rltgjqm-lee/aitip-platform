@@ -6,7 +6,7 @@
 import { martApi } from '../api.js';
 import { fileToWebpDataUrl } from '../utils/media-webp.js';
 import { getL1List, getL2List, getL3List, buildCategoryPath, inferCategoryFromProduct } from '../utils/mart-categories.js';
-import { bindStopPropagation } from '../utils/html.js';
+import { bindStopPropagation, showToast } from '../utils/html.js';
 import { paginateArray, renderMartPaginationHtml, bindMartPaginationEvents } from '../utils/pagination.js';
 import { bindCatalogMediaPicker } from './catalog-media-picker.js';
 import { bindCatalogHaccpLookup } from './catalog-haccp-modal.js';
@@ -29,6 +29,8 @@ import {
 let drawerMode = 'NONE'; // 'NONE' | 'EDIT' | 'IMPORT'
 let uploadBatchType = 'BASE_PRODUCT'; // 'BASE_PRODUCT' | 'FLYER_PROMO' | 'DAILY_FRESH'
 let editingProductId = '';
+let cloneProductDraft = null;
+let continueAddAfterSave = false;
 let activeFilter = 'ALL';
 let l1Filter = 'ALL';
 let l2Filter = 'ALL';
@@ -52,7 +54,12 @@ export async function renderMartCatalogView(container, opts = {}) {
   const baseProducts = (data.products || []).filter(p => p.category_type !== 'PREP_PROCESSED');
   const promotions = data.promotions || [];
   const editingProduct = editingProductId ? baseProducts.find(p => p.id === editingProductId) : null;
-  const editCat = editingProduct ? inferCategoryFromProduct(editingProduct) : { l1: '01', l2: '0102', l3: '010202', path: buildCategoryPath('01', '0102', '010202') };
+  const formProduct = editingProduct || cloneProductDraft;
+  const editCat = formProduct
+    ? (formProduct.category_l1
+        ? { l1: formProduct.category_l1, l2: formProduct.category_l2 || '', l3: formProduct.category_l3 || '', path: buildCategoryPath(formProduct.category_l1, formProduct.category_l2, formProduct.category_l3) }
+        : inferCategoryFromProduct(formProduct))
+    : { l1: '01', l2: '0102', l3: '010202', path: buildCategoryPath('01', '0102', '010202') };
   const l1List = getL1List();
   const filterL2List = l1Filter !== 'ALL' ? getL2List(l1Filter) : [];
 
@@ -81,12 +88,12 @@ export async function renderMartCatalogView(container, opts = {}) {
   const pageInfo = paginateArray(filtered, currentPage, pageSize);
   currentPage = pageInfo.page;
   const allFilteredSelected = filtered.length > 0 && filtered.every(p => selectedIds.has(p.id));
-  const curImgUrl = draftMedia.image_url || editingProduct?.image_url || '';
+  const curImgUrl = draftMedia.image_url || formProduct?.image_url || '';
 
-  const initCost = Number(editingProduct?.cost_price ?? 3500);
-  const initReg = Number(editingProduct?.regular_price ?? 4900);
-  const initSale = Number(editingProduct?.sale_price ?? editingProduct?.regular_price ?? 4900);
-  const initDisc = Number(editingProduct?.discount_pct ?? (initReg > 0 && initSale < initReg ? Math.round((1 - initSale / initReg) * 100) : 0));
+  const initCost = Number(formProduct?.cost_price ?? 3500);
+  const initReg = Number(formProduct?.regular_price ?? 4900);
+  const initSale = Number(formProduct?.sale_price ?? formProduct?.regular_price ?? 4900);
+  const initDisc = Number(formProduct?.discount_pct ?? (initReg > 0 && initSale < initReg ? Math.round((1 - initSale / initReg) * 100) : 0));
   const initMargin = calcMarginPct(initCost, initSale);
 
   container.innerHTML = `
@@ -333,6 +340,7 @@ export async function renderMartCatalogView(container, opts = {}) {
                         <button type="button" class="mc-btn-primary btn-mart-approve-prod" data-id="${p.id}" style="height: 26px; padding: 0 8px; font-size: 11.5px; margin-right: 4px;">취급 승인</button>
                         <button type="button" class="mc-btn-secondary btn-mart-reject-prod" data-id="${p.id}" style="height: 26px; padding: 0 8px; font-size: 11.5px; color: #b91c1c; margin-right: 4px;">반려</button>
                       ` : ''}
+                      <button type="button" class="mc-row-edit-btn btn-clone-prod" data-id="${p.id}" style="margin-right: 4px;">복제</button>
                       <button type="button" class="mc-row-edit-btn btn-edit-prod" data-id="${p.id}">수정</button>
                     </td>
                   </tr>
@@ -348,7 +356,7 @@ export async function renderMartCatalogView(container, opts = {}) {
         <div class="mc-drawer-backdrop" id="mc-drawer-backdrop">
           <form class="mc-drawer mc-drawer--wide" id="form-mart-add">
             <div class="mc-drawer-header">
-              <h2>${editingProduct ? '상품 정보 수정' : '새 상품 등록'}</h2>
+              <h2>${editingProduct ? '상품 정보 수정' : cloneProductDraft?.name ? '상품 복제 등록' : '새 상품 등록'}</h2>
               <button type="button" class="mc-drawer-close" id="btn-close-drawer">×</button>
             </div>
             <div class="mc-drawer-body mc-drawer-grid-2">
@@ -377,8 +385,8 @@ export async function renderMartCatalogView(container, opts = {}) {
                   <div>
                     <label class="erp-field-label">과면세 구분 *</label>
                     <select id="mp-tax" class="erp-input">
-                      <option value="EXEMPT" ${editingProduct?.tax_type === 'EXEMPT' ? 'selected' : ''}>면세 (농·축·수산)</option>
-                      <option value="TAXABLE" ${editingProduct?.tax_type !== 'EXEMPT' ? 'selected' : ''}>과세 (가공·생활)</option>
+                      <option value="EXEMPT" ${formProduct?.tax_type === 'EXEMPT' ? 'selected' : ''}>면세 (농·축·수산)</option>
+                      <option value="TAXABLE" ${formProduct?.tax_type !== 'EXEMPT' ? 'selected' : ''}>과세 (가공·생활)</option>
                     </select>
                   </div>
                 </div>
@@ -393,28 +401,28 @@ export async function renderMartCatalogView(container, opts = {}) {
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                   <div style="grid-column: 1 / -1;">
                     <label class="erp-field-label">상품명 *</label>
-                    <input id="mp-name" type="text" required class="erp-input" value="${escapeHtml(editingProduct?.name || '')}" placeholder="예: 국내산 세척당근(특) 또는 신라면 입력 후 HACCP 조회" />
+                    <input id="mp-name" type="text" required class="erp-input" value="${escapeHtml(formProduct?.name || '')}" placeholder="예: 국내산 세척당근(특) 또는 신라면 입력 후 HACCP 조회" />
                   </div>
                   <div>
                     <label class="erp-field-label">바코드 / PLU</label>
-                    <input id="mp-barcode" type="text" class="erp-input" value="${escapeHtml(editingProduct?.barcode || '')}" placeholder="880... 또는 200..." />
+                    <input id="mp-barcode" type="text" class="erp-input" value="${escapeHtml(formProduct?.barcode || '')}" placeholder="880... 또는 200..." />
                   </div>
                   <div>
                     <label class="erp-field-label">규격 / 단량</label>
-                    <input id="mp-spec" type="text" class="erp-input" value="${escapeHtml(editingProduct?.spec || '')}" placeholder="1kg/봉" />
+                    <input id="mp-spec" type="text" class="erp-input" value="${escapeHtml(formProduct?.spec || '')}" placeholder="1kg/봉" />
                   </div>
                   <div>
                     <label class="erp-field-label">단위 (UOM)</label>
                     <select id="mp-uom" class="erp-input">
-                      ${['개', '봉', '단', '팩', '박스', '번들'].map(u => `<option value="${u}" ${editingProduct?.uom === u ? 'selected' : ''}>${u}</option>`).join('')}
+                      ${['개', '봉', '단', '팩', '박스', '번들'].map(u => `<option value="${u}" ${formProduct?.uom === u ? 'selected' : ''}>${u}</option>`).join('')}
                     </select>
                   </div>
                   <div>
                     <label class="erp-field-label">보관 구분</label>
                     <select id="mp-temp" class="erp-input">
-                      <option value="AMBIENT" ${editingProduct?.storage_temp === 'AMBIENT' ? 'selected' : ''}>상온</option>
-                      <option value="REFRIGERATED" ${editingProduct?.storage_temp === 'REFRIGERATED' ? 'selected' : ''}>냉장</option>
-                      <option value="FROZEN" ${editingProduct?.storage_temp === 'FROZEN' ? 'selected' : ''}>냉동</option>
+                      <option value="AMBIENT" ${formProduct?.storage_temp === 'AMBIENT' ? 'selected' : ''}>상온</option>
+                      <option value="REFRIGERATED" ${formProduct?.storage_temp === 'REFRIGERATED' ? 'selected' : ''}>냉장</option>
+                      <option value="FROZEN" ${formProduct?.storage_temp === 'FROZEN' ? 'selected' : ''}>냉동</option>
                     </select>
                   </div>
                 </div>
@@ -442,11 +450,11 @@ export async function renderMartCatalogView(container, opts = {}) {
                   </div>
                   <div>
                     <label class="erp-field-label">현재 재고</label>
-                    <input id="mp-stock" type="number" min="0" value="${Number(editingProduct?.stock_qty ?? 50)}" class="erp-input" />
+                    <input id="mp-stock" type="number" min="0" value="${Number(formProduct?.stock_qty ?? 50)}" class="erp-input" />
                   </div>
                   <div>
                     <label class="erp-field-label">안전 재고</label>
-                    <input id="mp-safety" type="number" min="0" value="${Number(editingProduct?.safety_stock ?? 5)}" class="erp-input" />
+                    <input id="mp-safety" type="number" min="0" value="${Number(formProduct?.safety_stock ?? 5)}" class="erp-input" />
                   </div>
                 </div>
                 <div style="display: flex; align-items: flex-start; gap: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
@@ -478,6 +486,7 @@ export async function renderMartCatalogView(container, opts = {}) {
             </div>
             <div class="mc-drawer-footer">
               <button type="button" class="mc-btn-secondary" id="btn-cancel-drawer">취소</button>
+              ${!editingProduct ? `<button type="button" class="mc-btn-secondary" id="btn-save-and-continue" style="border-color: #007749; color: #007749;">저장 후 계속 등록</button>` : ''}
               <button type="submit" class="mc-btn-primary">${editingProduct ? '수정 저장' : '상품 등록'}</button>
             </div>
           </form>
@@ -675,6 +684,8 @@ export async function renderMartCatalogView(container, opts = {}) {
   // 드로어 열기 / 닫기
   container.querySelector('#btn-open-add')?.addEventListener('click', () => {
     editingProductId = '';
+    cloneProductDraft = null;
+    continueAddAfterSave = false;
     draftMedia = { media_id: '', image_url: '' };
     drawerMode = 'EDIT';
     renderMartCatalogView(container);
@@ -685,12 +696,35 @@ export async function renderMartCatalogView(container, opts = {}) {
   });
   const openEditDrawer = (id) => {
     editingProductId = id;
+    cloneProductDraft = null;
+    continueAddAfterSave = false;
     draftMedia = { media_id: '', image_url: '' };
     drawerMode = 'EDIT';
     renderMartCatalogView(container);
   };
   container.querySelectorAll('.btn-edit-prod').forEach(btn => {
     btn.addEventListener('click', () => openEditDrawer(btn.dataset.id));
+  });
+  container.querySelectorAll('.btn-clone-prod').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const src = baseProducts.find(p => p.id === btn.dataset.id);
+      if (!src) return;
+      const cat = inferCategoryFromProduct(src);
+      editingProductId = '';
+      continueAddAfterSave = false;
+      cloneProductDraft = {
+        ...src,
+        id: undefined,
+        barcode: '',
+        name: `${src.name || ''} (복제)`.trim(),
+        category_l1: src.category_l1 || cat.l1,
+        category_l2: src.category_l2 || cat.l2,
+        category_l3: src.category_l3 || cat.l3
+      };
+      draftMedia = { media_id: src.media_id || '', image_url: src.image_url || '' };
+      drawerMode = 'EDIT';
+      renderMartCatalogView(container, { focusId: 'mp-name' });
+    });
   });
   bindStopPropagation(container);
   bindMartPaginationEvents(container, {
@@ -706,6 +740,8 @@ export async function renderMartCatalogView(container, opts = {}) {
   const closeDrawer = () => {
     drawerMode = 'NONE';
     editingProductId = '';
+    cloneProductDraft = null;
+    continueAddAfterSave = false;
     draftAppliedPromo = null;
     draftMedia = { media_id: '', image_url: '' };
     renderMartCatalogView(container);
@@ -807,9 +843,16 @@ export async function renderMartCatalogView(container, opts = {}) {
     }
   });
 
+  container.querySelector('#btn-save-and-continue')?.addEventListener('click', () => {
+    continueAddAfterSave = true;
+    container.querySelector('#form-mart-add')?.requestSubmit();
+  });
+
   // 단건 등록/수정 저장 (상품 마스터 기본정보만 저장, 기존 판매/행사 배정값 보존)
   container.querySelector('#form-mart-add')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const shouldContinue = continueAddAfterSave && !editingProductId;
+    continueAddAfterSave = false;
     const l1 = mpL1?.value || '';
     const l2 = mpL2?.value || '';
     const l3 = mpL3?.value || '';
@@ -829,8 +872,8 @@ export async function renderMartCatalogView(container, opts = {}) {
       spec: container.querySelector('#mp-spec')?.value?.trim(),
       uom: container.querySelector('#mp-uom')?.value,
       storage_temp: container.querySelector('#mp-temp')?.value || 'AMBIENT',
-      media_id: draftMedia.media_id || editingProduct?.media_id || '',
-      image_url: draftMedia.image_url || editingProduct?.image_url || '',
+      media_id: draftMedia.media_id || formProduct?.media_id || '',
+      image_url: draftMedia.image_url || formProduct?.image_url || '',
       cost_price: Math.max(0, Number(container.querySelector('#mp-cost')?.value ?? 0)),
       regular_price: regPrice,
       stock_qty: Math.max(0, Number(container.querySelector('#mp-stock')?.value ?? 50)),
@@ -845,8 +888,36 @@ export async function renderMartCatalogView(container, opts = {}) {
     }
     if (editingProductId) await martApi.updateProduct(payload);
     else await martApi.addProduct(payload);
+
+    if (shouldContinue) {
+      // 대/중/소분류·과면세·단위·보관구분·재고 기본값은 유지하고 상품명·바코드·규격·이미지 비워 연속 등록
+      cloneProductDraft = {
+        category_l1: l1,
+        category_l2: l2,
+        category_l3: l3,
+        tax_type: payload.tax_type,
+        uom: payload.uom,
+        storage_temp: payload.storage_temp,
+        cost_price: payload.cost_price,
+        regular_price: payload.regular_price,
+        stock_qty: payload.stock_qty,
+        safety_stock: payload.safety_stock,
+        name: '',
+        barcode: '',
+        spec: '',
+        media_id: '',
+        image_url: ''
+      };
+      draftMedia = { media_id: '', image_url: '' };
+      drawerMode = 'EDIT';
+      showToast(`"${payload.name}" 등록 완료 — 같은 분류로 다음 상품을 이어서 등록하세요.`, 'success');
+      await renderMartCatalogView(container, { focusId: 'mp-name' });
+      return;
+    }
+
     drawerMode = 'NONE';
     editingProductId = '';
+    cloneProductDraft = null;
     draftAppliedPromo = null;
     draftMedia = { media_id: '', image_url: '' };
     await renderMartCatalogView(container);

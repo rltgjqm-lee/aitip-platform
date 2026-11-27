@@ -69,9 +69,9 @@ export async function renderMartChannelAssignView(container) {
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             ${[
               ['ALL', '전체'],
-              ['BOTH', '공통 (B2C+B2B)'],
-              ['B2C_ONLY', '일반몰 전용 (B2C)'],
-              ['B2B_ONLY', '기관 전용 (B2B)']
+              ['BOTH', '공통 (온라인+기관)'],
+              ['B2C_ONLY', '온라인 전용 (B2C)'],
+              ['B2B_ONLY', '기관 납품 전용 (B2B)']
             ].map(([k, lbl]) => `
               <button type="button" class="${targetFilter === k ? 'mc-btn-primary' : 'mc-btn-secondary'} btn-ca-target-filter" data-target="${k}" style="height: 32px; font-size: 12px;">${lbl}</button>
             `).join('')}
@@ -97,11 +97,11 @@ export async function renderMartChannelAssignView(container) {
           <div class="mc-bulk-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <strong style="font-size: 13px;">${selectedIds.size}개 상품 선택됨</strong>
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-              <select id="ca-bulk-target" class="erp-input" style="width: 160px; height: 32px; font-size: 12px;">
+              <select id="ca-bulk-target" class="erp-input" style="width: 175px; height: 32px; font-size: 12px;">
                 <option value="">판매대상 변경 안함</option>
-                <option value="BOTH">공통 (B2C+B2B)</option>
-                <option value="B2C_ONLY">일반몰 전용 (B2C)</option>
-                <option value="B2B_ONLY">기관 전용 (B2B)</option>
+                <option value="BOTH">공통 (온라인+기관)</option>
+                <option value="B2C_ONLY">온라인 전용 (B2C)</option>
+                <option value="B2B_ONLY">기관 납품 전용 (B2B)</option>
               </select>
               <div style="display: flex; align-items: center; gap: 4px;">
                 <input id="ca-bulk-b2b-disc" type="number" min="0" max="80" placeholder="B2B 할인%" class="erp-input" style="width: 96px; height: 32px; font-size: 12px;" />
@@ -127,9 +127,9 @@ export async function renderMartChannelAssignView(container) {
                   <th style="width: 36px;"><input type="checkbox" id="ca-chk-all" ${allChecked ? 'checked' : ''} /></th>
                   <th>상품명 · 기준가</th>
                   <th>판매 대상</th>
-                  <th style="text-align: right;">B2C 판매가 (원)</th>
-                  <th style="text-align: right;">B2B 공급가 (원)</th>
-                  <th style="text-align: center;">B2B 최소수량</th>
+                  <th style="text-align: right;">온라인 판매가 (원)</th>
+                  <th style="text-align: right;">기관 납품가 (0=온라인가)</th>
+                  <th style="text-align: center;">기관 최소수량</th>
                   <th>노출 상태</th>
                   <th style="text-align: right;">적용</th>
                 </tr>
@@ -153,17 +153,17 @@ export async function renderMartChannelAssignView(container) {
                         </div>
                       </td>
                       <td>
-                        <select class="erp-input ca-target" data-pid="${esc(p.id)}" style="height: 30px; font-size: 12px; min-width: 125px;">
-                          <option value="BOTH" ${st === 'BOTH' ? 'selected' : ''}>공통 (B2C+B2B)</option>
-                          <option value="B2C_ONLY" ${st === 'B2C_ONLY' ? 'selected' : ''}>일반 전용 (B2C)</option>
-                          <option value="B2B_ONLY" ${st === 'B2B_ONLY' ? 'selected' : ''}>기관 전용 (B2B)</option>
+                        <select class="erp-input ca-target" data-pid="${esc(p.id)}" style="height: 30px; font-size: 12px; min-width: 145px;">
+                          <option value="BOTH" ${st === 'BOTH' ? 'selected' : ''}>공통 (온라인+기관)</option>
+                          <option value="B2C_ONLY" ${st === 'B2C_ONLY' ? 'selected' : ''}>온라인 전용 (B2C)</option>
+                          <option value="B2B_ONLY" ${st === 'B2B_ONLY' ? 'selected' : ''}>기관 납품 전용 (B2B)</option>
                         </select>
                       </td>
                       <td style="text-align: right;">
                         <input type="number" min="0" class="erp-input ca-b2c-price" data-pid="${esc(p.id)}" value="${Number(p.sale_price ?? p.regular_price ?? 0)}" style="width: 100px; height: 30px; text-align: right; display: inline-block;" />
                       </td>
                       <td style="text-align: right;">
-                        <input type="number" min="0" class="erp-input ca-b2b-price" data-pid="${esc(p.id)}" value="${Number(p.b2b_price ?? 0)}" placeholder="0=일반가" style="width: 100px; height: 30px; text-align: right; display: inline-block;" />
+                        <input type="number" min="0" class="erp-input ca-b2b-price" data-pid="${esc(p.id)}" value="${Number(p.b2b_price ?? 0)}" placeholder="0=온라인가" style="width: 100px; height: 30px; text-align: right; display: inline-block;" />
                       </td>
                       <td style="text-align: center;">
                         <input type="number" min="1" class="erp-input ca-b2b-min" data-pid="${esc(p.id)}" value="${Number(p.b2b_min_qty ?? 1)}" style="width: 68px; height: 30px; text-align: center; display: inline-block;" />

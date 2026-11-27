@@ -38,6 +38,7 @@ let flyerImageFile = null;
 let flyerDraftText = '';
 let flyerPreviewData = null;
 let scopeFilter = 'ALL'; // 'ALL' | 'ALL_CHANNELS' | 'ONLINE_ONLY' | 'POS_ONLY'
+let promoRuleQuery = '';
 let drawerOpen = false;
 let typeMgrOpen = false;
 let editingPromoId = '';
@@ -77,8 +78,10 @@ export async function renderMartFlyerView(container, opts = {}) {
   const promoProdPg = paginateArray(candidateProducts, promoProdPage, promoProdPageSize);
   promoProdPage = promoProdPg.page;
   const pagedCandidateProducts = promoProdPg.paged;
+  const rq = promoRuleQuery.trim().toLowerCase();
   const filtered = promotions.filter(pr => {
     if (scopeFilter !== 'ALL' && getChannelScope(pr) !== scopeFilter) return false;
+    if (rq && !`${pr.name || ''} ${pr.promo_type || ''} ${typeLabelMap[pr.promo_type] || ''}`.toLowerCase().includes(rq)) return false;
     return true;
   });
 
@@ -119,6 +122,7 @@ export async function renderMartFlyerView(container, opts = {}) {
         <div class="mc-surface">
           <div class="mc-filter-bar">
             <div class="mc-filter-controls">
+              <input id="promo-rule-search" type="text" class="mc-search" style="width: 190px;" value="${esc(promoRuleQuery)}" placeholder="행사명 · 유형 검색" />
               <select id="promo-scope-filter" class="mc-select">
                 <option value="ALL" ${scopeFilter === 'ALL' ? 'selected' : ''}>전체 채널 (${promotions.length})</option>
                 <option value="ALL_CHANNELS" ${scopeFilter === 'ALL_CHANNELS' ? 'selected' : ''}>온·오프 공통</option>
@@ -157,12 +161,15 @@ export async function renderMartFlyerView(container, opts = {}) {
                     : '전체 카드·결제';
                   const linked = allProducts.filter(p => p.applied_promo_id === pr.id);
                   const isExpanded = expandedPromoIds.has(pr.id);
+                  const curStatus = String(pr.status || 'ACTIVE').toUpperCase();
+                  const isPaused = curStatus === 'PAUSED' || curStatus === 'ENDED';
                   return `
-                    <tr>
+                    <tr style="${isPaused ? 'opacity: 0.72;' : ''}">
                       <td>
                         <button type="button" class="btn-toggle-promo-acc" data-id="${esc(pr.id)}" style="border: 0; background: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; text-align: left;">
                           <span style="display: inline-block; width: 14px; font-size: 12px; color: #64748b;">${isExpanded ? '▾' : '▸'}</span>
                           <strong style="color: #0f172a;">${esc(pr.name)}</strong>
+                          <span class="mc-pill ${curStatus === 'ACTIVE' ? 'mc-pill-green' : curStatus === 'PAUSED' ? 'mc-pill-amber' : 'mc-pill-gray'}" style="font-size: 10.5px;">${curStatus === 'ACTIVE' ? '진행중' : curStatus === 'PAUSED' ? '일시중지' : '종료'}</span>
                           <span class="mc-pill ${linked.length > 0 ? 'mc-pill-green' : 'mc-pill-gray'}" style="font-size: 11px;">연결 ${linked.length}건</span>
                         </button>
                       </td>
@@ -194,6 +201,7 @@ export async function renderMartFlyerView(container, opts = {}) {
                         </div>
                       </td>
                       <td style="text-align: right; white-space: nowrap;">
+                        <button type="button" class="mc-row-edit-btn btn-toggle-promo-status" data-id="${esc(pr.id)}" data-status="${esc(curStatus)}" style="${isPaused ? 'border-color: #007749; color: #007749;' : 'border-color: #f59e0b; color: #b45309;'}">${isPaused ? '재개' : '중지'}</button>
                         <button type="button" class="mc-row-edit-btn btn-edit-promo" data-id="${esc(pr.id)}">수정</button>
                         <button type="button" class="mc-row-edit-btn btn-clone-promo" data-id="${esc(pr.id)}">복제</button>
                         <button type="button" class="mc-row-edit-btn btn-del-promo" data-id="${esc(pr.id)}" style="color: #b91c1c; border-color: #fecaca;">삭제</button>
@@ -677,6 +685,21 @@ export async function renderMartFlyerView(container, opts = {}) {
     });
   });
 
+  container.querySelector('#promo-rule-search')?.addEventListener('input', (e) => {
+    promoRuleQuery = e.target.value;
+    renderMartFlyerView(container, { focusId: 'promo-rule-search', cursorPos: e.target.selectionStart });
+  });
+  container.querySelectorAll('.btn-toggle-promo-status').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const cur = String(btn.dataset.status || 'ACTIVE').toUpperCase();
+      const nextStatus = (cur === 'ACTIVE') ? 'PAUSED' : 'ACTIVE';
+      await martApi.updatePromotion({ id, status: nextStatus });
+      showToast(nextStatus === 'ACTIVE' ? '행사가 다시 시작되었습니다.' : '행사가 일시중지되었습니다.', 'success');
+      await renderMartFlyerView(container);
+    });
+  });
+
   bindFlyerPromoModalEvents({
     container,
     martApi,
@@ -687,6 +710,15 @@ export async function renderMartFlyerView(container, opts = {}) {
       drawerOpen = false;
       editingPromoId = '';
       cloneDraft = null;
+      renderMartFlyerView(container);
+    },
+    onCreatedAndLink: (newId) => {
+      drawerOpen = false;
+      editingPromoId = '';
+      cloneDraft = null;
+      selectedPromoId = newId;
+      viewTab = 'PROMO_PRODUCTS';
+      showToast('행사가 등록되었습니다. 아래에서 행사 상품을 바로 연결하세요.', 'success');
       renderMartFlyerView(container);
     },
     onOpenTypeMgr: () => {

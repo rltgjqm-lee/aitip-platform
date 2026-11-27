@@ -4,10 +4,20 @@
  */
 
 import { martApi } from '../api.js';
-import { escapeHtml } from '../utils/html.js';
+import { escapeHtml, showToast } from '../utils/html.js';
+import {
+  DAY_ITEMS,
+  LAYOUT_LABEL,
+  TARGET_TAB_LABEL,
+  formatScheduleSummary,
+  getBlockScheduleStatus,
+  buildPromoFieldBadges
+} from '/core/shared/mart-promo-display.js';
 
 let previewDevice = 'MOBILE'; // 'MOBILE' (375px) | 'TABLET' (768px) | 'PC' (1200px)
 let editingBlockId = '';
+let promoBuilderOpen = false;
+let editingCustomBlockId = '';
 let gbDrawerOpen = false;
 let shelfSearchQuery = '';
 let draftFeaturedIds = []; // ordered array of product IDs
@@ -28,7 +38,11 @@ export async function renderMartPwaControlView(container, opts = {}) {
   const marts = martsRes.marts || [];
   const groupBuys = gbRes.group_buys || [];
   const allProducts = (catRes.products || []).filter(p => p.online_publish_status !== 'SUSPENDED');
+  const promotions = catRes.promotions || [];
+  const promoMap = new Map(promotions.map(pr => [pr.id, pr]));
   const editingBlock = editingBlockId ? blocks.find(b => b.id === editingBlockId) : null;
+  const editingCustomBlock = editingCustomBlockId ? blocks.find(b => b.id === editingCustomBlockId) : null;
+  const today = new Date().toISOString().slice(0, 10);
   const sq = shelfSearchQuery.trim().toLowerCase();
   const filteredProducts = allProducts.filter(p => !sq || `${p.name} ${p.barcode} ${p.spec}`.toLowerCase().includes(sq));
   const isSidePreview = previewDevice === 'MOBILE';
@@ -79,9 +93,12 @@ export async function renderMartPwaControlView(container, opts = {}) {
           </div>
 
           <div class="mc-surface">
-            <div style="padding: 16px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 14px; font-weight: 800; color: #0f172a;">2. 홈 6대 디스플레이 블록 조립</span>
-              <span style="font-size: 12px; color: #64748b;">순서 숫자가 작을수록 상단에 노출됩니다</span>
+            <div style="padding: 16px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <div>
+                <span style="font-size: 14px; font-weight: 800; color: #0f172a;">2. 홈 · 전단 디스플레이 블록 조립</span>
+                <span style="font-size: 12px; color: #64748b; margin-left: 8px;">순서 숫자가 작을수록 상단에 노출 · 행사 매대는 기간·요일·시간대로 자동 노출</span>
+              </div>
+              <button type="button" class="mc-btn-primary" id="btn-open-promo-builder" style="height: 30px; padding: 0 12px; font-size: 12px;">+ 행사 매대 조립 추가</button>
             </div>
             <div class="mc-table-wrap">
               <table class="mc-table">
@@ -89,27 +106,49 @@ export async function renderMartPwaControlView(container, opts = {}) {
                   <tr>
                     <th style="width: 68px;">순서</th>
                     <th style="width: 52px; text-align: center;">노출</th>
-                    <th>블록 ID</th>
+                    <th>블록 · 스케줄 · 현장 조건</th>
                     <th>노출 섹션 제목</th>
-                    <th style="text-align: right;">진열 상품</th>
+                    <th style="text-align: right;">관리 · 진열</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${blocks.map(b => {
                     const fIds = Array.isArray(b.featured_product_ids) ? b.featured_product_ids : [];
-                    const isShelf = SHELF_BLOCK_IDS.has(b.id);
+                    const isCustom = b.block_type === 'CUSTOM_PROMO_SHELF';
+                    const isShelf = SHELF_BLOCK_IDS.has(b.id) || isCustom;
+                    const linkedPromo = b.linked_promo_id ? promoMap.get(b.linked_promo_id) : null;
+                    const sched = isCustom ? getBlockScheduleStatus(b, linkedPromo) : null;
+                    const fieldBadges = isCustom ? buildPromoFieldBadges(linkedPromo) : [];
                     return `
                     <tr class="pwa-block-row" data-block-id="${escapeHtml(b.id)}">
-                      <td><input type="number" class="blk-order erp-input" value="${b.order}" min="1" max="10" style="width: 58px; height: 32px; text-align: center;" /></td>
+                      <td><input type="number" class="blk-order erp-input" value="${b.order}" min="1" max="50" style="width: 58px; height: 32px; text-align: center;" /></td>
                       <td style="text-align: center;"><input type="checkbox" class="blk-enabled" ${b.enabled ? 'checked' : ''} /></td>
-                      <td><span class="mc-pill mc-pill-gray">${escapeHtml(b.id)}</span></td>
+                      <td>
+                        <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                          <span class="mc-pill ${isCustom ? 'mc-pill-green' : 'mc-pill-gray'}">${isCustom ? (LAYOUT_LABEL[b.layout] || '행사 매대') : escapeHtml(b.id)}</span>
+                          ${isCustom && sched ? `<span class="mc-pill ${sched.active ? 'mc-pill-green' : sched.code === 'SCHEDULED' ? 'mc-pill-blue' : 'mc-pill-amber'}">${escapeHtml(sched.label)}</span>` : ''}
+                          ${isCustom ? `<span class="mc-pill mc-pill-gray">${escapeHtml(TARGET_TAB_LABEL[b.target_tab] || '장보기 홈')}</span>` : ''}
+                        </div>
+                        ${isCustom ? `
+                          <div style="font-size: 11px; color: #475569; margin-top: 4px;">
+                            스케줄: <b>${escapeHtml(formatScheduleSummary(b))}</b>${linkedPromo ? ` · 행사: ${escapeHtml(linkedPromo.name)}` : ''}
+                          </div>
+                          ${fieldBadges.length > 0 ? `
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px;">
+                              ${fieldBadges.map(fb => `<span class="mc-pill mc-pill-${fb.tone === 'red' ? 'red' : fb.tone === 'amber' ? 'amber' : fb.tone === 'green' ? 'green' : 'gray'}" style="font-size: 10.5px;">${escapeHtml(fb.text)}</span>`).join('')}
+                            </div>
+                          ` : ''}
+                        ` : ''}
+                      </td>
                       <td><input type="text" class="blk-title erp-input" value="${escapeHtml(b.title)}" style="height: 32px;" /></td>
                       <td style="text-align: right; white-space: nowrap;">
+                        ${isCustom ? `<button type="button" class="mc-row-edit-btn btn-edit-custom-block" data-block-id="${escapeHtml(b.id)}" style="margin-right: 4px;">스케줄·설정</button>` : ''}
                         ${isShelf ? `
                           <button type="button" class="mc-row-edit-btn btn-pick-shelf-prods" data-block-id="${escapeHtml(b.id)}">
-                            ${fIds.length > 0 ? `지정 ${fIds.length}개` : '진열 상품 선택'}
+                            ${fIds.length > 0 ? `지정 ${fIds.length}개` : (linkedPromo ? '행사상품 자동' : '진열 상품 선택')}
                           </button>
                         ` : '<span style="font-size: 11.5px; color: #94a3b8;">자동</span>'}
+                        ${isCustom ? `<button type="button" class="mc-row-edit-btn btn-del-custom-block" data-block-id="${escapeHtml(b.id)}" style="margin-left: 4px; color: #b91c1c; border-color: #fecaca;">삭제</button>` : ''}
                       </td>
                     </tr>
                   `;}).join('')}
@@ -252,6 +291,110 @@ export async function renderMartPwaControlView(container, opts = {}) {
           </div>
         </div>
       ` : ''}
+
+      ${promoBuilderOpen ? (() => {
+        const cb = editingCustomBlock || {};
+        const selPromo = cb.linked_promo_id ? promoMap.get(cb.linked_promo_id) : null;
+        const previewBadges = buildPromoFieldBadges(selPromo);
+        const selDays = Array.isArray(cb.days_of_week) ? cb.days_of_week : [];
+        return `
+        <div class="mc-drawer-backdrop" id="mc-promo-builder-backdrop">
+          <form class="mc-drawer" id="form-promo-builder" style="width: 560px;">
+            <div class="mc-drawer-header">
+              <div>
+                <h2>${editingCustomBlock ? '행사 매대 스케줄 · 조립 수정' : '새 행사 매대 조립 추가'}</h2>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">기간 · 요일 · 시간대에 맞춰 1+1 · 골라담기 · 한정특가 매대를 자동 노출합니다.</div>
+              </div>
+              <button type="button" class="mc-drawer-close" id="btn-close-promo-builder">×</button>
+            </div>
+            <div class="mc-drawer-body">
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">1. 연결 행사 룰 · 매대 제목</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div style="grid-column: 1 / -1;">
+                    <label class="erp-field-label">연결할 행사 룰 (선택 시 기간·요일·상품·현장배지 자동 연동)</label>
+                    <select id="pb-promo-id" class="erp-input">
+                      <option value="">행사 연결 안함 (수동 상품 지정 매대)</option>
+                      ${promotions.map(pr => `<option value="${escapeHtml(pr.id)}" ${cb.linked_promo_id === pr.id ? 'selected' : ''}>${escapeHtml(pr.name)} (${escapeHtml(pr.start_date || '-')} ~ ${escapeHtml(pr.end_date || '-')})</option>`).join('')}
+                    </select>
+                    <div id="pb-promo-badges" style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;">
+                      ${previewBadges.map(fb => `<span class="mc-pill mc-pill-${fb.tone === 'red' ? 'red' : fb.tone === 'amber' ? 'amber' : fb.tone === 'green' ? 'green' : 'gray'}" style="font-size: 11px;">${escapeHtml(fb.text)}</span>`).join('')}
+                    </div>
+                  </div>
+                  <div style="grid-column: 1 / -1;">
+                    <label class="erp-field-label">매대 제목 *</label>
+                    <input id="pb-title" type="text" required class="erp-input" value="${escapeHtml(cb.title || '')}" placeholder="예: 주말 1+1 · 골라담기 특가 매대" />
+                  </div>
+                  <div style="grid-column: 1 / -1;">
+                    <label class="erp-field-label">한 줄 안내 문구 (선택)</label>
+                    <input id="pb-subtitle" type="text" class="erp-input" value="${escapeHtml(cb.subtitle || '')}" placeholder="예: 금·토·일 오후 3시~7시 선착순 한정 수량" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">2. 자동 노출 스케줄 (기간 · 요일 · 시간대)</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label class="erp-field-label">노출 시작일 (미입력=상시)</label>
+                    <input id="pb-start-date" type="date" class="erp-input" value="${escapeHtml(cb.start_date || '')}" />
+                  </div>
+                  <div>
+                    <label class="erp-field-label">노출 종료일 (미입력=상시)</label>
+                    <input id="pb-end-date" type="date" class="erp-input" value="${escapeHtml(cb.end_date || '')}" />
+                  </div>
+                  <div>
+                    <label class="erp-field-label">노출 시작 시각 (미입력=00:00)</label>
+                    <input id="pb-start-time" type="time" class="erp-input" value="${escapeHtml(cb.start_time || '')}" />
+                  </div>
+                  <div>
+                    <label class="erp-field-label">노출 종료 시각 (최대 23:59)</label>
+                    <input id="pb-end-time" type="time" class="erp-input" value="${escapeHtml(cb.end_time || '')}" />
+                  </div>
+                  <div style="grid-column: 1 / -1;">
+                    <label class="erp-field-label">노출 요일 (미선택 시 매일 노출)</label>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      ${DAY_ITEMS.map(d => `
+                        <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; padding: 4px 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc;">
+                          <input type="checkbox" class="pb-day-chk" value="${d.code}" ${selDays.includes(d.code) ? 'checked' : ''} /> ${d.label}
+                        </label>
+                      `).join('')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mc-drawer-section">
+                <div class="mc-drawer-section-title">3. 진열 레이아웃 · 노출 탭</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label class="erp-field-label">진열 레이아웃</label>
+                    <select id="pb-layout" class="erp-input">
+                      <option value="GRID" ${(cb.layout || 'GRID') === 'GRID' ? 'selected' : ''}>카드 그리드 (2열 정돈)</option>
+                      <option value="HORIZONTAL" ${cb.layout === 'HORIZONTAL' ? 'selected' : ''}>가로 슬라이드 (1+1·골라담기)</option>
+                      <option value="HERO" ${cb.layout === 'HERO' ? 'selected' : ''}>대형 배너형 (메인 기획전)</option>
+                      <option value="COUNTDOWN" ${cb.layout === 'COUNTDOWN' ? 'selected' : ''}>마감·한정수량 특가</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="erp-field-label">노출 탭 위치</label>
+                    <select id="pb-target-tab" class="erp-input">
+                      <option value="SHOP" ${(cb.target_tab || 'SHOP') === 'SHOP' ? 'selected' : ''}>장보기 홈</option>
+                      <option value="FLYER" ${cb.target_tab === 'FLYER' ? 'selected' : ''}>전단 탭</option>
+                      <option value="BOTH" ${cb.target_tab === 'BOTH' ? 'selected' : ''}>홈 + 전단 모두</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mc-drawer-footer">
+              <button type="button" class="mc-btn-secondary" id="btn-cancel-promo-builder">취소</button>
+              <button type="submit" class="mc-btn-primary">${editingCustomBlock ? '매대 설정 저장' : '행사 매대 추가'}</button>
+            </div>
+          </form>
+        </div>
+        `;
+      })() : ''}
 
       ${gbDrawerOpen ? `
         <div class="mc-drawer-backdrop" id="mc-gb-backdrop">
@@ -434,6 +577,85 @@ export async function renderMartPwaControlView(container, opts = {}) {
     });
     const iframe = container.querySelector('#iframe-pwa-preview');
     if (iframe) iframe.src = `/mart/pwa/?t=${Date.now()}`;
+  });
+
+  container.querySelector('#btn-open-promo-builder')?.addEventListener('click', () => {
+    editingCustomBlockId = '';
+    promoBuilderOpen = true;
+    renderMartPwaControlView(container);
+  });
+  container.querySelectorAll('.btn-edit-custom-block').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingCustomBlockId = btn.dataset.blockId || '';
+      promoBuilderOpen = true;
+      renderMartPwaControlView(container);
+    });
+  });
+  container.querySelectorAll('.btn-del-custom-block').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.blockId;
+      const nextBlocks = blocks.filter(b => b.id !== targetId);
+      await martApi.updatePwaControl({ blocks: nextBlocks });
+      showToast('행사 매대가 삭제되었습니다.', 'success');
+      await renderMartPwaControlView(container);
+    });
+  });
+  const closePromoBuilder = () => {
+    promoBuilderOpen = false;
+    editingCustomBlockId = '';
+    renderMartPwaControlView(container);
+  };
+  container.querySelector('#btn-close-promo-builder')?.addEventListener('click', closePromoBuilder);
+  container.querySelector('#btn-cancel-promo-builder')?.addEventListener('click', closePromoBuilder);
+  container.querySelector('#mc-promo-builder-backdrop')?.addEventListener('click', (e) => {
+    if (e.target.id === 'mc-promo-builder-backdrop') closePromoBuilder();
+  });
+  container.querySelector('#pb-promo-id')?.addEventListener('change', (e) => {
+    const pr = promoMap.get(e.target.value);
+    const badgeHost = container.querySelector('#pb-promo-badges');
+    if (badgeHost) {
+      const fbs = buildPromoFieldBadges(pr);
+      badgeHost.innerHTML = fbs.map(fb => `<span class="mc-pill mc-pill-${fb.tone === 'red' ? 'red' : fb.tone === 'amber' ? 'amber' : fb.tone === 'green' ? 'green' : 'gray'}" style="font-size: 11px;">${escapeHtml(fb.text)}</span>`).join('');
+    }
+    if (!pr) return;
+    const titleEl = container.querySelector('#pb-title');
+    if (titleEl && !titleEl.value.trim()) titleEl.value = pr.name || '';
+    const sdEl = container.querySelector('#pb-start-date');
+    const edEl = container.querySelector('#pb-end-date');
+    if (sdEl && (pr.start_date || pr.start_at)) sdEl.value = String(pr.start_date || pr.start_at).slice(0, 10);
+    if (edEl && (pr.end_date || pr.end_at)) edEl.value = String(pr.end_date || pr.end_at).slice(0, 10);
+    const prDays = Array.isArray(pr.days_of_week) ? pr.days_of_week : [];
+    container.querySelectorAll('.pb-day-chk').forEach(c => { c.checked = prDays.includes(c.value); });
+  });
+  container.querySelector('#form-promo-builder')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const days = Array.from(container.querySelectorAll('.pb-day-chk:checked')).map(c => c.value);
+    const payloadBlock = {
+      id: editingCustomBlockId || `PROMO_BLK_${Date.now()}`,
+      block_type: 'CUSTOM_PROMO_SHELF',
+      enabled: editingCustomBlock ? Boolean(editingCustomBlock.enabled) : true,
+      order: editingCustomBlock ? Number(editingCustomBlock.order || 2) : 2,
+      title: container.querySelector('#pb-title')?.value?.trim() || '기획 행사 매대',
+      subtitle: container.querySelector('#pb-subtitle')?.value?.trim() || '',
+      linked_promo_id: container.querySelector('#pb-promo-id')?.value || '',
+      start_date: container.querySelector('#pb-start-date')?.value || '',
+      end_date: container.querySelector('#pb-end-date')?.value || '',
+      start_time: container.querySelector('#pb-start-time')?.value || '',
+      end_time: container.querySelector('#pb-end-time')?.value || '',
+      days_of_week: days,
+      layout: container.querySelector('#pb-layout')?.value || 'GRID',
+      target_tab: container.querySelector('#pb-target-tab')?.value || 'SHOP',
+      featured_product_ids: editingCustomBlock?.featured_product_ids || [],
+      shelf_overrides: editingCustomBlock?.shelf_overrides || {}
+    };
+    const nextBlocks = editingCustomBlockId
+      ? blocks.map(b => b.id === editingCustomBlockId ? payloadBlock : b)
+      : [...blocks, payloadBlock];
+    await martApi.updatePwaControl({ blocks: nextBlocks });
+    promoBuilderOpen = false;
+    editingCustomBlockId = '';
+    showToast('행사 매대 조립 설정이 저장되었습니다.', 'success');
+    await renderMartPwaControlView(container);
   });
 
   container.querySelector('#btn-open-gb-drawer')?.addEventListener('click', () => {
