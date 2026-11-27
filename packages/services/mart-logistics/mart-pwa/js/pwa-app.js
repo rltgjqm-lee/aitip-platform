@@ -10,13 +10,17 @@ import { initPortalAuthGate } from '/core/shared/portal-auth-gate.js';
 import {
   getBlockScheduleStatus,
   formatScheduleSummary,
+  getDeadlineBadgeText,
   buildPromoFieldBadges
 } from '/core/shared/mart-promo-display.js';
 
-let persona = new URLSearchParams(location.search).get('mode') === 'facility' ? 'B2B_FACILITY' : 'B2C_CONSUMER'; // 'B2C_CONSUMER' | 'B2B_FACILITY'
+const initParams = new URLSearchParams(location.search);
+const initTabParam = String(initParams.get('tab') || '').toUpperCase();
+let persona = initParams.get('mode') === 'facility' ? 'B2B_FACILITY' : 'B2C_CONSUMER'; // 'B2C_CONSUMER' | 'B2B_FACILITY'
 let largeText = false;
-let pwaTab = 'SHOP'; // 'SHOP' | 'ORDERS'
+let pwaTab = ['SHOP', 'FLYER', 'GROUP_BUY', 'ORDERS'].includes(initTabParam) ? initTabParam : 'SHOP';
 let detailProductId = '';
+let detailShelfPrice = 0;
 let selectedCat = 'ALL'; // 'ALL' | '01'..'06' | 'PROMO_ONLY' | 'PREP_PROCESSED'
 let selectedSubCat = 'ALL'; // 'ALL' | L2 code
 let searchQuery = '';
@@ -60,16 +64,23 @@ async function render() {
   const marts = martsRes.marts || [];
   const groupBuys = gbRes.group_buys || [];
   const orders = ordersRes.orders || [];
-  const detailProduct = detailProductId ? products.find(p => p.id === detailProductId) : null;
+  const rawDetailProduct = detailProductId ? products.find(p => p.id === detailProductId) : null;
+  const detailProduct = rawDetailProduct && detailShelfPrice > 0
+    ? { ...rawDetailProduct, sale_price: detailShelfPrice, _shelf_price: detailShelfPrice }
+    : rawDetailProduct;
   const blocks = (cfg.blocks || []).filter(b => b.enabled).sort((a, b) => Number(a.order) - Number(b.order));
 
   const q = searchQuery.trim().toLowerCase();
-  const visibleProducts = products.filter(p => {
+  const baseProducts = products.filter(p => {
     if (p.online_publish_status === 'SUSPENDED') return false;
     if (p.payment_scope === 'POS_ONLY' && cfg.pos_only_policy === 'HIDE') return false;
     if (!q && p.online_publish_status === 'SEARCH_ONLY') return false;
     if (persona === 'B2C_CONSUMER' && (p.category_type === 'PREP_PROCESSED' || p.sales_target === 'B2B_ONLY')) return false;
     if (persona === 'B2B_FACILITY' && p.sales_target === 'B2C_ONLY') return false;
+    if (q && !`${p.name} ${p.spec} ${p.barcode}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const visibleProducts = baseProducts.filter(p => {
     if (selectedCat === 'PROMO_ONLY') {
       if (!p.applied_promo_id && !(Number(p.sale_price || 0) < Number(p.regular_price || 0))) return false;
     } else if (selectedCat === 'PREP_PROCESSED') {
@@ -79,7 +90,6 @@ async function render() {
       if (cat.l1 !== selectedCat) return false;
       if (selectedSubCat !== 'ALL' && cat.l2 !== selectedSubCat) return false;
     }
-    if (q && !`${p.name} ${p.spec} ${p.barcode}`.toLowerCase().includes(q)) return false;
     return true;
   });
 
@@ -139,9 +149,10 @@ async function render() {
     },
     FLYER_CAROUSEL: () => {
       const banners = Array.isArray(cfg.flyer_banners) ? cfg.flyer_banners : [];
+      const activePromos = promotions.filter(pr => getBlockScheduleStatus({ enabled: true }, pr).active);
       return `
       <div class="section-block">
-        <div class="section-title"><span>금주의 전단 · 반짝 특가</span><span style="font-size:11.5px;color:#065f46;">${promotions.length}건 진행중</span></div>
+        <div class="section-title"><span>금주의 전단 · 반짝 특가</span><span style="font-size:11.5px;color:#065f46;">${activePromos.length}건 진행중</span></div>
         ${banners.length > 0 ? `
           <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom:6px;">
             ${banners.map(b => `
@@ -152,13 +163,21 @@ async function render() {
           </div>
         ` : ''}
         <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;">
-          ${promotions.map(pr => `
+          ${activePromos.map(pr => {
+            const fbs = buildPromoFieldBadges(pr);
+            return `
             <div style="min-width: 210px; border: 1px solid #fde68a; background: #fffbeb; border-radius: 8px; padding: 10px;">
-              <span class="badge badge-promo">${esc(pr.promo_type)}</span>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                ${fbs.length > 0
+                  ? fbs.slice(0, 2).map(fb => `<span class="badge ${fb.tone === 'green' ? 'badge-fresh' : fb.tone === 'red' ? 'badge-pos' : 'badge-promo'}">${esc(fb.text)}</span>`).join('')
+                  : `<span class="badge badge-promo">기획 특가</span>`
+                }
+              </div>
               <div style="font-weight: 800; font-size: 13px; margin-top: 4px;">${esc(pr.name)}</div>
-              <div style="font-size: 11px; color: #92400e; margin-top: 3px;">${esc(pr.start_date)} ~ ${esc(pr.end_date)}</div>
+              <div style="font-size: 11px; color: #92400e; margin-top: 3px;">${esc(pr.start_date || '상시')} ~ ${esc(pr.end_date || '상시')}</div>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </div>
     `;
@@ -191,19 +210,20 @@ async function render() {
       `;
     },
     PROMO_SHELF: (blk) => {
+      const srcList = pwaTab === 'FLYER' ? baseProducts : visibleProducts;
       const fids = Array.isArray(blk?.featured_product_ids) ? blk.featured_product_ids : [];
       const ov = blk?.shelf_overrides || {};
-      const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price) } : p);
+      const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price), _shelf_price: Number(ov[p.id].shelf_price) } : p);
       const list = (!q && fids.length > 0)
-        ? fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv)
-        : visibleProducts.filter(p => p.applied_promo_id || Number(p.sale_price || 0) < Number(p.regular_price || 0)).slice(0, 4);
-      const finalList = list.length > 0 ? list : visibleProducts.slice(0, 4);
+        ? fids.map(id => srcList.find(p => p.id === id)).filter(Boolean).map(applyOv)
+        : srcList.filter(p => p.applied_promo_id || Number(p.sale_price || 0) < Number(p.regular_price || 0)).slice(0, 4);
+      const finalList = list.length > 0 ? list : srcList.slice(0, 4);
       return renderProductGrid(blk?.title || '1+1 · 골라담기 · 행사 상품', finalList, cfg, promoMap);
     },
     CURATED_SHELF: (blk) => {
       const fids = Array.isArray(blk?.featured_product_ids) ? blk.featured_product_ids : [];
       const ov = blk?.shelf_overrides || {};
-      const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price) } : p);
+      const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price), _shelf_price: Number(ov[p.id].shelf_price) } : p);
       const list = (!q && fids.length > 0)
         ? fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv)
         : visibleProducts;
@@ -217,19 +237,21 @@ async function render() {
     const sched = getBlockScheduleStatus(blk, linkedPromo);
     if (!sched.active) return '';
 
+    const srcList = pwaTab === 'FLYER' ? baseProducts : visibleProducts;
     const fids = Array.isArray(blk.featured_product_ids) ? blk.featured_product_ids : [];
     const ov = blk.shelf_overrides || {};
-    const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price) } : p);
+    const applyOv = (p) => (ov[p.id]?.shelf_price > 0 ? { ...p, sale_price: Number(ov[p.id].shelf_price), _shelf_price: Number(ov[p.id].shelf_price) } : p);
     let list = [];
     if (fids.length > 0) {
-      list = fids.map(id => visibleProducts.find(p => p.id === id)).filter(Boolean).map(applyOv);
+      list = fids.map(id => srcList.find(p => p.id === id)).filter(Boolean).map(applyOv);
     } else if (blk.linked_promo_id) {
-      list = visibleProducts.filter(p => p.applied_promo_id === blk.linked_promo_id).map(applyOv);
+      list = srcList.filter(p => p.applied_promo_id === blk.linked_promo_id).map(applyOv);
     }
     if (list.length === 0) return '';
 
     const fieldBadges = buildPromoFieldBadges(linkedPromo);
     const schedText = formatScheduleSummary(blk);
+    const deadlineText = getDeadlineBadgeText(blk, linkedPromo);
     const layout = blk.layout || 'GRID';
     const isHero = layout === 'HERO';
     const isCountdown = layout === 'COUNTDOWN';
@@ -240,11 +262,14 @@ async function render() {
     const remainPct = totalLimit > 0 ? Math.min(100, Math.round((remainQty / totalLimit) * 100)) : 0;
 
     return `
-      <div class="section-block" style="${isHero ? 'border: 1.5px solid #007749; background: #f8fafc;' : ''}">
+      <div class="section-block" style="${isHero ? 'border: 1.5px solid #007749; background: #f8fafc;' : isCountdown ? 'border: 1.5px solid #fecaca; background: #fffafb;' : ''}">
         <div style="${isHero ? 'background: #0f172a; color: #fff; padding: 12px 14px; border-radius: 8px; margin-bottom: 10px;' : 'margin-bottom: 10px;'}">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
             <strong style="font-size: 14.5px; ${isHero ? 'color: #fff;' : 'color: #0f172a;'}">${esc(blk.title || linkedPromo?.name || '기획 특가')}</strong>
-            <span style="font-size: 11px; ${isHero ? 'color: #cbd5e1;' : 'color: #64748b;'}">${esc(schedText)}</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              ${isCountdown && deadlineText ? `<span class="badge badge-pos">${esc(deadlineText)}</span>` : ''}
+              <span style="font-size: 11px; ${isHero ? 'color: #cbd5e1;' : 'color: #64748b;'}">${esc(schedText)}</span>
+            </div>
           </div>
           ${blk.subtitle ? `<div style="font-size: 12px; margin-top: 3px; ${isHero ? 'color: #e2e8f0;' : 'color: #475569;'}">${esc(blk.subtitle)}</div>` : ''}
           ${fieldBadges.length > 0 ? `
@@ -364,7 +389,7 @@ function renderProductCardHtml(p, cfg, promoMap = null, isHoriz = false) {
   return `
     <div class="prod-card" style="${isHoriz ? 'min-width: 158px; max-width: 158px; flex-shrink: 0;' : ''}">
       <div>
-        <div class="prod-thumb prod-clickable" data-detail-pid="${esc(p.id)}">
+        <div class="prod-thumb prod-clickable" data-detail-pid="${esc(p.id)}" data-shelf-price="${Number(p._shelf_price || 0)}">
           ${p.image_url
             ? `<img src="${esc(p.image_url)}" alt="${esc(p.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />`
             : (p.category_type === 'FRESH' ? '신선농수산' : p.category_type === 'PREP_PROCESSED' ? '전처리규격' : '표준상품')
@@ -383,7 +408,7 @@ function renderProductCardHtml(p, cfg, promoMap = null, isHoriz = false) {
             : ''
           }
         </div>
-        <div class="prod-title prod-clickable" data-detail-pid="${esc(p.id)}" style="margin-top:4px;">${esc(p.name)}</div>
+        <div class="prod-title prod-clickable" data-detail-pid="${esc(p.id)}" data-shelf-price="${Number(p._shelf_price || 0)}" style="margin-top:4px;">${esc(p.name)}</div>
         <div class="prod-spec">${esc(p.spec)} · ${esc(p.uom)}</div>
       </div>
       <div>
@@ -391,7 +416,7 @@ function renderProductCardHtml(p, cfg, promoMap = null, isHoriz = false) {
           <div class="prod-price">${salePrice.toLocaleString()}원</div>
           ${hasDiscount ? `<span style="font-size:11px; color:#94a3b8; text-decoration:line-through;">${regPrice.toLocaleString()}원</span>` : ''}
         </div>
-        <button type="button" class="btn-add" data-pid="${esc(p.id)}" ${disabled ? 'disabled' : ''}>
+        <button type="button" class="btn-add" data-pid="${esc(p.id)}" data-shelf-price="${Number(p._shelf_price || 0)}" ${disabled ? 'disabled' : ''}>
           ${isPosOnly ? '현장 전용가' : isSoldOut ? '품절' : '담기'}
         </button>
       </div>
@@ -539,7 +564,7 @@ function renderProductDetailModal(p, cfg) {
               : ''}
             <div style="font-size:19px;font-weight:800;color:#065f46;">${Number(p.sale_price || p.regular_price || 0).toLocaleString()}원</div>
           </div>
-          <button type="button" id="btn-detail-add-cart" class="btn-add" data-pid="${esc(p.id)}" style="width:auto;padding:10px 22px;font-size:14px;" ${disabled ? 'disabled' : ''}>
+          <button type="button" id="btn-detail-add-cart" class="btn-add" data-pid="${esc(p.id)}" data-shelf-price="${Number(p._shelf_price || 0)}" style="width:auto;padding:10px 22px;font-size:14px;" ${disabled ? 'disabled' : ''}>
             ${isPosOnly ? '매장 현장결제 전용' : isSoldOut ? '일시품절' : '장바구니 담기'}
           </button>
         </div>
@@ -606,15 +631,17 @@ function bindEvents(root, { products = [], orders = [] } = {}) {
   root.querySelectorAll('.prod-clickable').forEach(el => {
     el.addEventListener('click', () => {
       detailProductId = el.dataset.detailPid || '';
+      detailShelfPrice = Number(el.dataset.shelfPrice || 0);
       render();
     });
   });
   root.querySelector('#btn-close-detail')?.addEventListener('click', () => {
     detailProductId = '';
+    detailShelfPrice = 0;
     render();
   });
   root.querySelector('#detail-modal-bg')?.addEventListener('click', (e) => {
-    if (e.target.id === 'detail-modal-bg') { detailProductId = ''; render(); }
+    if (e.target.id === 'detail-modal-bg') { detailProductId = ''; detailShelfPrice = 0; render(); }
   });
   root.querySelectorAll('.btn-reorder-items').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -663,9 +690,12 @@ function bindEvents(root, { products = [], orders = [] } = {}) {
   root.querySelectorAll('.btn-add[data-pid]').forEach(btn => {
     btn.addEventListener('click', async () => {
       const cat = await martPwaApi.getCatalog();
-      const prod = (cat.products || []).find(x => x.id === btn.dataset.pid);
-      if (!prod) return;
+      const rawProd = (cat.products || []).find(x => x.id === btn.dataset.pid);
+      if (!rawProd) return;
+      const shelfPrice = Number(btn.dataset.shelfPrice || 0);
+      const prod = shelfPrice > 0 ? { ...rawProd, sale_price: shelfPrice, _shelf_price: shelfPrice } : rawProd;
       const cur = cart.get(prod.id) || { product: prod, qty: 0 };
+      if (shelfPrice > 0) cur.product = prod;
       const limit = Number(prod.promo_limit_per_person || prod.limit_per_person || 0);
       if (limit > 0 && cur.qty + 1 > limit) {
         showPwaToast(`1인 ${limit}개 한정 상품입니다.`, 'warn');

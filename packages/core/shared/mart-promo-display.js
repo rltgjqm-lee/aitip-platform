@@ -108,10 +108,25 @@ export function getBlockScheduleStatus(block = {}, linkedPromo = null, now = new
   return { active: true, code: 'ACTIVE', label: '노출중' };
 }
 
+export function getDeadlineBadgeText(block = {}, linkedPromo = null, now = new Date()) {
+  const eDate = String(block.end_date || linkedPromo?.end_date || linkedPromo?.end_at || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(eDate)) return '';
+  const { dateStr } = getKstParts(now);
+  const todayMs = Date.parse(`${dateStr}T00:00:00Z`);
+  const endMs = Date.parse(`${eDate}T00:00:00Z`);
+  if (!Number.isFinite(todayMs) || !Number.isFinite(endMs)) return '';
+  const diffDays = Math.round((endMs - todayMs) / 86400000);
+  if (diffDays < 0) return '기간 종료';
+  if (diffDays === 0) return '오늘 마감';
+  if (diffDays === 1) return '내일 마감 (D-1)';
+  return `마감 D-${diffDays} (${eDate.slice(5).replace('-', '/')}까지)`;
+}
+
 export function buildPromoFieldBadges(promo = null) {
   if (!promo) return [];
   const badges = [];
   const pType = String(promo.promo_type || '').toUpperCase();
+  const cMode = String(promo.calc_mode || '').toUpperCase();
   const reqQty = Number(promo.required_qty || promo.bundle_qty || 1);
   const bundlePrice = Number(promo.bundle_price || 0);
   const discPct = Number(promo.discount_pct ?? promo.discount_value ?? 0);
@@ -122,11 +137,11 @@ export function buildPromoFieldBadges(promo = null) {
   const totalLimit = Number(promo.total_limit_qty || 0);
   const usedQty = Number(promo.used_qty || 0);
 
-  if (pType === 'BOGO_1_PLUS_1') {
+  if (pType === 'BOGO_1_PLUS_1' || cMode === 'BOGO_1_PLUS_1') {
     badges.push({ text: '1+1 덤', tone: 'green' });
-  } else if (pType === 'BOGO_2_PLUS_1') {
+  } else if (pType === 'BOGO_2_PLUS_1' || cMode === 'BOGO_2_PLUS_1') {
     badges.push({ text: '2+1 덤', tone: 'green' });
-  } else if (pType === 'MIX_AND_MATCH') {
+  } else if (pType === 'MIX_AND_MATCH' || cMode === 'MIX_AND_MATCH') {
     badges.push({
       text: bundlePrice > 0
         ? `골라담기 ${reqQty}개 ${bundlePrice.toLocaleString()}원`

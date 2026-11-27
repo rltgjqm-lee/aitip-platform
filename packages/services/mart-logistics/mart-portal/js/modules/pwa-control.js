@@ -15,6 +15,7 @@ import {
 } from '/core/shared/mart-promo-display.js';
 
 let previewDevice = 'MOBILE'; // 'MOBILE' (375px) | 'TABLET' (768px) | 'PC' (1200px)
+let previewTab = 'SHOP'; // 'SHOP' | 'FLYER'
 let editingBlockId = '';
 let promoBuilderOpen = false;
 let editingCustomBlockId = '';
@@ -96,7 +97,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
             <div style="padding: 16px 18px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
               <div>
                 <span style="font-size: 14px; font-weight: 800; color: #0f172a;">2. 홈 · 전단 디스플레이 블록 조립</span>
-                <span style="font-size: 12px; color: #64748b; margin-left: 8px;">순서 숫자가 작을수록 상단에 노출 · 행사 매대는 기간·요일·시간대로 자동 노출</span>
+                <span style="font-size: 12px; color: #64748b; margin-left: 8px;">순서 숫자가 작을수록 상단에 노출 · 행사 매대는 기간·요일 조건으로 자동 노출</span>
               </div>
               <button type="button" class="mc-btn-primary" id="btn-open-promo-builder" style="height: 30px; padding: 0 12px; font-size: 12px;">+ 행사 매대 조립 추가</button>
             </div>
@@ -119,6 +120,8 @@ export async function renderMartPwaControlView(container, opts = {}) {
                     const linkedPromo = b.linked_promo_id ? promoMap.get(b.linked_promo_id) : null;
                     const sched = isCustom ? getBlockScheduleStatus(b, linkedPromo) : null;
                     const fieldBadges = isCustom ? buildPromoFieldBadges(linkedPromo) : [];
+                    const autoPromoCount = linkedPromo ? allProducts.filter(p => p.applied_promo_id === linkedPromo.id).length : 0;
+                    const effectiveProdCount = fIds.length > 0 ? fIds.length : autoPromoCount;
                     return `
                     <tr class="pwa-block-row" data-block-id="${escapeHtml(b.id)}">
                       <td><input type="number" class="blk-order erp-input" value="${b.order}" min="1" max="50" style="width: 58px; height: 32px; text-align: center;" /></td>
@@ -128,6 +131,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
                           <span class="mc-pill ${isCustom ? 'mc-pill-green' : 'mc-pill-gray'}">${isCustom ? (LAYOUT_LABEL[b.layout] || '행사 매대') : escapeHtml(b.id)}</span>
                           ${isCustom && sched ? `<span class="mc-pill ${sched.active ? 'mc-pill-green' : sched.code === 'SCHEDULED' ? 'mc-pill-blue' : 'mc-pill-amber'}">${escapeHtml(sched.label)}</span>` : ''}
                           ${isCustom ? `<span class="mc-pill mc-pill-gray">${escapeHtml(TARGET_TAB_LABEL[b.target_tab] || '장보기 홈')}</span>` : ''}
+                          ${isCustom && effectiveProdCount === 0 ? `<span class="mc-pill mc-pill-amber">상품 0개 · 미노출</span>` : ''}
                         </div>
                         ${isCustom ? `
                           <div style="font-size: 11px; color: #475569; margin-top: 4px;">
@@ -145,7 +149,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
                         ${isCustom ? `<button type="button" class="mc-row-edit-btn btn-edit-custom-block" data-block-id="${escapeHtml(b.id)}" style="margin-right: 4px;">스케줄·설정</button>` : ''}
                         ${isShelf ? `
                           <button type="button" class="mc-row-edit-btn btn-pick-shelf-prods" data-block-id="${escapeHtml(b.id)}">
-                            ${fIds.length > 0 ? `지정 ${fIds.length}개` : (linkedPromo ? '행사상품 자동' : '진열 상품 선택')}
+                            ${fIds.length > 0 ? `지정 ${fIds.length}개` : (linkedPromo ? `행사상품 자동 (${autoPromoCount}개)` : '진열 상품 선택')}
                           </button>
                         ` : '<span style="font-size: 11.5px; color: #94a3b8;">자동</span>'}
                         ${isCustom ? `<button type="button" class="mc-row-edit-btn btn-del-custom-block" data-block-id="${escapeHtml(b.id)}" style="margin-left: 4px; color: #b91c1c; border-color: #fecaca;">삭제</button>` : ''}
@@ -203,16 +207,20 @@ export async function renderMartPwaControlView(container, opts = {}) {
 
         <!-- 우측(모바일) / 하단(태블릿·PC): 실시간 미리보기 -->
         <div id="pwa-preview-card" class="mc-surface" style="background: #0f172a; border-color: #1e293b; padding: 14px; ${isSidePreview ? 'position: sticky; top: 76px;' : ''}">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;">
             <div style="display: flex; gap: 4px;">
-              <button type="button" class="btn-device-preview" data-device="MOBILE" style="padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'MOBILE' ? '#007749' : '#334155'}; color: #fff;">모바일</button>
-              <button type="button" class="btn-device-preview" data-device="TABLET" style="padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'TABLET' ? '#007749' : '#334155'}; color: #fff;">태블릿</button>
-              <button type="button" class="btn-device-preview" data-device="PC" style="padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'PC' ? '#007749' : '#334155'}; color: #fff;">PC 웹</button>
+              <button type="button" class="btn-device-preview" data-device="MOBILE" style="padding: 5px 9px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'MOBILE' ? '#007749' : '#334155'}; color: #fff;">모바일</button>
+              <button type="button" class="btn-device-preview" data-device="TABLET" style="padding: 5px 9px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'TABLET' ? '#007749' : '#334155'}; color: #fff;">태블릿</button>
+              <button type="button" class="btn-device-preview" data-device="PC" style="padding: 5px 9px; border-radius: 6px; border: none; cursor: pointer; font-size: 11.5px; font-weight: 700; background: ${previewDevice === 'PC' ? '#007749' : '#334155'}; color: #fff;">PC 웹</button>
             </div>
-            <button type="button" id="btn-refresh-pwa-preview" style="background: #334155; color: #e2e8f0; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; font-size: 11.5px; font-weight: 600;">새로고침</button>
+            <div style="display: flex; gap: 4px; align-items: center;">
+              <button type="button" class="btn-preview-tab" data-tab="SHOP" style="padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; background: ${previewTab === 'SHOP' ? '#0284c7' : '#334155'}; color: #fff;">홈</button>
+              <button type="button" class="btn-preview-tab" data-tab="FLYER" style="padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer; font-size: 11px; font-weight: 700; background: ${previewTab === 'FLYER' ? '#0284c7' : '#334155'}; color: #fff;">전단</button>
+              <button type="button" id="btn-refresh-pwa-preview" style="background: #334155; color: #e2e8f0; border: none; border-radius: 6px; padding: 5px 9px; cursor: pointer; font-size: 11px; font-weight: 600;">새로고침</button>
+            </div>
           </div>
           <div style="overflow-x: auto; display: flex; justify-content: center; background: #1e293b; border-radius: 10px; padding: 10px;">
-            <iframe id="iframe-pwa-preview" src="/mart/pwa/" style="width: ${previewDevice === 'MOBILE' ? '375px' : previewDevice === 'TABLET' ? '768px' : '1200px'}; max-width: 100%; height: 640px; border: none; border-radius: 10px; background: #ffffff;"></iframe>
+            <iframe id="iframe-pwa-preview" src="/mart/pwa/?tab=${previewTab}" style="width: ${previewDevice === 'MOBILE' ? '375px' : previewDevice === 'TABLET' ? '768px' : '1200px'}; max-width: 100%; height: 640px; border: none; border-radius: 10px; background: #ffffff;"></iframe>
           </div>
         </div>
       </div>
@@ -303,7 +311,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
             <div class="mc-drawer-header">
               <div>
                 <h2>${editingCustomBlock ? '행사 매대 스케줄 · 조립 수정' : '새 행사 매대 조립 추가'}</h2>
-                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">기간 · 요일 · 시간대에 맞춰 1+1 · 골라담기 · 한정특가 매대를 자동 노출합니다.</div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 2px;">기간 · 요일 조건에 맞춰 1+1 · 골라담기 · 한정특가 매대를 자동 노출합니다.</div>
               </div>
               <button type="button" class="mc-drawer-close" id="btn-close-promo-builder">×</button>
             </div>
@@ -327,13 +335,19 @@ export async function renderMartPwaControlView(container, opts = {}) {
                   </div>
                   <div style="grid-column: 1 / -1;">
                     <label class="erp-field-label">한 줄 안내 문구 (선택)</label>
-                    <input id="pb-subtitle" type="text" class="erp-input" value="${escapeHtml(cb.subtitle || '')}" placeholder="예: 금·토·일 오후 3시~7시 선착순 한정 수량" />
+                    <input id="pb-subtitle" type="text" class="erp-input" value="${escapeHtml(cb.subtitle || '')}" placeholder="예: 금·토·일 선착순 한정 수량 · 1인 2개 한정" />
                   </div>
                 </div>
               </div>
 
               <div class="mc-drawer-section">
-                <div class="mc-drawer-section-title">2. 자동 노출 스케줄 (기간 · 요일 · 시간대)</div>
+                <div class="mc-drawer-section-title">2. 자동 노출 스케줄 (기간 · 요일)</div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                  <button type="button" class="mc-btn-secondary btn-pb-sched-preset" data-preset="TODAY" style="height: 27px; padding: 0 9px; font-size: 11.5px;">오늘 하루</button>
+                  <button type="button" class="mc-btn-secondary btn-pb-sched-preset" data-preset="WEEKEND" style="height: 27px; padding: 0 9px; font-size: 11.5px;">이번 주말 (금·토·일)</button>
+                  <button type="button" class="mc-btn-secondary btn-pb-sched-preset" data-preset="WEEK7" style="height: 27px; padding: 0 9px; font-size: 11.5px;">7일 전단</button>
+                  <button type="button" class="mc-btn-secondary btn-pb-sched-preset" data-preset="ALWAYS" style="height: 27px; padding: 0 9px; font-size: 11.5px;">상시 노출</button>
+                </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                   <div>
                     <label class="erp-field-label">노출 시작일 (미입력=상시)</label>
@@ -342,14 +356,6 @@ export async function renderMartPwaControlView(container, opts = {}) {
                   <div>
                     <label class="erp-field-label">노출 종료일 (미입력=상시)</label>
                     <input id="pb-end-date" type="date" class="erp-input" value="${escapeHtml(cb.end_date || '')}" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">노출 시작 시각 (미입력=00:00)</label>
-                    <input id="pb-start-time" type="time" class="erp-input" value="${escapeHtml(cb.start_time || '')}" />
-                  </div>
-                  <div>
-                    <label class="erp-field-label">노출 종료 시각 (최대 23:59)</label>
-                    <input id="pb-end-time" type="time" class="erp-input" value="${escapeHtml(cb.end_time || '')}" />
                   </div>
                   <div style="grid-column: 1 / -1;">
                     <label class="erp-field-label">노출 요일 (미선택 시 매일 노출)</label>
@@ -389,6 +395,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
             </div>
             <div class="mc-drawer-footer">
               <button type="button" class="mc-btn-secondary" id="btn-cancel-promo-builder">취소</button>
+              <button type="button" class="mc-btn-secondary" id="btn-pb-save-and-pick" style="border-color: #007749; color: #007749;">저장 후 바로 상품 선택</button>
               <button type="submit" class="mc-btn-primary">${editingCustomBlock ? '매대 설정 저장' : '행사 매대 추가'}</button>
             </div>
           </form>
@@ -470,9 +477,20 @@ export async function renderMartPwaControlView(container, opts = {}) {
     });
   });
 
+  container.querySelectorAll('.btn-preview-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      previewTab = btn.dataset.tab || 'SHOP';
+      const iframe = container.querySelector('#iframe-pwa-preview');
+      if (iframe) iframe.src = `/mart/pwa/?tab=${previewTab}&t=${Date.now()}`;
+      container.querySelectorAll('.btn-preview-tab').forEach(b => {
+        b.style.background = b.dataset.tab === previewTab ? '#0284c7' : '#334155';
+      });
+    });
+  });
+
   container.querySelector('#btn-refresh-pwa-preview')?.addEventListener('click', () => {
     const iframe = container.querySelector('#iframe-pwa-preview');
-    if (iframe) iframe.src = `/mart/pwa/?t=${Date.now()}`;
+    if (iframe) iframe.src = `/mart/pwa/?tab=${previewTab}&t=${Date.now()}`;
   });
 
   container.querySelectorAll('.btn-pick-shelf-prods').forEach(btn => {
@@ -576,7 +594,7 @@ export async function renderMartPwaControlView(container, opts = {}) {
       blocks: blocksPayload
     });
     const iframe = container.querySelector('#iframe-pwa-preview');
-    if (iframe) iframe.src = `/mart/pwa/?t=${Date.now()}`;
+    if (iframe) iframe.src = `/mart/pwa/?tab=${previewTab}&t=${Date.now()}`;
   });
 
   container.querySelector('#btn-open-promo-builder')?.addEventListener('click', () => {
@@ -627,24 +645,68 @@ export async function renderMartPwaControlView(container, opts = {}) {
     const prDays = Array.isArray(pr.days_of_week) ? pr.days_of_week : [];
     container.querySelectorAll('.pb-day-chk').forEach(c => { c.checked = prDays.includes(c.value); });
   });
+  let openPickerAfterSave = false;
+  container.querySelector('#btn-pb-save-and-pick')?.addEventListener('click', () => {
+    openPickerAfterSave = true;
+    container.querySelector('#form-promo-builder')?.requestSubmit();
+  });
+  container.querySelectorAll('.btn-pb-sched-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.preset;
+      const now = new Date();
+      const addDays = (n) => new Date(now.getTime() + n * 86400000).toISOString().slice(0, 10);
+      const sdEl = container.querySelector('#pb-start-date');
+      const edEl = container.querySelector('#pb-end-date');
+      const setDays = (arr = []) => {
+        container.querySelectorAll('.pb-day-chk').forEach(c => { c.checked = arr.includes(c.value); });
+      };
+      if (code === 'TODAY') {
+        if (sdEl) sdEl.value = today;
+        if (edEl) edEl.value = today;
+        setDays([]);
+      } else if (code === 'WEEKEND') {
+        const daysToSun = (7 - now.getDay()) % 7;
+        if (sdEl) sdEl.value = today;
+        if (edEl) edEl.value = addDays(daysToSun || 3);
+        setDays(['FRI', 'SAT', 'SUN']);
+      } else if (code === 'WEEK7') {
+        if (sdEl) sdEl.value = today;
+        if (edEl) edEl.value = addDays(6);
+        setDays([]);
+      } else if (code === 'ALWAYS') {
+        if (sdEl) sdEl.value = '';
+        if (edEl) edEl.value = '';
+        setDays([]);
+      }
+    });
+  });
   container.querySelector('#form-promo-builder')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const startDate = container.querySelector('#pb-start-date')?.value || '';
+    const endDate = container.querySelector('#pb-end-date')?.value || '';
+    if (startDate && endDate && startDate > endDate) {
+      openPickerAfterSave = false;
+      showToast('노출 시작일이 종료일보다 늦습니다. 기간을 확인해 주세요.', 'warn');
+      return;
+    }
     const days = Array.from(container.querySelectorAll('.pb-day-chk:checked')).map(c => c.value);
+    const savedId = editingCustomBlockId || `PROMO_BLK_${Date.now()}`;
+    const targetTab = container.querySelector('#pb-target-tab')?.value || 'SHOP';
     const payloadBlock = {
-      id: editingCustomBlockId || `PROMO_BLK_${Date.now()}`,
+      id: savedId,
       block_type: 'CUSTOM_PROMO_SHELF',
       enabled: editingCustomBlock ? Boolean(editingCustomBlock.enabled) : true,
       order: editingCustomBlock ? Number(editingCustomBlock.order || 2) : 2,
       title: container.querySelector('#pb-title')?.value?.trim() || '기획 행사 매대',
       subtitle: container.querySelector('#pb-subtitle')?.value?.trim() || '',
       linked_promo_id: container.querySelector('#pb-promo-id')?.value || '',
-      start_date: container.querySelector('#pb-start-date')?.value || '',
-      end_date: container.querySelector('#pb-end-date')?.value || '',
-      start_time: container.querySelector('#pb-start-time')?.value || '',
-      end_time: container.querySelector('#pb-end-time')?.value || '',
+      start_date: startDate,
+      end_date: endDate,
+      start_time: '',
+      end_time: '',
       days_of_week: days,
       layout: container.querySelector('#pb-layout')?.value || 'GRID',
-      target_tab: container.querySelector('#pb-target-tab')?.value || 'SHOP',
+      target_tab: targetTab,
       featured_product_ids: editingCustomBlock?.featured_product_ids || [],
       shelf_overrides: editingCustomBlock?.shelf_overrides || {}
     };
@@ -654,7 +716,18 @@ export async function renderMartPwaControlView(container, opts = {}) {
     await martApi.updatePwaControl({ blocks: nextBlocks });
     promoBuilderOpen = false;
     editingCustomBlockId = '';
-    showToast('행사 매대 조립 설정이 저장되었습니다.', 'success');
+    if (targetTab === 'FLYER') previewTab = 'FLYER';
+    const shouldPick = openPickerAfterSave;
+    openPickerAfterSave = false;
+    if (shouldPick) {
+      editingBlockId = savedId;
+      draftFeaturedIds = [...payloadBlock.featured_product_ids];
+      draftShelfOverrides = { ...payloadBlock.shelf_overrides };
+      shelfSearchQuery = '';
+      showToast('매대가 저장되었습니다. 진열할 상품을 선택해 주세요.', 'success');
+    } else {
+      showToast('행사 매대 조립 설정이 저장되었습니다.', 'success');
+    }
     await renderMartPwaControlView(container);
   });
 
