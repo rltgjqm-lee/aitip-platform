@@ -69,7 +69,7 @@ export async function renderMartChannelAssignView(container) {
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             ${[
               ['ALL', '전체'],
-              ['BOTH', '공통 (온라인+기관)'],
+              ['BOTH', '공통 (기본정보)'],
               ['B2C_ONLY', '온라인 전용 (B2C)'],
               ['B2B_ONLY', '기관 납품 전용 (B2B)']
             ].map(([k, lbl]) => `
@@ -99,7 +99,7 @@ export async function renderMartChannelAssignView(container) {
             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
               <select id="ca-bulk-target" class="erp-input" style="width: 175px; height: 32px; font-size: 12px;">
                 <option value="">판매대상 변경 안함</option>
-                <option value="BOTH">공통 (온라인+기관)</option>
+                <option value="BOTH">공통 (기본정보)</option>
                 <option value="B2C_ONLY">온라인 전용 (B2C)</option>
                 <option value="B2B_ONLY">기관 납품 전용 (B2B)</option>
               </select>
@@ -154,7 +154,7 @@ export async function renderMartChannelAssignView(container) {
                       </td>
                       <td>
                         <select class="erp-input ca-target" data-pid="${esc(p.id)}" style="height: 30px; font-size: 12px; min-width: 145px;">
-                          <option value="BOTH" ${st === 'BOTH' ? 'selected' : ''}>공통 (온라인+기관)</option>
+                          <option value="BOTH" ${st === 'BOTH' ? 'selected' : ''}>공통 (기본정보)</option>
                           <option value="B2C_ONLY" ${st === 'B2C_ONLY' ? 'selected' : ''}>온라인 전용 (B2C)</option>
                           <option value="B2B_ONLY" ${st === 'B2B_ONLY' ? 'selected' : ''}>기관 납품 전용 (B2B)</option>
                         </select>
